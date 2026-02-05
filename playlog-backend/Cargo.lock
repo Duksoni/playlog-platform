@@ -43,6 +43,7 @@ name = "api-error"
 version = "0.1.0"
 dependencies = [
  "axum",
+ "validator",
 ]
 
 [[package]]
