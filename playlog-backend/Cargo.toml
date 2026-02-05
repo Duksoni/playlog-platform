@@ -1,20 +1,24 @@
 [workspace]
-members = ["services/*"]
+members = ["services/*", "shared/*"]
 resolver = "3"
 
 [workspace.dependencies]
 # --- Async runtime & HTTP ---
-tokio = { version = "1",  features = ["full"] }
+tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
 axum = { version = "0.8" }
+axum-macros = "0.5"
 tower = "0.5"
 tower-http = { version = "0.6", features = ["trace", "cors"] }
 http = "1"
 
-# --- Serialization ---
+# --- Serialization and validation ---
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-uuid = { version = "1.19", features = ["v4", "serde"] }
+uuid = { version = "1", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
+validator = { version = "0.20", features = ["derive"] }
+regex = "1.12"
+once_cell = "1.21"
 
 # --- Config ---
 dotenvy = "0.15"
@@ -36,3 +40,14 @@ futures = "0.3"
 # --- Logging ---
 tracing = "0.1"
 
+# --- Databases ---
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono", "uuid"] }
+mongodb = "3"
+
+# --- OpenAPI Documentation ---
+utoipa = { version = "5", features = ["axum_extras", "chrono", "uuid"] }
+utoipa-axum = "0.2"
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+
+# --- Shared ---
+api-error = { path = "shared/api-error" }

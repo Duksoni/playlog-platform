@@ -4,5 +4,22 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-tokio.workspace = true
+anyhow.workspace = true
+api-error.workspace = true
+argon2.workspace = true
+async-trait.workspace = true
+axum-macros.workspace = true
 axum.workspace = true
+chrono.workspace = true
+dotenvy.workspace = true
+once_cell.workspace = true
+regex.workspace = true
+serde.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+utoipa-axum.workspace = true
+utoipa-swagger-ui.workspace = true
+utoipa.workspace = true
+uuid.workspace = true
+validator.workspace = true
