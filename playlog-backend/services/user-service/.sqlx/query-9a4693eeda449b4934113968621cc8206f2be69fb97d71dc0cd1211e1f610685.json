@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "DELETE FROM user_tokens WHERE token = $1 RETURNING 1",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "?column?",
+        "type_info": "Int4"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Text"
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "9a4693eeda449b4934113968621cc8206f2be69fb97d71dc0cd1211e1f610685"
+}

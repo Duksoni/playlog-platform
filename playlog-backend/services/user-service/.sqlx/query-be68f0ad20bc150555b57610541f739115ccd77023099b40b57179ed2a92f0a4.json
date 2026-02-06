@@ -1,0 +1,25 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                INSERT INTO user_profiles (user_id, first_name, last_name, birthdate)\n                VALUES ($1, $2, $3, $4)\n                RETURNING created_at\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "created_at",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Varchar",
+        "Varchar",
+        "Date"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "be68f0ad20bc150555b57610541f739115ccd77023099b40b57179ed2a92f0a4"
+}
