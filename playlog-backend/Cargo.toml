@@ -4,12 +4,10 @@ resolver = "3"
 
 [workspace.dependencies]
 # --- Async runtime & HTTP ---
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "net"] }
+tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8" }
 axum-macros = "0.5"
-tower = "0.5"
-tower-http = { version = "0.6", features = ["trace", "cors"] }
-http = "1"
+tower-http = { version = "0.6", features = ["timeout", "trace", "cors"] }
 
 # --- Serialization and validation ---
 serde = { version = "1", features = ["derive"] }
@@ -29,7 +27,7 @@ thiserror = "2"
 anyhow = "1"
 
 # --- Auth & security ---
-jsonwebtoken = "10"
+jsonwebtoken = { version = "10", features = ["rust_crypto"] }
 argon2 = "0.5"
 rand = "0.9"
 
@@ -38,7 +36,7 @@ async-trait = "0.1"
 futures = "0.3"
 
 # --- Logging ---
-tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # --- Databases ---
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono", "uuid"] }
