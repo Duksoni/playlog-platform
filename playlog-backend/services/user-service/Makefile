@@ -51,7 +51,7 @@ wait-dev:
 		echo "User service development environment is ready!"; \
 		echo ""; \
 		echo "Services:"; \
-		echo "  - PostgreSQL:	localhost:5433"; \
+		echo "  - PostgreSQL:		localhost:5433"; \
 		echo "  - pgAdmin:		http://localhost:5050"; \
 		echo ""; \
 		echo "View logs: make logs-dev [service_name]"; \

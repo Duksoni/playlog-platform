@@ -9,7 +9,7 @@ services:
     ports:
       - "5433:5432"
     volumes:
-      - users_pg_data:/var/lib/postgresql/data
+      - users_pg_data:/var/lib/postgresql
     healthcheck:
       test: [ "CMD-SHELL", "pg_isready -U playlog_user -d users_db" ]
       interval: 10s
