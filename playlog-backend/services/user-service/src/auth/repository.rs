@@ -1,8 +1,9 @@
 use super::{AccountStatus, AuthError, RegisterRequest, RegisterResponse, Result, User};
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
+use jwt_common::Role;
 use sqlx::{
-    query, query_as, query_scalar, Error as SqlxError, FromRow, PgPool, Postgres, Transaction,
+    Error as SqlxError, FromRow, PgPool, Postgres, Transaction, query, query_as, query_scalar,
 };
 use uuid::Uuid;
 
@@ -16,6 +17,13 @@ pub trait AuthRepository: Send + Sync {
         request: &RegisterRequest,
         is_admin: bool,
     ) -> Result<RegisterResponse>;
+    async fn get_user_role(&self, id: Uuid) -> Result<Role>;
+    async fn save_refresh_token(
+        &self,
+        user_id: Uuid,
+        token: &str,
+        expiration_date: &DateTime<Utc>,
+    ) -> Result<()>;
     async fn revoke_token(&self, token: &str) -> Result<bool>;
     async fn clear_expired_tokens(&self) -> Result<u64>;
 }
@@ -37,8 +45,8 @@ impl AuthRepository for PostgresAuthRepository {
             "#,
             identifier
         )
-        .fetch_one(&self.pool)
-        .await?;
+            .fetch_one(&self.pool)
+            .await?;
         Ok(user)
     }
 
@@ -79,6 +87,40 @@ impl AuthRepository for PostgresAuthRepository {
             user.email,
             created_at,
         ))
+    }
+
+    async fn get_user_role(&self, user_id: Uuid) -> Result<Role> {
+        let role_name = sqlx::query_scalar!(
+            r#"
+                SELECT r.name
+                FROM user_roles ur INNER JOIN roles r ON ur.role_id = r.id
+                WHERE user_id = $1
+            "#,
+            user_id
+        )
+        .fetch_one(&self.pool)
+        .await?;
+        Ok(role_name.parse().map_err(|_| AuthError::UserNotFound)?)
+    }
+
+    async fn save_refresh_token(
+        &self,
+        user_id: Uuid,
+        token: &str,
+        expiration_date: &DateTime<Utc>,
+    ) -> Result<()> {
+        query!(
+            r#"
+                INSERT INTO user_tokens (user_id, token, expires_at)
+                VALUES ($1, $2, $3)
+            "#,
+            user_id,
+            token,
+            expiration_date
+        )
+        .execute(&self.pool)
+        .await?;
+        Ok(())
     }
 
     async fn revoke_token(&self, token: &str) -> Result<bool> {
