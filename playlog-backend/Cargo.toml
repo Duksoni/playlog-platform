@@ -27,9 +27,8 @@ thiserror = "2"
 anyhow = "1"
 
 # --- Auth & security ---
-jsonwebtoken = { version = "10", features = ["rust_crypto"] }
+jsonwebtoken = { version = "10", features = ["rust_crypto", "use_pem"] }
 argon2 = "0.5"
-rand = "0.9"
 
 # --- Async utils ---
 async-trait = "0.1"
@@ -49,3 +48,4 @@ utoipa-swagger-ui = { version = "9", features = ["axum"] }
 
 # --- Shared ---
 api-error = { path = "shared/api-error" }
+jwt-common = { path = "shared/jwt-common"}

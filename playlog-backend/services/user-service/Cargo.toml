@@ -8,10 +8,14 @@ anyhow.workspace = true
 api-error.workspace = true
 argon2.workspace = true
 async-trait.workspace = true
+axum-extra = { version = "0.12", features = ["cookie"]}
 axum-macros.workspace = true
 axum.workspace = true
 chrono.workspace = true
+cookie = "0.18"
 dotenvy.workspace = true
+jsonwebtoken.workspace = true
+jwt-common.workspace = true
 once_cell.workspace = true
 regex.workspace = true
 serde.workspace = true

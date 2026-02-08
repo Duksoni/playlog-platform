@@ -1,25 +1,30 @@
 use anyhow::{Context, Result};
 use std::env::var;
+use std::fs::read;
 
 pub type DBUrl = String;
 pub struct Environment(pub DBUrl, pub AppConfig, pub Option<AdminBootstrapConfig>);
 
 pub struct AppConfig {
-    pub jwt_secret: String,
+    pub jwt_private_key: Vec<u8>,
     pub access_token_expiration_seconds: u16,
     pub refresh_token_expiration_days: u8,
 }
 
 impl AppConfig {
     fn from_env() -> Result<Self> {
+        let private_key_path =
+            var("JWT_PRIVATE_KEY_PATH").context("JWT_PRIVATE_KEY_PATH must be set")?;
+        let jwt_private_key = read(&private_key_path)
+            .with_context(|| format!("failed to read {}", private_key_path))?;
         Ok(Self {
-            jwt_secret: var("JWT_SECRET").context("JWT_SECRET must be set")?,
+            jwt_private_key,
             access_token_expiration_seconds: var("ACCESS_TOKEN_EXPIRATION_SECONDS")
                 .map(|val| val.parse::<u16>())
                 .unwrap_or(Ok(300))?,
             refresh_token_expiration_days: var("REFRESH_TOKEN_EXPIRATION_DAYS")
                 .map(|val| val.parse::<u8>())
-                .unwrap_or(Ok(30))?,
+                .unwrap_or(Ok(14))?,
         })
     }
 }
@@ -37,12 +42,10 @@ impl AdminBootstrapConfig {
             .unwrap_or(Ok(false))?;
 
         if enabled {
-            let email = var("ADMIN_EMAIL")
-                .context("ADMIN_EMAIL must be set")?;
-            let username = var("ADMIN_USERNAME")
-                .context("ADMIN_USERNAME must be set")?;
-            let temp_password = var("ADMIN_TEMP_PASSWORD")
-                .context("ADMIN_TEMP_PASSWORD must be set")?;
+            let email = var("ADMIN_EMAIL").context("ADMIN_EMAIL must be set")?;
+            let username = var("ADMIN_USERNAME").context("ADMIN_USERNAME must be set")?;
+            let temp_password =
+                var("ADMIN_TEMP_PASSWORD").context("ADMIN_TEMP_PASSWORD must be set")?;
 
             return Ok(Some(Self {
                 email,

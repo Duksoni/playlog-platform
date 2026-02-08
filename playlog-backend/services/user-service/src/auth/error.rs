@@ -19,8 +19,8 @@ pub enum AuthError {
     #[error("User blocked")]
     UserBlocked,
 
-    #[error("Token expired")]
-    TokenExpired,
+    #[error("Error with token: {0}")]
+    TokenError(String),
 
     #[error("Internal error")]
     InternalError,
@@ -33,7 +33,7 @@ use AuthError::*;
 impl From<AuthError> for ApiError {
     fn from(error: AuthError) -> Self {
         let status_code: StatusCode = match error {
-            InvalidCredentials | TokenExpired => StatusCode::UNAUTHORIZED,
+            InvalidCredentials | TokenError(_) => StatusCode::UNAUTHORIZED,
             UserBlocked => StatusCode::FORBIDDEN,
             UserNotFound => StatusCode::NOT_FOUND,
             UsernameTaken | EmailAlreadyExists => StatusCode::CONFLICT,

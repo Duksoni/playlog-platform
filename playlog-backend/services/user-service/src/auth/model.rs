@@ -11,14 +11,6 @@ pub enum AccountStatus {
     Deactivated,
 }
 
-#[derive(Serialize)]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum Role {
-    User,
-    Moderator,
-    Admin,
-}
-
 #[derive(Serialize, FromRow)]
 pub struct User {
     pub id: Uuid,
