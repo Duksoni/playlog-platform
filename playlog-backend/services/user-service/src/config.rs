@@ -1,4 +1,5 @@
 use anyhow::{Context, Result};
+use chrono::Duration;
 use std::env::var;
 use std::fs::read;
 
@@ -7,8 +8,9 @@ pub struct Environment(pub DBUrl, pub AppConfig, pub Option<AdminBootstrapConfig
 
 pub struct AppConfig {
     pub jwt_private_key: Vec<u8>,
-    pub access_token_expiration_seconds: u16,
-    pub refresh_token_expiration_days: u8,
+    pub jwt_public_key: Vec<u8>,
+    pub access_token_validity: Duration,
+    pub refresh_token_validity: Duration,
 }
 
 impl AppConfig {
@@ -17,14 +19,21 @@ impl AppConfig {
             var("JWT_PRIVATE_KEY_PATH").context("JWT_PRIVATE_KEY_PATH must be set")?;
         let jwt_private_key = read(&private_key_path)
             .with_context(|| format!("failed to read {}", private_key_path))?;
+        let public_key_path =
+            var("JWT_PUBLIC_KEY_PATH").context("JWT_PUBLIC_KEY_PATH must be set")?;
+        let jwt_public_key = read(&public_key_path)
+            .with_context(|| format!("failed to read {}", public_key_path))?;
+        let access_token_exp = var("ACCESS_TOKEN_VALIDITY_SECONDS")
+            .map(|val| val.parse::<u16>())
+            .unwrap_or(Ok(300))?;
+        let refresh_token_exp = var("REFRESH_TOKEN_VALIDITY_DAYS")
+            .map(|val| val.parse::<u8>())
+            .unwrap_or(Ok(14))?;
         Ok(Self {
             jwt_private_key,
-            access_token_expiration_seconds: var("ACCESS_TOKEN_EXPIRATION_SECONDS")
-                .map(|val| val.parse::<u16>())
-                .unwrap_or(Ok(300))?,
-            refresh_token_expiration_days: var("REFRESH_TOKEN_EXPIRATION_DAYS")
-                .map(|val| val.parse::<u8>())
-                .unwrap_or(Ok(14))?,
+            jwt_public_key,
+            access_token_validity: Duration::seconds(access_token_exp as i64),
+            refresh_token_validity: Duration::days(refresh_token_exp as i64),
         })
     }
 }
