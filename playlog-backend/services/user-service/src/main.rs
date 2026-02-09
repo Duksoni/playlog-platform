@@ -1,5 +1,6 @@
 mod app;
 mod auth;
+mod task;
 mod config;
 mod setup;
 
