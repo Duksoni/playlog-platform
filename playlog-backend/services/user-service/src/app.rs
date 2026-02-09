@@ -1,0 +1,97 @@
+use crate::auth::{router as auth_router, AuthService};
+use crate::config::AppConfig;
+use axum::{
+    http::{
+        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method,
+        StatusCode,
+    },
+    routing::get,
+    Router,
+};
+use std::{sync::Arc, time::Duration};
+use tower_http::{cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer};
+use utoipa::{
+    openapi::security::{Http, HttpAuthScheme, SecurityRequirement, SecurityScheme}, Modify,
+    OpenApi,
+};
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_swagger_ui::SwaggerUi;
+
+pub struct AppState {
+    pub config: AppConfig,
+    pub auth_service: AuthService,
+}
+
+impl AppState {
+    pub fn new(config: AppConfig, auth_service: AuthService) -> Self {
+        Self {
+            config,
+            auth_service,
+        }
+    }
+}
+
+#[derive(OpenApi)]
+#[openapi(
+    modifiers(&SecurityAddon),
+    info(title = "User Service", description = "User service description"),
+    paths(
+        crate::auth::handler::login,
+        crate::auth::handler::register,
+        crate::auth::handler::logout,
+        crate::auth::handler::refresh_tokens,
+        health_check
+    ),
+)]
+struct ApiDoc;
+
+struct SecurityAddon;
+
+impl Modify for SecurityAddon {
+    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
+        if let Some(components) = openapi.components.as_mut() {
+            components.add_security_scheme(
+                "bearer",
+                SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
+            )
+        }
+        openapi.security = Some(vec![SecurityRequirement::new("bearer", Vec::<&str>::new())]);
+    }
+}
+
+pub fn build_app(state: Arc<AppState>) -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin("http://localhost:4200".parse::<HeaderValue>().unwrap())
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
+        .allow_credentials(true)
+        .allow_methods([Method::GET, Method::POST, Method::PUT]);
+
+    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+        .route("/health", get(health_check))
+        .nest("/auth", auth_router())
+        .layer((
+            TraceLayer::new_for_http(),
+            TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(10)),
+        ))
+        .layer(cors.clone())
+        .with_state(state)
+        .split_for_parts();
+
+    Router::new()
+        .nest("/api", router)
+        .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", api.clone()))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/health",
+    summary = "API Health check",
+    responses(
+        (status = 200, description = "Health check passed"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    tag = "Health",
+)]
+async fn health_check() -> Result<StatusCode, StatusCode> {
+    Ok(StatusCode::OK)
+}
