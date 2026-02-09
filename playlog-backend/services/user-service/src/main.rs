@@ -1,6 +1,7 @@
 mod app;
 mod auth;
 mod config;
+mod setup;
 
 use axum::{
     routing::get,
