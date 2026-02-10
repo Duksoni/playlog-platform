@@ -1,8 +1,9 @@
 use super::{
-    create_tokens, hash_password, verify_password, AccountStatus, AuthError, AuthRepository,
-    LoginRequest, RegisterRequest, RegisterResponse, Result, Tokens,
+    create_tokens, AuthError, AuthRepository, LoginRequest, RegisterRequest, RegisterResponse, Result,
+    Tokens,
 };
 use crate::config::{AdminBootstrapConfig, AppConfig};
+use crate::shared::{hash_password, verify_password, AccountStatus};
 use uuid::Uuid;
 
 pub struct AuthService {
@@ -27,7 +28,8 @@ impl AuthService {
             return Err(AuthError::UserNotFound);
         }
 
-        verify_password(&request.password, &user.password)?;
+        verify_password(&request.password, &user.password)
+            .map_err(|_| AuthError::InvalidCredentials)?;
 
         let tokens = self.generate_tokens(config, user.id).await?;
         Ok(tokens)
@@ -41,7 +43,7 @@ impl AuthService {
             return Err(AuthError::UsernameTaken);
         }
 
-        let password = hash_password(&request.password)?;
+        let password = hash_password(&request.password).map_err(|_| AuthError::InternalError)?;
         let request = RegisterRequest {
             password,
             ..request
@@ -85,7 +87,13 @@ impl AuthService {
 
     async fn generate_tokens(&self, config: &AppConfig, user_id: Uuid) -> Result<Tokens> {
         let role = self.repository.get_user_role(user_id).await?;
-        let (tokens, refresh_expiration) = create_tokens(config, user_id, role)?;
+        let (tokens, refresh_expiration) = create_tokens(
+            config.refresh_token_validity,
+            config.access_token_validity,
+            &config.jwt_private_key,
+            user_id,
+            role,
+        )?;
 
         self.repository
             .save_refresh_token(user_id, &tokens.1, &refresh_expiration)
@@ -103,7 +111,8 @@ impl AuthService {
             return Ok(false);
         }
 
-        let password = hash_password(&config.temp_password)?;
+        let password =
+            hash_password(&config.temp_password).map_err(|_| AuthError::InternalError)?;
 
         let request = RegisterRequest::new(config.username, config.email, password);
 

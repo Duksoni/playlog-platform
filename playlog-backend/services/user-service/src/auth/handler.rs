@@ -1,14 +1,11 @@
 use super::{AuthError, LoginRequest, RegisterRequest, RegisterResponse, TokenResponse};
-use crate::app::AppState;
-use api_error::ApiError;
-use axum::{
-    extract::State,
-    http::{header::SET_COOKIE, HeaderMap, StatusCode},
-    response::IntoResponse,
-    routing::post,
-    Json,
+use crate::{
+    app::AppState,
+    shared::{build_cookie_header, REFRESH_TOKEN_COOKIE_NAME},
 };
-use axum_extra::extract::cookie::{Cookie, CookieJar};
+use api_error::ApiError;
+use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json};
+use axum_extra::extract::cookie::CookieJar;
 use axum_macros::debug_handler;
 use cookie::time::Duration;
 use jwt_common::decode_token;
@@ -24,8 +21,6 @@ pub fn router() -> OpenApiRouter<Arc<AppState>> {
         .route("/logout", post(logout))
         .route("/refresh", post(refresh_tokens))
 }
-
-const REFRESH_TOKEN_COOKIE_NAME: &str = "playlog-refresh-token";
 
 #[utoipa::path(
        post,
@@ -138,17 +133,6 @@ pub async fn refresh_tokens(
     response.headers_mut().extend(headers);
 
     Ok(response)
-}
-
-fn build_cookie_header(refresh_token: &str, max_age: Duration) -> HeaderMap {
-    let mut headers = HeaderMap::new();
-    let cookie = Cookie::build((REFRESH_TOKEN_COOKIE_NAME, refresh_token))
-        .path("/")
-        .max_age(max_age)
-        .http_only(true)
-        .build();
-    headers.append(SET_COOKIE, cookie.to_string().parse().unwrap());
-    headers
 }
 
 fn extract_refresh_token(cookie_jar: &CookieJar) -> Result<String, ApiError> {

@@ -2,6 +2,7 @@ mod app;
 mod auth;
 mod config;
 mod setup;
+mod shared;
 mod task;
 
 use dotenvy::dotenv;

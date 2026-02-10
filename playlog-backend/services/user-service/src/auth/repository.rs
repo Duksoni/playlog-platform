@@ -1,9 +1,10 @@
-use super::{AccountStatus, AuthError, RegisterRequest, RegisterResponse, Result, User};
+use super::{AuthError, RegisterRequest, RegisterResponse, Result, User};
+use crate::shared::AccountStatus;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use jwt_common::Role;
 use sqlx::{
-    Error as SqlxError, FromRow, PgPool, Postgres, Transaction, query, query_as, query_scalar,
+    query, query_as, query_scalar, Error as SqlxError, FromRow, PgPool, Postgres, Transaction,
 };
 use uuid::Uuid;
 

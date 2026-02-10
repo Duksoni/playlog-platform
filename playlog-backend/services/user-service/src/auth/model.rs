@@ -1,15 +1,7 @@
+use crate::shared::AccountStatus;
 use serde::Serialize;
-use sqlx::{FromRow, Type};
+use sqlx::FromRow;
 use uuid::Uuid;
-
-#[derive(Type, Serialize)]
-#[sqlx(type_name = "account_status", rename_all = "SCREAMING_SNAKE_CASE")]
-#[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-pub enum AccountStatus {
-    Active,
-    Blocked,
-    Deactivated,
-}
 
 #[derive(Serialize, FromRow)]
 pub struct User {
