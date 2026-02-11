@@ -43,33 +43,30 @@ fn collect_validation_errors(
     errors: &ValidationErrors,
     messages: &mut Vec<String>,
 ) {
-    for (field, kind) in errors.errors() {
+    errors.errors().iter().for_each(|(field, kind)| {
         let full_field = match parent {
             Some(parent) => format!("{parent}.{field}"),
             None => field.to_string(),
         };
-
         match kind {
             ValidationErrorsKind::Field(field_errors) => {
-                for error in field_errors {
-                    if let Some(message) = &error.message {
-                        messages.push(format!("{full_field}: {message}"));
+                field_errors.iter().for_each(|error| {
+                    messages.push(if let Some(message) = &error.message {
+                        format!("{full_field}: {message}")
                     } else {
-                        messages.push(format!("{full_field}: validation failed ({})", error.code));
-                    }
-                }
+                        format!("{full_field}: validation failed ({})", error.code)
+                    })
+                });
             }
-
             ValidationErrorsKind::Struct(struct_errors) => {
                 collect_validation_errors(Some(&full_field), struct_errors, messages);
             }
-
             ValidationErrorsKind::List(list_errors) => {
-                for (index, list_item_errors) in list_errors {
+                list_errors.iter().for_each(|(index, errors)| {
                     let indexed = format!("{full_field}[{index}]");
-                    collect_validation_errors(Some(&indexed), list_item_errors, messages);
-                }
+                    collect_validation_errors(Some(&indexed), errors, messages);
+                })
             }
         }
-    }
+    })
 }
