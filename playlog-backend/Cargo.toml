@@ -6,6 +6,7 @@ resolver = "3"
 # --- Async runtime & HTTP ---
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8" }
+axum-extra = { version = "0.12", features = ["cookie"] }
 axum-macros = "0.5"
 tower-http = { version = "0.6", features = ["timeout", "trace", "cors"] }
 
@@ -29,6 +30,7 @@ anyhow = "1"
 # --- Auth & security ---
 jsonwebtoken = { version = "10", features = ["rust_crypto", "use_pem"] }
 argon2 = "0.5"
+cookie = "0.18"
 
 # --- Async utils ---
 async-trait = "0.1"
@@ -49,4 +51,4 @@ utoipa-swagger-ui = { version = "9", features = ["axum"] }
 
 # --- Shared ---
 api-error = { path = "shared/api-error" }
-jwt-common = { path = "shared/jwt-common"}
+jwt-common = { path = "shared/jwt-common" }
