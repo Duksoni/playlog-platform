@@ -19,6 +19,7 @@ pub struct LoginRequest {
 
 #[derive(Serialize, ToSchema)]
 pub struct TokenResponse {
+    #[serde(rename = "accessToken")]
     pub access_token: String,
 }
 

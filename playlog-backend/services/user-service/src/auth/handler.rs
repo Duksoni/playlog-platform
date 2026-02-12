@@ -33,7 +33,7 @@ pub fn router() -> OpenApiRouter<Arc<AppState>> {
            (status = 403, description = "User is blocked"),
            (status = 404, description = "Account doesn't exist or it's deactivated"),
        ),
-       tag = "Auth",
+       tag = "auth",
 )]
 #[debug_handler]
 pub async fn login(
@@ -62,7 +62,7 @@ pub async fn login(
            (status = 400, description = "Request has missing values, or the values are invalid"),
            (status = 409, description = "Email or username is already taken"),
        ),
-       tag = "Auth",
+       tag = "auth",
 )]
 #[debug_handler]
 pub async fn register(
@@ -82,7 +82,7 @@ pub async fn register(
         (status = 204, description = "Logged out"),
         (status = 401, description = "Refresh token missing or invalid"),
     ),
-    tag = "Auth",
+    tag = "auth",
 )]
 #[debug_handler]
 pub async fn logout(
@@ -109,7 +109,7 @@ pub async fn logout(
            (status = 200, description = "Refreshed token", body = TokenResponse),
            (status = 401, description = "Refresh token missing or invalid"),
     ),
-    tag = "Auth",
+    tag = "auth",
 )]
 #[debug_handler]
 pub async fn refresh_tokens(
