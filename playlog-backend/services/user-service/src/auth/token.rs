@@ -24,7 +24,7 @@ pub fn create_tokens(
         now.timestamp() as usize,
         role,
     );
-    let access_token = create_token(claims, &jwt_private_key)?;
+    let access_token = create_token(claims, jwt_private_key)?;
 
     let expiration_date = now + refresh_token_validity;
     let claims = Claims::for_refresh_token(
@@ -32,7 +32,7 @@ pub fn create_tokens(
         expiration_date.timestamp() as usize,
         now.timestamp() as usize,
     );
-    let refresh_token = create_token(claims, &jwt_private_key)?;
+    let refresh_token = create_token(claims, jwt_private_key)?;
 
     Ok((Tokens(access_token, refresh_token), expiration_date))
 }

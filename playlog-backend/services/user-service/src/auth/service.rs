@@ -88,8 +88,8 @@ impl AuthService {
     async fn generate_tokens(&self, config: &AppConfig, user_id: Uuid) -> Result<Tokens> {
         let role = self.repository.get_user_role(user_id).await?;
         let (tokens, refresh_expiration) = create_tokens(
-            config.refresh_token_validity,
             config.access_token_validity,
+            config.refresh_token_validity,
             &config.jwt_private_key,
             user_id,
             role,

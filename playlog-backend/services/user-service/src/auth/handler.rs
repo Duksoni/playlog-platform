@@ -58,7 +58,7 @@ pub async fn login(
        request_body = RegisterRequest,
        summary = "Register new user",
        responses(
-           (status = 200, description = "Successful register", body = RegisterResponse),
+           (status = 201, description = "Successful register", body = RegisterResponse),
            (status = 400, description = "Request has missing values, or the values are invalid"),
            (status = 409, description = "Email or username is already taken"),
        ),
@@ -68,10 +68,10 @@ pub async fn login(
 pub async fn register(
     State(state): State<Arc<AppState>>,
     Json(request): Json<RegisterRequest>,
-) -> Result<Json<RegisterResponse>, ApiError> {
+) -> Result<impl IntoResponse, ApiError> {
     request.validate().map_err(ApiError::from)?;
     let result = state.auth_service.register(request).await?;
-    Ok(Json(result))
+    Ok((StatusCode::CREATED, Json(result)).into_response())
 }
 
 #[utoipa::path(
