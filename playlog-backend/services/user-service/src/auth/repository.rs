@@ -18,6 +18,7 @@ pub trait AuthRepository: Send + Sync {
         request: &RegisterRequest,
         is_admin: bool,
     ) -> Result<RegisterResponse>;
+    async fn get_admin_count(&self) -> Result<i64>;
     async fn get_user_role(&self, id: Uuid) -> Result<Role>;
     async fn save_refresh_token(
         &self,
@@ -90,8 +91,24 @@ impl AuthRepository for PostgresAuthRepository {
         ))
     }
 
+    async fn get_admin_count(&self) -> Result<i64> {
+        let result = query_scalar!(
+            r#"
+                SELECT COUNT(1)
+                FROM users u
+                         JOIN user_roles ur ON ur.user_id = u.id
+                         JOIN roles r ON r.id = ur.role_id
+                WHERE r.name = 'ADMIN'
+            "#
+        )
+        .fetch_one(&self.pool)
+        .await?
+        .unwrap_or(0);
+        Ok(result)
+    }
+
     async fn get_user_role(&self, user_id: Uuid) -> Result<Role> {
-        let role_name = sqlx::query_scalar!(
+        let role_name = query_scalar!(
             r#"
                 SELECT r.name
                 FROM user_roles ur INNER JOIN roles r ON ur.role_id = r.id

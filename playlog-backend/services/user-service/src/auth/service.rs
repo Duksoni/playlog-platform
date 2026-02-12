@@ -73,6 +73,9 @@ impl AuthService {
             if admin_created {
                 tracing::info!("Admin account created successfully");
             }
+        } else if self.repository.get_admin_count().await? == 0 {
+            tracing::error!("Admin account not initialized. Please provide admin bootstrap config");
+            return Err(AuthError::UserNotFound);
         }
         Ok(())
     }
@@ -103,6 +106,10 @@ impl AuthService {
     }
 
     async fn init_admin(&self, config: AdminBootstrapConfig) -> Result<bool> {
+        if self.repository.get_admin_count().await? > 0 {
+            return Ok(false);
+        }
+
         if self.email_exists(&config.email).await? {
             return Ok(false);
         }
