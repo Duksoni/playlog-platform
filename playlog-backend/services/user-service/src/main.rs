@@ -4,6 +4,7 @@ mod config;
 mod setup;
 mod shared;
 mod task;
+mod users;
 
 use dotenvy::dotenv;
 use std::{net::SocketAddr, sync::Arc};
