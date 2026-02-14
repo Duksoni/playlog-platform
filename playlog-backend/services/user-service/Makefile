@@ -1,7 +1,9 @@
 .PHONY: help start-dev stop-dev rebuild-dev logs-dev
 
 ENV_FILE := .env
-COMPOSE_DEV := docker compose -p playlog-user-service-dev --env-file $(ENV_FILE) -f ../../docker/pgadmin/compose.yaml -f ../../docker/postgres/user/compose.yaml
+NETWORK := playlog_network
+
+COMPOSE_DEV := docker compose -p playlog-user-service-dev --env-file $(ENV_FILE) -f ../../docker/pgadmin/compose.yaml -f ../../docker/postgres/user/compose.yaml -f ../../docker/postgres/user/compose.dev.yaml
 
 help:
 	@echo "Available targets:"
@@ -11,6 +13,7 @@ help:
 	@echo "  make logs-dev [svc] - Follow dev logs (optionally for a service)"
 
 start-dev:
+	@$(MAKE) init-network
 	@$(COMPOSE_DEV) up -d
 	@$(MAKE) wait-dev
 
@@ -58,10 +61,14 @@ wait-dev:
 		echo "Stop: make stop-dev"; \
 	'
 
+init-network:
+	@docker network inspect $(NETWORK) >/dev/null 2>&1 || docker network create --driver bridge $(NETWORK)
+
 stop-dev:
 	@$(COMPOSE_DEV) down
 
 rebuild-dev:
+	@$(MAKE) init-network
 	@$(COMPOSE_DEV) build --no-cache
 
 logs-dev:

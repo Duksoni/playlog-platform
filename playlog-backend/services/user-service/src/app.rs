@@ -8,6 +8,7 @@ use axum::{
         header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method,
         StatusCode,
     },
+    response::{IntoResponse, Redirect},
     routing::get,
     Router,
 };
@@ -93,6 +94,7 @@ pub fn build_app(state: Arc<AppState>) -> Router {
         .split_for_parts();
 
     Router::new()
+        .route("/", get(root_redirect))
         .nest("/api", router)
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", api.clone()))
 }
@@ -107,6 +109,10 @@ pub fn build_app(state: Arc<AppState>) -> Router {
     ),
     tag = "health",
 )]
-async fn health_check() -> Result<StatusCode, StatusCode> {
-    Ok(StatusCode::OK)
+async fn health_check() -> Result<impl IntoResponse, StatusCode> {
+    Ok((StatusCode::OK, "API is healthy!".into_response()))
+}
+
+async fn root_redirect() -> Redirect {
+    Redirect::permanent("/docs")
 }

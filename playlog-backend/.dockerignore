@@ -8,6 +8,7 @@
 **/.classpath
 **/.dockerignore
 **/.env
+**/.env.production
 **/.git
 **/.gitignore
 **/.project
@@ -28,5 +29,8 @@
 **/values.dev.yaml
 /bin
 /target
+/docker
 LICENSE
+Makefile
 README.md
+README.Docker.md

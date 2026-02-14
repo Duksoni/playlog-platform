@@ -11,9 +11,14 @@ services:
     volumes:
       - pgadmin_data:/var/lib/pgadmin
     healthcheck:
-      test: [ "CMD", "wget", "-O", "-", "http://localhost:80/misc/ping" ]
+      test: [ "CMD", "wget", "-O", "-", "http://127.0.0.1:80/misc/ping" ]
       interval: 10s
       timeout: 10s
       retries: 5
+    networks:
+      - playlog_network
 volumes:
   pgadmin_data:
+networks:
+  playlog_network:
+    external: true
