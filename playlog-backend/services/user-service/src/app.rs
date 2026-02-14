@@ -1,5 +1,8 @@
-use crate::auth::{router as auth_router, AuthService};
-use crate::config::AppConfig;
+use crate::{
+    auth::{router as auth_router, AuthService},
+    config::AppConfig,
+    users::{router as users_router, UserService},
+};
 use axum::{
     http::{
         header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method,
@@ -20,13 +23,15 @@ use utoipa_swagger_ui::SwaggerUi;
 pub struct AppState {
     pub config: AppConfig,
     pub auth_service: AuthService,
+    pub user_service: UserService,
 }
 
 impl AppState {
-    pub fn new(config: AppConfig, auth_service: AuthService) -> Self {
+    pub fn new(config: AppConfig, auth_service: AuthService, user_service: UserService) -> Self {
         Self {
             config,
             auth_service,
+            user_service,
         }
     }
 }
@@ -40,8 +45,17 @@ impl AppState {
         crate::auth::handler::register,
         crate::auth::handler::logout,
         crate::auth::handler::refresh_tokens,
+        crate::users::handler::get_user,
+        crate::users::handler::update_user,
+        crate::users::handler::change_password,
+        crate::users::handler::deactivate_account,
+        crate::users::handler::find_users,
+        crate::users::handler::promote_user,
+        crate::users::handler::demote_user,
+        crate::users::handler::block_user,
         health_check
     ),
+
 )]
 struct ApiDoc;
 
@@ -69,12 +83,13 @@ pub fn build_app(state: Arc<AppState>) -> Router {
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .route("/health", get(health_check))
         .nest("/auth", auth_router())
+        .nest("/users", users_router(Arc::clone(&state)))
         .layer((
             TraceLayer::new_for_http(),
             TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(10)),
         ))
         .layer(cors.clone())
-        .with_state(state)
+        .with_state(Arc::clone(&state))
         .split_for_parts();
 
     Router::new()
@@ -90,7 +105,7 @@ pub fn build_app(state: Arc<AppState>) -> Router {
         (status = 200, description = "Health check passed"),
         (status = 500, description = "Internal Server Error"),
     ),
-    tag = "Health",
+    tag = "health",
 )]
 async fn health_check() -> Result<StatusCode, StatusCode> {
     Ok(StatusCode::OK)

@@ -1,10 +1,15 @@
 use anyhow::{Context, Result};
 use chrono::Duration;
-use std::env::var;
-use std::fs::read;
+use std::{
+    env::var,
+    fs::read
+};
 
-pub type DBUrl = String;
-pub struct Environment(pub DBUrl, pub AppConfig, pub Option<AdminBootstrapConfig>);
+pub struct Environment {
+    pub database_url: String,
+    pub app_config: AppConfig,
+    pub admin_bootstrap_config: Option<AdminBootstrapConfig>,
+}
 
 pub struct AppConfig {
     pub jwt_private_key: Vec<u8>,
@@ -71,9 +76,9 @@ pub fn load_from_environment() -> Result<Environment> {
     let app_config = AppConfig::from_env()?;
     let admin_bootstrap_config = AdminBootstrapConfig::from_env()?;
 
-    Ok(Environment(
+    Ok(Environment {
         database_url,
         app_config,
         admin_bootstrap_config,
-    ))
+    })
 }
