@@ -1,5 +1,4 @@
-use crate::Claims;
-use crate::{JwtError, Result};
+use super::{Claims, JwtError, Result};
 use axum::http::{header::AUTHORIZATION, HeaderMap};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use std::collections::HashSet;
@@ -11,14 +10,19 @@ pub fn extract_bearer_token(headers: &HeaderMap) -> Result<String> {
         .get(AUTHORIZATION)
         .ok_or(JwtError::MissingAuthorization)?
         .to_str()
-        .map_err(|_| JwtError::InvalidAuthorization)?;
+        .map_err(|err| JwtError::InvalidAuthorizationHeader(err.to_string()))?;
 
-    let token = header_value
-        .strip_prefix("Bearer ")
-        .ok_or(JwtError::InvalidAuthorization)?;
+    let token =
+        header_value
+            .strip_prefix("Bearer ")
+            .ok_or(JwtError::InvalidAuthorizationHeader(String::from(
+                "Invalid authorization scheme",
+            )))?;
 
     if token.is_empty() {
-        return Err(JwtError::InvalidAuthorization);
+        return Err(JwtError::InvalidAuthorizationHeader(String::from(
+            "Token is empty",
+        )));
     }
 
     Ok(String::from(token))
@@ -37,7 +41,10 @@ pub fn decode_token(token: &str, public_key: &[u8]) -> Result<Claims> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Role::User;
+    use crate::{
+        model::{AccessTokenClaims, RefreshTokenClaims},
+        Role::User
+    };
     use axum::http::{HeaderMap, HeaderValue};
     use chrono::{Duration, Utc};
     use jsonwebtoken::{encode, EncodingKey, Header};
@@ -72,7 +79,10 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(AUTHORIZATION, HeaderValue::from_static("Token xyz"));
         let err = extract_bearer_token(&headers).unwrap_err();
-        assert!(matches!(err, JwtError::InvalidAuthorization));
+        assert!(
+            matches!(err, JwtError::InvalidAuthorizationHeader(ref message)
+        if message == "Invalid authorization scheme")
+        );
     }
 
     #[test]
@@ -80,17 +90,20 @@ mod tests {
         let mut headers = HeaderMap::new();
         headers.insert(AUTHORIZATION, HeaderValue::from_static("Bearer "));
         let err = extract_bearer_token(&headers).unwrap_err();
-        assert!(matches!(err, JwtError::InvalidAuthorization));
+        assert!(
+            matches!(err, JwtError::InvalidAuthorizationHeader(ref message)
+        if message == "Token is empty")
+        );
     }
 
     #[test]
-    fn decode_token_roundtrip() {
+    fn decode_access_token_roundtrip() {
         let private_key = load_key("../../keys/private.pem");
         let public_key = load_key("../../keys/public.pem");
 
         let now = Utc::now();
         let claims = Claims::for_access_token(
-            "user-123".into(),
+            "46c7d874-6402-4514-8a0d-d969ba0125d1".to_string(),
             (now + Duration::seconds(60)).timestamp() as usize,
             now.timestamp() as usize,
             User,
@@ -104,9 +117,42 @@ mod tests {
         .unwrap();
 
         let decoded = decode_token(&token, &public_key).unwrap();
-        assert_eq!(decoded.sub, "user-123");
+        assert_eq!(decoded.sub, "46c7d874-6402-4514-8a0d-d969ba0125d1");
         assert_eq!(decoded.role, Some(User));
         assert_eq!(decoded.iss, String::from(ISSUER));
+
+        let access_claims = AccessTokenClaims::try_from(decoded).unwrap();
+        assert_eq!(access_claims.role, User);
+    }
+
+    #[test]
+    fn decode_refresh_token_roundtrip() {
+        let private_key = load_key("../../keys/private.pem");
+        let public_key = load_key("../../keys/public.pem");
+
+        let now = Utc::now();
+        let claims = Claims::for_refresh_token(
+            "922e0270-89b1-422a-b396-5dccc3de3b5e".to_string(),
+            (now + Duration::seconds(60)).timestamp() as usize,
+            now.timestamp() as usize,
+        );
+
+        let token = encode(
+            &Header::new(Algorithm::RS256),
+            &claims,
+            &EncodingKey::from_rsa_pem(&private_key).unwrap(),
+        )
+        .unwrap();
+
+        let decoded = decode_token(&token, &public_key).unwrap();
+        assert_eq!(decoded.role, None);
+
+        // Test conversion to RefreshTokenClaims
+        let refresh_claims = RefreshTokenClaims::try_from(decoded).unwrap();
+        assert_eq!(
+            refresh_claims.user_id.to_string(),
+            "922e0270-89b1-422a-b396-5dccc3de3b5e"
+        );
     }
 
     #[test]
@@ -116,7 +162,7 @@ mod tests {
 
         let now = Utc::now();
         let claims = Claims {
-            sub: "user-123".into(),
+            sub: "46c7d874-6402-4514-8a0d-d969ba0125d1".to_string(),
             exp: (now + Duration::seconds(60)).timestamp() as usize,
             iat: now.timestamp() as usize,
             iss: "https://evil.playlog".to_string(),

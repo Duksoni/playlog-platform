@@ -1144,6 +1144,8 @@ dependencies = [
  "jsonwebtoken",
  "serde",
  "thiserror",
+ "utoipa",
+ "uuid",
 ]
 
 [[package]]

@@ -9,3 +9,5 @@ chrono.workspace = true
 jsonwebtoken.workspace = true
 serde.workspace = true
 thiserror.workspace = true
+utoipa.workspace = true
+uuid.workspace = true
