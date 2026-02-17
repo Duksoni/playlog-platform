@@ -20,6 +20,7 @@ pub trait AuthRepository: Send + Sync {
     ) -> Result<RegisterResponse>;
     async fn get_admin_count(&self) -> Result<i64>;
     async fn get_user_role(&self, id: Uuid) -> Result<Role>;
+    async fn is_token_valid(&self, token: &str) -> Result<bool>;
     async fn save_refresh_token(
         &self,
         user_id: Uuid,
@@ -111,14 +112,33 @@ impl AuthRepository for PostgresAuthRepository {
         let role_name = query_scalar!(
             r#"
                 SELECT r.name
-                FROM user_roles ur INNER JOIN roles r ON ur.role_id = r.id
-                WHERE user_id = $1
+                FROM user_roles ur
+                    INNER JOIN roles r ON ur.role_id = r.id
+                    INNER JOIN users u ON ur.user_id = u.id
+                WHERE user_id = $1 and u.account_status = 'ACTIVE'
             "#,
             user_id
         )
         .fetch_one(&self.pool)
         .await?;
         Ok(role_name.parse().map_err(|_| AuthError::UserNotFound)?)
+    }
+
+    async fn is_token_valid(&self, token: &str) -> Result<bool> {
+        let exists = query_scalar!(
+            r#"
+                SELECT EXISTS (
+                    SELECT 1
+                    FROM user_tokens
+                    WHERE token = $1 AND revoked = false AND expires_at > now()
+                )
+            "#,
+            token
+        )
+        .fetch_one(&self.pool)
+        .await?
+        .unwrap_or(false);
+        Ok(exists)
     }
 
     async fn save_refresh_token(
@@ -143,7 +163,12 @@ impl AuthRepository for PostgresAuthRepository {
 
     async fn revoke_token(&self, token: &str) -> Result<bool> {
         let revoked = query_scalar!(
-            "DELETE FROM user_tokens WHERE token = $1 RETURNING 1",
+            r#"
+                UPDATE user_tokens
+                SET revoked = true
+                WHERE token = $1
+                RETURNING 1
+            "#,
             token
         )
         .fetch_optional(&self.pool)

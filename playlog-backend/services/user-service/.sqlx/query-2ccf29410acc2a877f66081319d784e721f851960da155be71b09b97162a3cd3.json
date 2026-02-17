@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "DELETE FROM user_tokens WHERE token = $1 RETURNING 1",
+  "query": "\n                UPDATE user_tokens\n                SET revoked = true\n                WHERE token = $1\n                RETURNING 1\n            ",
   "describe": {
     "columns": [
       {
@@ -18,5 +18,5 @@
       null
     ]
   },
-  "hash": "9a4693eeda449b4934113968621cc8206f2be69fb97d71dc0cd1211e1f610685"
+  "hash": "2ccf29410acc2a877f66081319d784e721f851960da155be71b09b97162a3cd3"
 }

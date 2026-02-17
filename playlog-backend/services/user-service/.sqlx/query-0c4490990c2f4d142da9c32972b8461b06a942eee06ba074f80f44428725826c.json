@@ -1,0 +1,22 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT r.name\n                FROM user_roles ur\n                    INNER JOIN roles r ON ur.role_id = r.id\n                    INNER JOIN users u ON ur.user_id = u.id\n                WHERE user_id = $1 and u.account_status = 'ACTIVE'\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false
+    ]
+  },
+  "hash": "0c4490990c2f4d142da9c32972b8461b06a942eee06ba074f80f44428725826c"
+}
