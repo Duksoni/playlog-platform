@@ -4,5 +4,18 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-tokio.workspace = true
+anyhow.workspace = true
+axum-macros.workspace = true
 axum.workspace = true
+dotenvy.workspace = true
+jwt-common.workspace = true
+reqwest.workspace = true
+serde_json.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tower-http.workspace = true
+tracing-subscriber.workspace = true
+tracing.workspace = true
+utoipa-swagger-ui.workspace = true
+utoipa.workspace = true
+uuid.workspace = true
