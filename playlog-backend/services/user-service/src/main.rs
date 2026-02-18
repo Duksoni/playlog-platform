@@ -1,6 +1,7 @@
 mod app;
 mod auth;
 mod config;
+mod docs;
 mod setup;
 mod shared;
 mod task;
@@ -17,9 +18,10 @@ use users::{PostgresUserRepository, UserService};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
+    dotenv().ok();
+
     init_tracing();
 
-    dotenv().ok();
     let env = config::load_from_environment()?;
 
     let pool = init_db(&env.database_url).await?;

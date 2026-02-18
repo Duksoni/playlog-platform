@@ -14,10 +14,7 @@ use axum::{
 };
 use std::{sync::Arc, time::Duration};
 use tower_http::{cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer};
-use utoipa::{
-    openapi::security::{Http, HttpAuthScheme, SecurityRequirement, SecurityScheme}, Modify,
-    OpenApi,
-};
+use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -37,42 +34,6 @@ impl AppState {
     }
 }
 
-#[derive(OpenApi)]
-#[openapi(
-    modifiers(&SecurityAddon),
-    info(title = "User Service", description = "User service description"),
-    paths(
-        crate::auth::handler::login,
-        crate::auth::handler::register,
-        crate::auth::handler::logout,
-        crate::auth::handler::refresh_tokens,
-        crate::users::handler::get_user,
-        crate::users::handler::update_user,
-        crate::users::handler::change_password,
-        crate::users::handler::deactivate_account,
-        crate::users::handler::find_users,
-        crate::users::handler::promote_user,
-        crate::users::handler::demote_user,
-        crate::users::handler::block_user,
-        health_check
-    ),
-
-)]
-struct ApiDoc;
-
-struct SecurityAddon;
-
-impl Modify for SecurityAddon {
-    fn modify(&self, openapi: &mut utoipa::openapi::OpenApi) {
-        if let Some(components) = openapi.components.as_mut() {
-            components.add_security_scheme(
-                "bearer",
-                SecurityScheme::Http(Http::new(HttpAuthScheme::Bearer)),
-            )
-        }
-        openapi.security = Some(vec![SecurityRequirement::new("bearer", Vec::<&str>::new())]);
-    }
-}
 
 pub fn build_app(state: Arc<AppState>) -> Router {
     let cors = CorsLayer::new()
@@ -81,8 +42,8 @@ pub fn build_app(state: Arc<AppState>) -> Router {
         .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE]);
 
-    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
-        .route("/health", get(health_check))
+    let (router, api) = OpenApiRouter::with_openapi(crate::docs::ApiDoc::openapi())
+        .route("/user-service-health", get(health_check))
         .nest("/auth", auth_router())
         .nest("/users", users_router(Arc::clone(&state)))
         .layer((
@@ -101,13 +62,14 @@ pub fn build_app(state: Arc<AppState>) -> Router {
 
 #[utoipa::path(
     get,
-    path = "/api/health",
+    path = "/api/user-service-health",
     summary = "API Health check",
     responses(
         (status = 200, description = "Health check passed"),
         (status = 500, description = "Internal Server Error"),
     ),
-    tag = "health",
+    tag = "user_service_health",
+    operation_id = "user_service_health"
 )]
 async fn health_check() -> Result<impl IntoResponse, StatusCode> {
     Ok((StatusCode::OK, "API is healthy!".into_response()))

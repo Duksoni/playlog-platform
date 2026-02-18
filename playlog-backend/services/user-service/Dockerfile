@@ -53,7 +53,7 @@ COPY --chown=appuser:appuser keys/public.pem /keys/public.pem
 
 # Healthcheck command.
 HEALTHCHECK --interval=10s --timeout=5s --retries=10 --start-period=15s \
-  CMD wget -q -O /dev/null http://127.0.0.1:3005/api/health || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1:3005/api/user-service-health || exit 1
 
 # What the container should run when it is started.
 CMD ["/bin/server"]
