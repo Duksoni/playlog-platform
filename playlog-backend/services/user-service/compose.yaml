@@ -1,7 +1,7 @@
 services:
   axum-server:
     image: playlog/user-service:latest
-    container_name: axum-server
+    container_name: user-service-axum-server
     build:
       context: ../..
       dockerfile: services/user-service/Dockerfile

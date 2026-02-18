@@ -1,7 +1,7 @@
 services:
   axum-server:
     image: playlog/api-gateway:latest
-    container_name: axum-server
+    container_name: api-gateway-axum-server
     build:
       context: ../..
       dockerfile: services/api-gateway/Dockerfile
