@@ -8,10 +8,8 @@ use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::po
 use axum_extra::extract::cookie::CookieJar;
 use axum_macros::debug_handler;
 use cookie::time::Duration;
-use jwt_common::decode_token;
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
-use uuid::Uuid;
 use validator::Validate;
 
 pub fn router() -> OpenApiRouter<Arc<AppState>> {
@@ -91,7 +89,10 @@ pub async fn logout(
 ) -> Result<impl IntoResponse, ApiError> {
     let refresh_token = extract_refresh_token(&cookie_jar)?;
 
-    state.auth_service.revoke_token(&refresh_token).await?;
+    let result = state.auth_service.revoke_token(&refresh_token).await;
+    if let Err(err) = result {
+        tracing::warn!("Failed to revoke refresh token: {}", err);
+    }
 
     let headers = build_cookie_header("", Duration::seconds(0));
 
@@ -117,13 +118,9 @@ pub async fn refresh_tokens(
     cookie_jar: CookieJar,
 ) -> Result<impl IntoResponse, ApiError> {
     let refresh_token = extract_refresh_token(&cookie_jar)?;
-    let claims = decode_token(&refresh_token, &state.config.jwt_public_key)
-        .map_err(|err| AuthError::TokenError(err.to_string()))?;
-    let user_id =
-        Uuid::parse_str(&claims.sub).map_err(|err| AuthError::TokenError(err.to_string()))?;
     let tokens = state
         .auth_service
-        .refresh_token(&state.config, &refresh_token, user_id)
+        .refresh_tokens(&state.config, &refresh_token)
         .await?;
 
     let cookie_duration = Duration::days(state.config.refresh_token_validity.num_days());

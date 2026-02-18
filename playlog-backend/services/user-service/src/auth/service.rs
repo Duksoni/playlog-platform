@@ -4,6 +4,7 @@ use super::{
 };
 use crate::config::{AdminBootstrapConfig, AppConfig};
 use crate::shared::{hash_password, verify_password, AccountStatus};
+use jwt_common::{decode_token, RefreshTokenClaims};
 use uuid::Uuid;
 
 pub struct AuthService {
@@ -56,14 +57,17 @@ impl AuthService {
         self.repository.revoke_token(token).await
     }
 
-    pub async fn refresh_token(
-        &self,
-        config: &AppConfig,
-        token: &str,
-        user_id: Uuid,
-    ) -> Result<Tokens> {
+    pub async fn refresh_tokens(&self, config: &AppConfig, token: &str) -> Result<Tokens> {
+        if !self.repository.is_token_valid(token).await? {
+            return Err(AuthError::TokenError(String::from("Invalid token!")));
+        }
+
+        let claims = decode_token(token, &config.jwt_public_key)
+            .and_then(RefreshTokenClaims::try_from)
+            .map_err(|err| AuthError::TokenError(err.to_string()))?;
+
         self.revoke_token(token).await?;
-        let tokens = self.generate_tokens(config, user_id).await?;
+        let tokens = self.generate_tokens(config, claims.user_id).await?;
         Ok(tokens)
     }
 
