@@ -1,0 +1,4 @@
+services:
+  postgres_catalogue:
+    ports:
+      - "5434:5432"

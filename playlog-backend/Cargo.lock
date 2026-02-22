@@ -294,8 +294,25 @@ checksum = "b35204fbdc0b3f4446b89fc1ac2cf84a8a68971995d0bf2e925ec7cd960f9cb3"
 name = "catalogue-service"
 version = "0.1.0"
 dependencies = [
+ "anyhow",
+ "api-error",
+ "async-trait",
  "axum",
+ "axum-macros",
+ "chrono",
+ "dotenvy",
+ "jwt-common",
+ "serde",
+ "sqlx",
+ "thiserror 2.0.17",
  "tokio",
+ "tower-http",
+ "tracing",
+ "tracing-subscriber",
+ "utoipa",
+ "utoipa-axum",
+ "utoipa-swagger-ui",
+ "validator",
 ]
 
 [[package]]
