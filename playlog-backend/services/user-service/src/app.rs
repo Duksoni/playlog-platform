@@ -2,6 +2,7 @@ use crate::{
     auth::{router as auth_router, AuthService},
     config::AppConfig,
     users::{router as users_router, UserService},
+    docs::ApiDoc,
 };
 use axum::{
     http::{
@@ -42,7 +43,7 @@ pub fn build_app(state: Arc<AppState>) -> Router {
         .allow_credentials(true)
         .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE]);
 
-    let (router, api) = OpenApiRouter::with_openapi(crate::docs::ApiDoc::openapi())
+    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .route("/user-service-health", get(health_check))
         .nest("/auth", auth_router())
         .nest("/users", users_router(Arc::clone(&state)))

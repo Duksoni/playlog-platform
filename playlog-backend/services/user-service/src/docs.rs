@@ -10,7 +10,7 @@ use utoipa::{
 #[derive(OpenApi)]
 #[openapi(
     modifiers(&SecurityAddon),
-    info(title = "User Service", description = "User service description"),
+    info(title = "User Service"),
     paths(
         crate::auth::handler::login,
         crate::auth::handler::register,

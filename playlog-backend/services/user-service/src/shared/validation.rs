@@ -6,7 +6,7 @@ use validator::ValidationError;
 static RE_LOWERCASE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[a-z]").unwrap());
 static RE_UPPERCASE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[A-Z]").unwrap());
 static RE_DIGIT: Lazy<Regex> = Lazy::new(|| Regex::new(r"\d").unwrap());
-static RE_SYMBOL: Lazy<Regex> = Lazy::new(|| Regex::new(r"\W").unwrap());
+static RE_SYMBOL: Lazy<Regex> = Lazy::new(|| Regex::new(r"[@$!%*?&]").unwrap());
 static RE_NAME: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^\p{L}{1,50}(?:[ '-]\p{L}{1,50})*$").unwrap());
 
