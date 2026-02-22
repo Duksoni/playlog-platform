@@ -2,6 +2,12 @@ use axum::{
     routing::get,
     Router,
 };
+mod developers;
+mod games;
+mod genres;
+mod platforms;
+mod publishers;
+mod tags;
 
 #[tokio::main]
 async fn main() {

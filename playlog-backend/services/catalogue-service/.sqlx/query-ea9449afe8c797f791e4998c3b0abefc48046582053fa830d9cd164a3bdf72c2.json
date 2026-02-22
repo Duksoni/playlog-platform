@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT t.id, t.name\n                FROM tags t\n                JOIN game_tags gt ON gt.tag_id = t.id\n                WHERE gt.game_id = $1\n                ORDER BY t.name\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "ea9449afe8c797f791e4998c3b0abefc48046582053fa830d9cd164a3bdf72c2"
+}

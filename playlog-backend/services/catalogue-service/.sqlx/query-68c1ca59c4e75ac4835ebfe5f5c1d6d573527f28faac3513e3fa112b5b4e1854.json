@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT p.id, p.name\n                FROM publishers p\n                JOIN game_publishers gp ON gp.publisher_id = p.id\n                WHERE gp.game_id = $1\n                ORDER BY p.name\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "68c1ca59c4e75ac4835ebfe5f5c1d6d573527f28faac3513e3fa112b5b4e1854"
+}

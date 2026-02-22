@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT p.id, p.name\n                FROM platforms p\n                JOIN game_platforms gp ON gp.platform_id = p.id\n                WHERE gp.game_id = $1\n                ORDER BY p.name\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "5ad180ec8a74e689d212921db6dac2d03ce3cc64e5b287e04157fad12bc655c3"
+}
