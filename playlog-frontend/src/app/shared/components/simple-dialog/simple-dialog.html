@@ -1,0 +1,32 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+<mat-dialog-content>{{ data.content }}</mat-dialog-content>
+<mat-dialog-actions>
+	@if (neutralAction && neutralActionText) {
+		<button
+			mat-button
+			(click)="neutralAction()"
+			[mat-dialog-close]="true"
+			class="me-auto"
+		>
+			{{ neutralActionText }}
+		</button>
+	}
+	@if (negativeAction && negativeActionText) {
+		<button
+			mat-button
+			mat-dialog-close
+			(click)="negativeAction()"
+		>
+			{{ negativeActionText }}
+		</button>
+
+	}
+	@if (positiveAction && positiveActionText) {
+		<button
+			mat-button
+			(click)="positiveAction()"
+			[mat-dialog-close]="true">
+			{{ positiveActionText }}
+		</button>
+	}
+</mat-dialog-actions>
