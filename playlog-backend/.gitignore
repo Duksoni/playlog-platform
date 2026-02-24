@@ -26,4 +26,7 @@ README.Docker.md
 .env.production
 .env.test
 
+env-dev
+env-prod
+
 keys/

@@ -1,16 +1,23 @@
-.PHONY: help start-dev stop-dev rebuild-dev logs-dev
+.PHONY: help start-dev start-db stop-dev rebuild-dev logs-dev
 
 ENV_FILE := .env
 NETWORK := playlog_network
 
+COMPOSE_DEV_DB := docker compose -p playlog-catalogue-service-dev --env-file $(ENV_FILE) -f ../../docker/postgres/catalogue/compose.yaml -f ../../docker/postgres/catalogue/compose.dev.yaml
 COMPOSE_DEV := docker compose -p playlog-catalogue-service-dev --env-file $(ENV_FILE) -f ../../docker/pgadmin/compose.yaml -f ../../docker/postgres/catalogue/compose.yaml -f ../../docker/postgres/catalogue/compose.dev.yaml
 
 help:
 	@echo "Available targets:"
 	@echo "  make start-dev      - Start dev services"
+	@echo "  make start-db       - Start database service only"
 	@echo "  make stop-dev       - Stop dev services"
 	@echo "  make rebuild-dev    - Rebuild dev images (no cache)"
 	@echo "  make logs-dev [svc] - Follow dev logs (optionally for a service)"
+
+start-db:
+	@$(MAKE) init-network
+	@$(COMPOSE_DEV_DB) up -d
+	@echo " Database will be available at localhost:5434"
 
 start-dev:
 	@$(MAKE) init-network
