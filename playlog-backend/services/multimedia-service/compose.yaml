@@ -1,0 +1,22 @@
+services:
+  axum-server:
+    image: playlog/multimedia-service:latest
+    build:
+      context: ../..
+      dockerfile: services/multimedia-service/Dockerfile
+      target: final
+    environment:
+      JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH}
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DATABASE: ${MONGODB_DATABASE}
+      MONGODB_COLLECTION: ${MONGODB_COLLECTION}
+      MINIO_SERVER_URL: ${MINIO_SERVER_URL}
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_BUCKET: ${MINIO_BUCKET}
+
+    networks:
+      - playlog_network
+networks:
+  playlog_network:
+    external: true

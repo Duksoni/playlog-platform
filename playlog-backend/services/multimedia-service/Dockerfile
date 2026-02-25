@@ -1,7 +1,7 @@
 # syntax=docker/dockerfile:1
 
 ARG RUST_VERSION=1.93.1
-ARG APP_NAME=catalogue-service
+ARG APP_NAME=multimedia-service
 
 ################################################################################
 # Create a stage for building the application.
@@ -21,7 +21,6 @@ RUN --mount=type=bind,source=services,target=services \
     --mount=type=cache,target=/app/target/ \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
-    SQLX_OFFLINE=true \
 cargo build --locked --release && \
 cp ./target/release/$APP_NAME /bin/server
 
@@ -52,7 +51,7 @@ COPY --chown=appuser:appuser keys/public.pem /keys/public.pem
 
 # Healthcheck command.
 HEALTHCHECK --interval=10s --timeout=5s --retries=10 --start-period=30s \
-  CMD wget -q -O /dev/null http://127.0.0.1:3001/api/catalogue-service-health || exit 1
+  CMD wget -q -O /dev/null http://127.0.0.1:3003/api/multimedia-service-health || exit 1
 
 # What the container should run when it is started.
 CMD ["/bin/server"]

@@ -6,12 +6,13 @@ resolver = "3"
 # --- Async runtime & HTTP ---
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8" }
-axum-extra = { version = "0.12", features = ["cookie"] }
+axum-extra = { version = "0.12", features = ["cookie", "multipart"] }
 axum-macros = "0.5"
 tower-http = { version = "0.6", features = ["timeout", "trace", "cors"] }
-reqwest = { version = "0.13", features = ["json"] }
+reqwest = { version = "0.13", features = ["json", "rustls"] }
 
 # --- Serialization and validation ---
+bytes = "1"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 uuid = { version = "1", features = ["v4", "serde"] }
@@ -42,8 +43,8 @@ tracing-subscriber = { version = "0.3", features = ["env-filter"] }
 
 # --- Databases and Storage ---
 sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "macros", "chrono", "uuid"] }
-mongodb = "3"
-minio = "0.3"
+mongodb = { version = "3.5", features = ["bson-3", "compat-3-0-0"] }
+minio = { git = "https://github.com/minio/minio-rs.git", rev = "e73fa10", default-features = false, features = ["rustls-tls", "default-crypto"] }
 
 # --- OpenAPI Documentation ---
 utoipa = { version = "5", features = ["axum_extras", "chrono", "uuid", "preserve_order"] }
