@@ -4,7 +4,7 @@ ENV_FILE := .env
 NETWORK := playlog_network
 
 COMPOSE_DEV_DB := docker compose -p playlog-multimedia-service-dev --env-file $(ENV_FILE) -f ../../docker/mongodb/multimedia/compose.yaml -f ../../docker/mongodb/multimedia/compose.dev.yaml -f ../../docker/minio/compose.yaml -f ../../docker/minio/compose.dev.yaml
-COMPOSE_DEV := docker compose -p playlog-multimedia-service-dev --env-file $(ENV_FILE) -f ../../docker/mongo-express/compose.yaml -f ../../docker/mongodb/multimedia/compose.yaml -f ../../docker/mongo/multimedia/compose.dev.yaml -f ../../docker/minio/compose.yaml -f ../../docker/minio/compose.dev.yaml
+COMPOSE_DEV := docker compose -p playlog-multimedia-service-dev --env-file $(ENV_FILE) -f ../../docker/mongo-express/compose.yaml -f ../../docker/mongodb/multimedia/compose.yaml -f ../../docker/mongodb/multimedia/compose.dev.yaml -f ../../docker/minio/compose.yaml -f ../../docker/minio/compose.dev.yaml
 
 help:
 	@echo "Available targets:"

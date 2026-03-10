@@ -1,6 +1,7 @@
 services:
   axum-server:
     image: playlog/multimedia-service:latest
+    container_name: multimedia-service-axum-server
     build:
       context: ../..
       dockerfile: services/multimedia-service/Dockerfile
@@ -14,7 +15,11 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET}
-
+    depends_on:
+      mongo_multimedia:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
     networks:
       - playlog_network
 networks:

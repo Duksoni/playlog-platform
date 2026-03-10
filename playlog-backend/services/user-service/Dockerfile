@@ -22,7 +22,7 @@ RUN --mount=type=bind,source=services,target=services \
     --mount=type=cache,target=/usr/local/cargo/git/db \
     --mount=type=cache,target=/usr/local/cargo/registry/ \
     SQLX_OFFLINE=true \
-cargo build --locked --release && \
+cargo build --locked --release -p $APP_NAME && \
 cp ./target/release/$APP_NAME /bin/server
 
 ################################################################################
