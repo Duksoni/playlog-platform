@@ -5,7 +5,7 @@ services:
     build:
       context: .
     environment:
-      NODE_ENV: production
+      BACKEND_URL: ${BACKEND_URL}
     ports:
       - "8080:8080"
     networks:
