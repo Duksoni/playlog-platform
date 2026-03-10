@@ -5,6 +5,7 @@ use axum::{
 mod config;
 mod dto;
 mod error;
+mod handler;
 mod model;
 mod repository;
 mod service;
