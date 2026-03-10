@@ -2,6 +2,10 @@ use axum::{
     routing::get,
     Router,
 };
+mod config;
+mod dto;
+mod error;
+mod model;
 
 #[tokio::main]
 async fn main() {
