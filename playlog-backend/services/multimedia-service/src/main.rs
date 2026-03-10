@@ -7,6 +7,7 @@ mod dto;
 mod error;
 mod model;
 mod repository;
+mod service;
 
 #[tokio::main]
 async fn main() {
