@@ -3,6 +3,7 @@ use axum::{
     Router,
 };
 mod developers;
+mod entity;
 mod games;
 mod genres;
 mod platforms;

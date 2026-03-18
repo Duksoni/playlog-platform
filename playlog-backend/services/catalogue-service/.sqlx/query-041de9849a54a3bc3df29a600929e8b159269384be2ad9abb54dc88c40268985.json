@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                UPDATE games\n                SET name = $1, description = $2, released = $3, website = $4\n                WHERE id = $5\n                RETURNING id, name, description, released, website, draft\n             ",
+  "query": "\n                SELECT id, name, description, released, website, draft\n                FROM games\n                WHERE id = $1 AND ($2 OR draft = false)\n            ",
   "describe": {
     "columns": [
       {
@@ -36,11 +36,8 @@
     ],
     "parameters": {
       "Left": [
-        "Varchar",
-        "Text",
-        "Date",
-        "Text",
-        "Int4"
+        "Int4",
+        "Bool"
       ]
     },
     "nullable": [
@@ -52,5 +49,5 @@
       false
     ]
   },
-  "hash": "b18de8fd33a0520842f83b2a81d5180f5b28e1cc96f8ee894471e0d671c4fba7"
+  "hash": "041de9849a54a3bc3df29a600929e8b159269384be2ad9abb54dc88c40268985"
 }

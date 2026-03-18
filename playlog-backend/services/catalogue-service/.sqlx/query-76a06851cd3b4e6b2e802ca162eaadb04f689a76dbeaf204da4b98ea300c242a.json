@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT id, name, description, released, website, draft\n                FROM games\n                WHERE id = $1\n            ",
+  "query": "\n                SELECT id, name, released, draft\n                FROM games\n                WHERE draft = true\n                ORDER BY name\n            ",
   "describe": {
     "columns": [
       {
@@ -15,38 +15,24 @@
       },
       {
         "ordinal": 2,
-        "name": "description",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 3,
         "name": "released",
         "type_info": "Date"
       },
       {
-        "ordinal": 4,
-        "name": "website",
-        "type_info": "Text"
-      },
-      {
-        "ordinal": 5,
+        "ordinal": 3,
         "name": "draft",
         "type_info": "Bool"
       }
     ],
     "parameters": {
-      "Left": [
-        "Int4"
-      ]
+      "Left": []
     },
     "nullable": [
       false,
       false,
-      false,
-      true,
       true,
       false
     ]
   },
-  "hash": "250d5eb03458a3c76831de79f7d1994a395b81929b5cf2377b9f1ea1290d71f6"
+  "hash": "76a06851cd3b4e6b2e802ca162eaadb04f689a76dbeaf204da4b98ea300c242a"
 }
