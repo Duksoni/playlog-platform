@@ -1,0 +1,153 @@
+use crate::{
+    app::AppState,
+    entity::{CreateUpdateGameEntityRequest, GameEntity, GameEntityError, PagedQuery, SearchQuery},
+};
+use api_error::ApiError;
+use axum::{
+    extract::{Path, Query, State},
+    http::StatusCode,
+    middleware::{from_fn, from_fn_with_state},
+    response::IntoResponse,
+    routing::{get, post, put},
+    Json,
+};
+use axum_macros::debug_handler;
+use jwt_common::{auth, require_admin, JwtConfig};
+use std::sync::Arc;
+use utoipa_axum::router::OpenApiRouter;
+use validator::Validate;
+
+pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
+    let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
+
+    let public_routes = OpenApiRouter::new()
+        .route("/", get(get_all_paged))
+        .route("/search", get(search))
+        .route("/{id}", get(get_by_id));
+
+    let admin_routes = OpenApiRouter::new()
+        .route("/", post(create))
+        .route("/{id}", put(update))
+        .route_layer(from_fn(require_admin))
+        .route_layer(from_fn_with_state(jwt_config, auth));
+
+    OpenApiRouter::new()
+        .merge(public_routes)
+        .merge(admin_routes)
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/tags",
+    summary = "Get all tags (paged)",
+    params(PagedQuery),
+    responses(
+        (status = 200, description = "List of tags", body = Vec<GameEntity>),
+    ),
+    tag = "tags",
+    operation_id = "get_all_tags_paged"
+    )]
+#[debug_handler]
+pub async fn get_all_paged(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<PagedQuery>,
+) -> Result<Json<Vec<GameEntity>>, ApiError> {
+    let result = state.tag_repository.get_all_paged(query.page).await?;
+    Ok(Json(result))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/tags/{id}",
+
+    summary = "Get tag by id",
+    params(("id" = i32, Path, description = "Tag id")),
+    responses(
+        (status = 200, description = "Tag", body = GameEntity),
+        (status = 404, description = "Tag not found"),
+    ),
+    tag = "tags",
+    operation_id = "get_tag_by_id"
+)]
+#[debug_handler]
+pub async fn get_by_id(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> Result<Json<GameEntity>, ApiError> {
+    let result: Option<GameEntity> = state.tag_repository.get(id).await?;
+    let result = result.ok_or_else(|| GameEntityError::NotFound(String::from("Tag"), id))?;
+    Ok(Json(result))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/tags/search",
+    summary = "Search tags by name",
+    params(SearchQuery),
+    responses(
+        (status = 200, description = "Matching tags", body = Vec<GameEntity>),
+    ),
+    tag = "tags",
+    operation_id = "search_tags"
+)]
+#[debug_handler]
+pub async fn search(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<SearchQuery>,
+) -> Result<Json<Vec<GameEntity>>, ApiError> {
+    let result = state.tag_repository.find_by_name(&query.q).await?;
+    Ok(Json(result))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/tags",
+    summary = "Create a tag (Admin only)",
+    request_body = CreateUpdateGameEntityRequest,
+    responses(
+        (status = 201, description = "Tag created", body = GameEntity),
+        (status = 400, description = "Validation error"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+    ),
+    tag = "tags",
+    security(("bearer" = [])),
+    operation_id = "create_tag"
+)]
+#[debug_handler]
+pub async fn create(
+    State(state): State<Arc<AppState>>,
+    Json(req): Json<CreateUpdateGameEntityRequest>,
+) -> Result<impl IntoResponse, ApiError> {
+    req.validate().map_err(ApiError::from)?;
+    let result = state.tag_repository.create(&req.name).await?;
+    Ok((StatusCode::CREATED, Json(result)))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/tags/{id}",
+    summary = "Update a tag's name (Admin only)",
+    params(("id" = i32, Path, description = "Tag id")),
+    request_body = CreateUpdateGameEntityRequest,
+    responses(
+        (status = 200, description = "Tag updated", body = GameEntity),
+        (status = 400, description = "Validation error"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
+        (status = 404, description = "Tag not found"),
+    ),
+    tag = "tags",
+    security(("bearer" = [])),
+    operation_id = "update_tag"
+)]
+#[debug_handler]
+pub async fn update(
+    State(state): State<Arc<AppState>>,
+    Path(id): Path<i32>,
+    Json(req): Json<CreateUpdateGameEntityRequest>,
+) -> Result<Json<GameEntity>, ApiError> {
+    req.validate().map_err(ApiError::from)?;
+    let result = state.tag_repository.update_name(id, &req.name).await?;
+    Ok(Json(result))
+}
