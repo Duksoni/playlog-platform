@@ -1,15 +1,17 @@
-use axum::{
-    routing::get,
-    Router,
-};
+mod config;
 mod developers;
 mod entity;
 mod games;
 mod genres;
 mod platforms;
 mod publishers;
+mod setup;
 mod tags;
 
+use axum::{
+    routing::get,
+    Router,
+};
 #[tokio::main]
 async fn main() {
     // build our application with a single route
