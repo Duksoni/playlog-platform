@@ -1,5 +1,7 @@
+mod app;
 mod config;
 mod developers;
+mod docs;
 mod entity;
 mod games;
 mod genres;
@@ -8,16 +10,68 @@ mod publishers;
 mod setup;
 mod tags;
 
-use axum::{
-    routing::get,
-    Router,
+use crate::{
+    app::{build_app, AppState},
+    entity::{GameEntityTable, PostgresGameEntityRepository},
+    games::{GameService, PostgresGameRepository},
 };
-#[tokio::main]
-async fn main() {
-    // build our application with a single route
-    let app = Router::new().route("/", get(|| async { "Hello from Catalogue Service!" }));
+use dotenvy::dotenv;
+use std::net::SocketAddr;
+use std::sync::Arc;
+use tracing::info;
 
-    // run our app with hyper, listening globally on port 3001
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3001").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+use setup::*;
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    dotenv().ok();
+
+    init_tracing();
+
+    let env = config::load_from_environment()?;
+
+    let pool = init_db(&env.database_url).await?;
+
+    let game_repository = PostgresGameRepository::new(pool.clone());
+    let dev_repository =
+        PostgresGameEntityRepository::new(GameEntityTable::Developers, pool.clone());
+    let genre_repository = PostgresGameEntityRepository::new(GameEntityTable::Genres, pool.clone());
+    let platform_repository =
+        PostgresGameEntityRepository::new(GameEntityTable::Platforms, pool.clone());
+    let publisher_repository =
+        PostgresGameEntityRepository::new(GameEntityTable::Publishers, pool.clone());
+    let tag_repository = PostgresGameEntityRepository::new(GameEntityTable::Tags, pool.clone());
+
+    let game_service = GameService::new(
+        Box::new(game_repository),
+        Box::new(dev_repository.clone()),
+        Box::new(publisher_repository.clone()),
+        Box::new(platform_repository.clone()),
+        Box::new(genre_repository.clone()),
+        Box::new(tag_repository.clone()),
+    );
+
+    let state = Arc::new(AppState::new(
+        env.app_config,
+        game_service,
+        Arc::new(dev_repository),
+        Arc::new(genre_repository),
+        Arc::new(platform_repository),
+        Arc::new(publisher_repository),
+        Arc::new(tag_repository),
+    ));
+
+    let app = build_app(state);
+
+    let server_address = SocketAddr::from(([0, 0, 0, 0], 3001));
+    let listener = tokio::net::TcpListener::bind(&server_address).await?;
+
+    info!(
+        "Server started. View docs at http://{}/docs",
+        server_address
+    );
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
+    Ok(())
 }
