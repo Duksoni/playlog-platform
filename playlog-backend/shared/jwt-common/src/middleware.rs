@@ -33,6 +33,22 @@ pub async fn auth(
     Ok(next.run(req).await)
 }
 
+/// Allows for extracting credentials for open routes if the user is authenticated
+pub async fn auth_optional(
+    State(config): State<JwtConfig>,
+    mut req: Request,
+    next: Next,
+) -> Response {
+    if let Ok(token) = extract_bearer_token(req.headers()) {
+        if let Ok(claims) = decode_token(&token, &config.public_key) {
+            if let Ok(auth_claims) = AuthClaims::try_from(claims) {
+                req.extensions_mut().insert(auth_claims);
+            }
+        }
+    }
+    next.run(req).await
+}
+
 /// Middleware that allows any authenticated user ([User], [Moderator], or [Admin])
 pub async fn require_user(req: Request, next: Next) -> Result<Response> {
     require_roles(req, next, &[User, Moderator, Admin]).await

@@ -1,27 +1,29 @@
-use async_trait::async_trait;
-use sqlx::{query, query_as, PgPool};
-
-use super::{CreateGameRequest, Game, GameDetail, GameError, Result, UpdateGameRequest};
+use super::{
+    CreateUpdateGameRequest, Game, GameDetails, GameError, GameFilterQuery, GameSimple,
+    GameSortField, Result, SortDirection,
+};
 use crate::{
     developers::Developer, genres::Genre, platforms::Platform, publishers::Publisher, tags::Tag,
 };
+use async_trait::async_trait;
+use sqlx::{query, query_as, PgPool, Postgres, Transaction};
 
 #[async_trait]
 pub trait GameRepository: Send + Sync {
-    async fn find_all(&self, include_drafts: bool) -> Result<Vec<Game>>;
-    async fn find_by_id(&self, id: i32) -> Result<Option<Game>>;
-    async fn find_detail(&self, id: i32) -> Result<Option<GameDetail>>;
-    async fn search(&self, query: &str, include_drafts: bool) -> Result<Vec<Game>>;
-    async fn create(&self, data: CreateGameRequest) -> Result<Game>;
-    async fn update(&self, id: i32, data: UpdateGameRequest) -> Result<Game>;
+    async fn filter(
+        &self,
+        include_drafts: bool,
+        params: GameFilterQuery,
+    ) -> Result<Vec<GameSimple>>;
+    async fn find_by_developer(&self, developer_id: i32) -> Result<Vec<GameSimple>>;
+    async fn find_by_publisher(&self, publisher_id: i32, page: u64) -> Result<Vec<GameSimple>>;
+    async fn get_all_unpublished(&self) -> Result<Vec<GameSimple>>;
+    async fn get(&self, id: i32, include_draft: bool) -> Result<Option<Game>>;
+    async fn get_details(&self, id: i32, include_draft: bool) -> Result<Option<GameDetails>>;
+    async fn create(&self, data: CreateUpdateGameRequest) -> Result<Game>;
+    async fn update(&self, id: i32, data: CreateUpdateGameRequest) -> Result<GameDetails>;
     async fn set_draft(&self, id: i32, draft: bool) -> Result<Game>;
     async fn delete(&self, id: i32) -> Result<()>;
-
-    async fn set_developers(&self, game_id: i32, developer_ids: &[i32]) -> Result<()>;
-    async fn set_publishers(&self, game_id: i32, publisher_ids: &[i32]) -> Result<()>;
-    async fn set_genres(&self, game_id: i32, genre_ids: &[i32]) -> Result<()>;
-    async fn set_platforms(&self, game_id: i32, platform_ids: &[i32]) -> Result<()>;
-    async fn set_tags(&self, game_id: i32, tag_ids: &[i32]) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -29,24 +31,29 @@ pub struct PostgresGameRepository {
     pool: PgPool,
 }
 
-impl PostgresGameRepository {
-    pub fn new(pool: PgPool) -> Self {
-        Self { pool }
-    }
-}
-
 #[async_trait]
 impl GameRepository for PostgresGameRepository {
-    async fn find_all(&self, include_drafts: bool) -> Result<Vec<Game>> {
+    async fn filter(
+        &self,
+        include_drafts: bool,
+        params: GameFilterQuery,
+    ) -> Result<Vec<GameSimple>> {
+        let query = self.build_filter_query(include_drafts, &params);
+        let games: Vec<GameSimple> = query_as(&query).fetch_all(&self.pool).await?;
+        Ok(games)
+    }
+
+    async fn find_by_developer(&self, developer_id: i32) -> Result<Vec<GameSimple>> {
         let games = query_as!(
-            Game,
+            GameSimple,
             r#"
-                SELECT id, name, description, released, website, draft
+                SELECT id, name, released, draft
                 FROM games
-                WHERE ($1 OR draft = false)
+                JOIN game_developers gd ON gd.game_id = games.id
+                WHERE gd.developer_id = $1
                 ORDER BY name
             "#,
-            include_drafts
+            developer_id
         )
         .fetch_all(&self.pool)
         .await?;
@@ -54,15 +61,53 @@ impl GameRepository for PostgresGameRepository {
         Ok(games)
     }
 
-    async fn find_by_id(&self, id: i32) -> Result<Option<Game>> {
+    async fn find_by_publisher(&self, publisher_id: i32, page: u64) -> Result<Vec<GameSimple>> {
+        let offset = (page.max(1) - 1) * 10;
+        let games = query_as!(
+            GameSimple,
+            r#"
+                SELECT id, name, released, draft
+                FROM games JOIN game_publishers gp ON gp.game_id = games.id
+                WHERE gp.publisher_id = $1
+                ORDER BY name
+                LIMIT 10
+                OFFSET $2
+            "#,
+            publisher_id,
+            offset as i64
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(games)
+    }
+
+    async fn get_all_unpublished(&self) -> Result<Vec<GameSimple>> {
+        let games = query_as!(
+            GameSimple,
+            r#"
+                SELECT id, name, released, draft
+                FROM games
+                WHERE draft = true
+                ORDER BY name
+            "#,
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
+        Ok(games)
+    }
+
+    async fn get(&self, id: i32, include_draft: bool) -> Result<Option<Game>> {
         let game = query_as!(
             Game,
             r#"
                 SELECT id, name, description, released, website, draft
                 FROM games
-                WHERE id = $1
+                WHERE id = $1 AND ($2 OR draft = false)
             "#,
-            id
+            id,
+            include_draft
         )
         .fetch_optional(&self.pool)
         .await?;
@@ -70,8 +115,8 @@ impl GameRepository for PostgresGameRepository {
         Ok(game)
     }
 
-    async fn find_detail(&self, id: i32) -> Result<Option<GameDetail>> {
-        let game = self.find_by_id(id).await?;
+    async fn get_details(&self, id: i32, include_draft: bool) -> Result<Option<GameDetails>> {
+        let game = self.get(id, include_draft).await?;
 
         let Some(game) = game else {
             return Ok(None);
@@ -147,37 +192,14 @@ impl GameRepository for PostgresGameRepository {
         .fetch_all(&self.pool)
         .await?;
 
-        Ok(Some(GameDetail {
-            game,
-            developers,
-            publishers,
-            platforms,
-            genres,
-            tags,
-        }))
+        Ok(Some(GameDetails::new(
+            game, developers, publishers, platforms, genres, tags,
+        )))
     }
 
-    async fn search(&self, query: &str, include_drafts: bool) -> Result<Vec<Game>> {
-        let games = query_as!(
-            Game,
-            r#"
-                SELECT id, name, description, released, website, draft
-                FROM games
-                WHERE name ILIKE $1
-                AND ($2 OR draft = false)
-                ORDER BY name
-                LIMIT 50
-            "#,
-            format!("%{}%", query),
-            include_drafts
-        )
-        .fetch_all(&self.pool)
-        .await?;
+    async fn create(&self, data: CreateUpdateGameRequest) -> Result<Game> {
+        let mut transaction = self.pool.begin().await?;
 
-        Ok(games)
-    }
-
-    async fn create(&self, data: CreateGameRequest) -> Result<Game> {
         let game = query_as!(
             Game,
             r#"
@@ -190,18 +212,36 @@ impl GameRepository for PostgresGameRepository {
             data.released,
             data.website
         )
-        .fetch_one(&self.pool)
+        .fetch_one(&mut *transaction)
         .await?;
+
+        self.set_developers(&mut transaction, game.id, &data.developer_ids)
+            .await?;
+        self.set_publishers(&mut transaction, game.id, &data.publisher_ids)
+            .await?;
+        self.set_genres(&mut transaction, game.id, &data.genre_ids)
+            .await?;
+        self.set_platforms(&mut transaction, game.id, &data.platform_ids)
+            .await?;
+        self.set_tags(&mut transaction, game.id, &data.tag_ids)
+            .await?;
+
+        transaction.commit().await?;
 
         Ok(game)
     }
 
-    async fn update(&self, id: i32, data: UpdateGameRequest) -> Result<Game> {
-        let game = query_as!(
+    async fn update(&self, id: i32, data: CreateUpdateGameRequest) -> Result<GameDetails> {
+        let mut transaction = self.pool.begin().await?;
+
+        query_as!(
             Game,
             r#"
                 UPDATE games
-                SET name = $1, description = $2, released = $3, website = $4
+                SET name = COALESCE($1, name), 
+                    description = COALESCE($2, description), 
+                    released = COALESCE($3, released), 
+                    website = COALESCE($4, website)
                 WHERE id = $5
                 RETURNING id, name, description, released, website, draft
              "#,
@@ -211,11 +251,25 @@ impl GameRepository for PostgresGameRepository {
             data.website,
             id
         )
-        .fetch_optional(&self.pool)
+        .fetch_optional(&mut *transaction)
         .await?
         .ok_or(GameError::NotFound(id))?;
 
-        Ok(game)
+        self.set_developers(&mut transaction, id, &data.developer_ids)
+            .await?;
+        self.set_publishers(&mut transaction, id, &data.publisher_ids)
+            .await?;
+        self.set_genres(&mut transaction, id, &data.genre_ids)
+            .await?;
+        self.set_platforms(&mut transaction, id, &data.platform_ids)
+            .await?;
+        self.set_tags(&mut transaction, id, &data.tag_ids).await?;
+
+        transaction.commit().await?;
+
+        self.get_details(id, true)
+            .await?
+            .ok_or(GameError::NotFound(id))
     }
 
     async fn set_draft(&self, id: i32, draft: bool) -> Result<Game> {
@@ -248,12 +302,85 @@ impl GameRepository for PostgresGameRepository {
 
         Ok(())
     }
+}
 
-    async fn set_developers(&self, game_id: i32, developer_ids: &[i32]) -> Result<()> {
-        let mut transaction = self.pool.begin().await?;
+impl PostgresGameRepository {
+    pub fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
 
+    fn build_filter_query(&self, include_drafts: bool, params: &GameFilterQuery) -> String {
+        let mut query = String::from(
+            r#"
+            SELECT DISTINCT g.id, g.name, g.released, g.draft
+            FROM games g
+                LEFT JOIN game_tags gt ON gt.game_id = g.id
+                LEFT JOIN game_genres gg ON gg.game_id = g.id
+                LEFT JOIN game_platforms gp ON gp.game_id = g.id
+            WHERE g.draft = 
+        "#,
+        );
+
+        query.push_str(if include_drafts { "true " } else { "false " });
+
+        if !params.platform_ids.is_empty() {
+            let id_str = params
+                .platform_ids
+                .iter()
+                .map(|id| format!("{}", id))
+                .collect::<Vec<String>>()
+                .join(", ");
+            query.push_str(&format!(" AND gp.platform_id IN ({})", id_str));
+        }
+        if !params.genre_ids.is_empty() {
+            let id_str = params
+                .genre_ids
+                .iter()
+                .map(|id| format!("{}", id))
+                .collect::<Vec<String>>()
+                .join(", ");
+            query.push_str(&format!(" AND gg.genre_id IN ({})", id_str));
+        }
+        if !params.tag_ids.is_empty() {
+            let id_str = params
+                .tag_ids
+                .iter()
+                .map(|id| format!("{}", id))
+                .collect::<Vec<String>>()
+                .join(", ");
+            query.push_str(&format!(" AND gt.tag_id IN ({})", id_str));
+        }
+        if let Some(name) = &params.name {
+            query.push_str(" AND g.name ILIKE ");
+            query.push_str(&format!("'%{}%'", name));
+        }
+
+        let sort_field = match params.sort.unwrap_or(GameSortField::Name) {
+            GameSortField::Name => "g.name",
+            GameSortField::Released => "g.released",
+        };
+
+        let direction = match params.sort_direction.unwrap_or(SortDirection::Asc) {
+            SortDirection::Asc => "ASC",
+            SortDirection::Desc => "DESC",
+        };
+
+        query.push_str(&format!(" ORDER BY {} {}", sort_field, direction));
+        query.push_str(" LIMIT 10");
+        query.push_str(" OFFSET ");
+        let offset = (params.page.max(1) - 1) * 10;
+        query.push_str(&format!("{}", offset));
+        query
+    }
+
+    async fn set_developers(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+        game_id: i32,
+        developer_ids: &[i32],
+    ) -> Result<()> {
         query!("DELETE FROM game_developers WHERE game_id = $1", game_id)
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
 
         for developer_id in developer_ids {
@@ -262,19 +389,20 @@ impl GameRepository for PostgresGameRepository {
                 game_id,
                 developer_id
             )
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
         }
-
-        transaction.commit().await?;
         Ok(())
     }
 
-    async fn set_publishers(&self, game_id: i32, publisher_ids: &[i32]) -> Result<()> {
-        let mut transaction = self.pool.begin().await?;
-
+    async fn set_publishers(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+        game_id: i32,
+        publisher_ids: &[i32],
+    ) -> Result<()> {
         query!("DELETE FROM game_publishers WHERE game_id = $1", game_id)
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
 
         for publisher_id in publisher_ids {
@@ -283,19 +411,20 @@ impl GameRepository for PostgresGameRepository {
                 game_id,
                 publisher_id
             )
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
         }
-
-        transaction.commit().await?;
         Ok(())
     }
 
-    async fn set_genres(&self, game_id: i32, genre_ids: &[i32]) -> Result<()> {
-        let mut transaction = self.pool.begin().await?;
-
+    async fn set_genres(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+        game_id: i32,
+        genre_ids: &[i32],
+    ) -> Result<()> {
         query!("DELETE FROM game_genres WHERE game_id = $1", game_id)
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
 
         for genre_id in genre_ids {
@@ -304,19 +433,20 @@ impl GameRepository for PostgresGameRepository {
                 game_id,
                 genre_id
             )
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
         }
-
-        transaction.commit().await?;
         Ok(())
     }
 
-    async fn set_platforms(&self, game_id: i32, platform_ids: &[i32]) -> Result<()> {
-        let mut transaction = self.pool.begin().await?;
-
+    async fn set_platforms(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+        game_id: i32,
+        platform_ids: &[i32],
+    ) -> Result<()> {
         query!("DELETE FROM game_platforms WHERE game_id = $1", game_id)
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
 
         for platform_id in platform_ids {
@@ -325,19 +455,20 @@ impl GameRepository for PostgresGameRepository {
                 game_id,
                 platform_id
             )
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
         }
-
-        transaction.commit().await?;
         Ok(())
     }
 
-    async fn set_tags(&self, game_id: i32, tag_ids: &[i32]) -> Result<()> {
-        let mut transaction = self.pool.begin().await?;
-
+    async fn set_tags(
+        &self,
+        transaction: &mut Transaction<'_, Postgres>,
+        game_id: i32,
+        tag_ids: &[i32],
+    ) -> Result<()> {
         query!("DELETE FROM game_tags WHERE game_id = $1", game_id)
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
 
         for tag_id in tag_ids {
@@ -346,11 +477,9 @@ impl GameRepository for PostgresGameRepository {
                 game_id,
                 tag_id
             )
-            .execute(&mut *transaction)
+            .execute(&mut **transaction)
             .await?;
         }
-
-        transaction.commit().await?;
         Ok(())
     }
 }
