@@ -1,10 +1,18 @@
-use crate::docs::{load_service_docs, OPENAPI_DOC_PATH};
-use crate::proxy::user_service::{auth_router, users_health_router, users_router, UserAppState};
-use crate::{config::Config, proxy::ProxyClient};
+use crate::{
+    docs::{load_service_docs, OPENAPI_DOC_PATH},
+    proxy::{
+        catalogue_service::{catalogue_health_router, entity_router, games_router},
+        multimedia_service::{multimedia_router, multimedia_health_router},
+        user_service::{auth_router, users_health_router, users_router},
+        ServiceAppState,
+        ProxyClient
+    },
+    config::Config,
+};
 use axum::{
     http::{
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method,
-        StatusCode,
+        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+        HeaderValue, Method, StatusCode,
     },
     response::{IntoResponse, Redirect},
     routing::get,
@@ -26,8 +34,20 @@ pub async fn build_app(config: Config) -> Router {
     let proxy_client = ProxyClient::new(client.clone());
     let jwt_config = JwtConfig::new(config.jwt_public_key.clone());
 
-    let user_app_state = Arc::new(UserAppState::new(
+    let user_app_state = Arc::new(ServiceAppState::new(
         config.user_service_url.clone(),
+        proxy_client.clone(),
+        jwt_config.clone(),
+    ));
+
+    let multimedia_app_state = Arc::new(ServiceAppState::new(
+        config.multimedia_service_url.clone(),
+        proxy_client.clone(),
+        jwt_config.clone(),
+    ));
+
+    let catalogue_app_state = Arc::new(ServiceAppState::new(
+        config.catalogue_service_url.clone(),
         proxy_client.clone(),
         jwt_config,
     ));
@@ -50,12 +70,55 @@ pub async fn build_app(config: Config) -> Router {
             users_health_router().with_state(Arc::clone(&user_app_state)),
         )
         .nest(
+            "/api",
+            multimedia_health_router().with_state(Arc::clone(&multimedia_app_state)),
+        )
+        .nest(
+            "/api",
+            catalogue_health_router().with_state(Arc::clone(&catalogue_app_state)),
+        )
+        .nest(
             "/api/auth",
             auth_router().with_state(Arc::clone(&user_app_state)),
         )
         .nest(
             "/api/users",
             users_router(Arc::clone(&user_app_state)).with_state(Arc::clone(&user_app_state)),
+        )
+        .nest(
+            "/api/media",
+            multimedia_router(Arc::clone(&multimedia_app_state))
+                .with_state(Arc::clone(&multimedia_app_state)),
+        )
+        .nest(
+            "/api/games",
+            games_router(Arc::clone(&catalogue_app_state))
+                .with_state(Arc::clone(&catalogue_app_state)),
+        )
+        .nest(
+            "/api/developers",
+            entity_router(Arc::clone(&catalogue_app_state), "developers")
+                .with_state(Arc::clone(&catalogue_app_state)),
+        )
+        .nest(
+            "/api/genres",
+            entity_router(Arc::clone(&catalogue_app_state), "genres")
+                .with_state(Arc::clone(&catalogue_app_state)),
+        )
+        .nest(
+            "/api/platforms",
+            entity_router(Arc::clone(&catalogue_app_state), "platforms")
+                .with_state(Arc::clone(&catalogue_app_state)),
+        )
+        .nest(
+            "/api/publishers",
+            entity_router(Arc::clone(&catalogue_app_state), "publishers")
+                .with_state(Arc::clone(&catalogue_app_state)),
+        )
+        .nest(
+            "/api/tags",
+            entity_router(Arc::clone(&catalogue_app_state), "tags")
+                .with_state(Arc::clone(&catalogue_app_state)),
         )
         .merge(swagger_ui)
         .layer(TraceLayer::new_for_http())
