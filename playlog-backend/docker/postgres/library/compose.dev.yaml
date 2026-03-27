@@ -1,4 +1,4 @@
 services:
-  postgres:
+  postgres_library:
     ports:
       - "5435:5432"

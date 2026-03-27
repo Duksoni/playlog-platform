@@ -1,0 +1,19 @@
+services:
+  axum-server:
+    image: playlog/library-service:latest
+    container_name: library-service-axum-server
+    build:
+      context: ../..
+      dockerfile: services/library-service/Dockerfile
+      target: final
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH}
+    depends_on:
+      postgres_library:
+        condition: service_healthy
+    networks:
+      - playlog_network
+networks:
+  playlog_network:
+    external: true
