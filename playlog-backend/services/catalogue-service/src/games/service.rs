@@ -54,6 +54,13 @@ impl GameService {
         self.game_repository.get_all_unpublished().await
     }
 
+    pub async fn get(&self, id: i32, include_draft: bool) -> Result<Game> {
+        self.game_repository
+            .get(id, include_draft)
+            .await?
+            .ok_or(GameError::NotFound(id))
+    }
+
     pub async fn get_details(&self, id: i32, include_draft: bool) -> Result<GameDetails> {
         self.game_repository
             .get_details(id, include_draft)
@@ -72,7 +79,11 @@ impl GameService {
     }
 
     pub async fn delete(&self, id: i32) -> Result<()> {
-        self.game_repository.delete(id).await
+        if let Some(_game) = self.game_repository.get(id, true).await? {
+            self.game_repository.delete(id).await
+        } else {
+            Err(GameError::NotFound(id))
+        }
     }
 
     pub async fn publish(&self, id: i32) -> Result<Game> {

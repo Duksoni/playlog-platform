@@ -10,8 +10,7 @@ use axum::{
     Json,
 };
 use axum_macros::debug_handler;
-use jwt_common::middleware::auth_optional;
-use jwt_common::{auth, require_admin, AuthClaims, JwtConfig, Role};
+use jwt_common::{auth, middleware::auth_optional, require_admin, AuthClaims, JwtConfig, Role};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use validator::Validate;
@@ -19,9 +18,10 @@ use validator::Validate;
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
 
-    let common_routes = OpenApiRouter::new()
+    let public_routes = OpenApiRouter::new()
         .route("/filter", get(filter))
-        .route("/{id}", get(get_detail))
+        .route("/{id}", get(get_game))
+        .route("/{id}/details", get(get_details))
         .route("/by-developer/{developer_id}", get(find_by_developer))
         .route("/by-publisher/{publisher_id}", get(find_by_publisher))
         .route_layer(from_fn_with_state(jwt_config.clone(), auth_optional));
@@ -37,7 +37,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
         .route_layer(from_fn_with_state(jwt_config, auth));
 
     OpenApiRouter::new()
-        .merge(common_routes)
+        .merge(public_routes)
         .merge(admin_routes)
 }
 
@@ -116,6 +116,32 @@ pub async fn find_by_publisher(
 #[utoipa::path(
     get,
     path = "/api/games/{id}",
+    summary = "Get basic game info",
+    params(("id" = i32, Path, description = "Game id")),
+    responses(
+        (status = 200, description = "Game detail with all relations", body = Game),
+        (status = 404, description = "Game not found"),
+    ),
+    tag = "games",
+    security(("bearer" = [])),
+    operation_id = "get_game"
+)]
+#[debug_handler]
+pub async fn get_game(
+    State(state): State<Arc<AppState>>,
+    extensions: Extensions,
+    Path(id): Path<i32>,
+) -> Result<Json<Game>, ApiError> {
+    let claims = extensions.get::<AuthClaims>();
+    let include_draft = claims.map(|c| c.role == Role::Admin).unwrap_or(false);
+
+    let game = state.game_service.get(id, include_draft).await?;
+    Ok(Json(game))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/games/{id}/details",
     summary = "Get full game details",
     params(("id" = i32, Path, description = "Game id")),
     responses(
@@ -127,7 +153,7 @@ pub async fn find_by_publisher(
     operation_id = "get_game_detail"
 )]
 #[debug_handler]
-pub async fn get_detail(
+pub async fn get_details(
     State(state): State<Arc<AppState>>,
     extensions: Extensions,
     Path(id): Path<i32>,

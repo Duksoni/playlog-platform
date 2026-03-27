@@ -13,6 +13,7 @@ pub fn router(state: Arc<ServiceAppState>) -> Router<Arc<ServiceAppState>> {
     let public_routes = Router::new()
         .route("/filter", get(proxy_handler))
         .route("/{id}", get(proxy_handler))
+        .route("/{id}/details", get(proxy_handler))
         .route("/by-developer/{id}", get(proxy_handler))
         .route("/by-publisher/{id}", get(proxy_handler));
 
