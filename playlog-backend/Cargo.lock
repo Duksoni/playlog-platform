@@ -2489,6 +2489,7 @@ dependencies = [
  "jwt-common",
  "minio",
  "mongodb",
+ "reqwest 0.13.2",
  "serde",
  "thiserror 2.0.18",
  "tokio",

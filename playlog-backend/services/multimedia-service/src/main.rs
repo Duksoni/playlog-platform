@@ -39,8 +39,19 @@ async fn main() -> anyhow::Result<()> {
         &env.minio_secret_key,
     )?;
 
+    let http_client = reqwest::Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()
+        .expect("Failed to create HTTP client");
+
     let repository = Box::new(MongoMediaRepository::new(collection));
-    let media_service = MediaService::new(repository, minio, env.minio_bucket);
+    let media_service = MediaService::new(
+        repository,
+        minio,
+        env.minio_bucket,
+        http_client,
+        env.app_config.catalogue_service_url.clone(),
+    );
 
     let state = Arc::new(AppState::new(env.app_config, media_service));
     let app = build_app(state);

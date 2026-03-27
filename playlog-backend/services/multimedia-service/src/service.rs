@@ -1,14 +1,3 @@
-use axum::http::Method;
-use bytes::Bytes;
-use minio::s3::{
-    client::Client as MinioClient,
-    multimap::{Multimap, MultimapExt},
-    segmented_bytes::SegmentedBytes,
-    types::S3Api,
-};
-use mongodb::bson::DateTime;
-use std::time::SystemTime;
-
 use crate::{
     dto::{GameMediaResponse, MediaFileResponse},
     error::{MediaError, Result},
@@ -18,6 +7,17 @@ use crate::{
     },
     repository::MediaRepository,
 };
+use axum::http::Method;
+use bytes::Bytes;
+use minio::s3::{
+    client::Client as MinioClient,
+    multimap::{Multimap, MultimapExt},
+    segmented_bytes::SegmentedBytes,
+    types::S3Api,
+};
+use mongodb::bson::DateTime;
+use reqwest::Client as HttpClient;
+use std::time::SystemTime;
 
 const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024; // 10 MB
 const MAX_VIDEO_BYTES: usize = 500 * 1024 * 1024; // 500 MB
@@ -26,20 +26,50 @@ pub struct MediaService {
     repository: Box<dyn MediaRepository>,
     minio: MinioClient,
     bucket: String,
+    http: HttpClient,
+    catalogue_url: String,
 }
 
 impl MediaService {
-    pub fn new(repository: Box<dyn MediaRepository>, minio: MinioClient, bucket: String) -> Self {
+    pub fn new(
+        repository: Box<dyn MediaRepository>,
+        minio: MinioClient,
+        bucket: String,
+        http: HttpClient,
+        catalogue_url: String,
+    ) -> Self {
         Self {
             repository,
             minio,
             bucket,
+            http,
+            catalogue_url,
         }
     }
 
     pub async fn get_game_media(&self, game_id: i32) -> Result<GameMediaResponse> {
         let media = self.find_by_game_id(game_id).await?;
         self.to_response(media).await
+    }
+
+    pub async fn ensure_game_exists(&self, game_id: i32) -> Result<()> {
+        let url = format!("{}/api/games/{}", self.catalogue_url, game_id);
+
+        let response = self
+            .http
+            .get(url)
+            .send()
+            .await
+            .map_err(|e| MediaError::CatalogueServiceError(e.to_string()))?;
+
+        match response.status() {
+            reqwest::StatusCode::OK => Ok(()),
+            reqwest::StatusCode::NOT_FOUND => Err(MediaError::InvalidGameId(game_id)),
+            _ => Err(MediaError::CatalogueServiceError(format!(
+                "Unexpected status from catalogue service: {}",
+                response.status()
+            ))),
+        }
     }
 
     pub async fn upload_game_media(

@@ -15,6 +15,7 @@ dotenvy.workspace = true
 jwt-common.workspace = true
 minio.workspace = true
 mongodb.workspace = true
+reqwest.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 tokio.workspace = true

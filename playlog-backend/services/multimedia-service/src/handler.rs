@@ -97,6 +97,7 @@ async fn upload_game_media(
     Path(game_id): Path<i32>,
     mut multipart: Multipart,
 ) -> Result<Json<GameMediaResponse>, ApiError> {
+    state.media_service.ensure_game_exists(game_id).await?;
     let mut files: Vec<UploadedFile> = vec![];
 
     while let Some(field) = multipart

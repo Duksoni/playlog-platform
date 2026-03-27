@@ -14,6 +14,7 @@ pub struct Environment {
 
 pub struct AppConfig {
     pub jwt_public_key: Vec<u8>,
+    pub catalogue_service_url: String,
 }
 
 impl AppConfig {
@@ -22,7 +23,12 @@ impl AppConfig {
             var("JWT_PUBLIC_KEY_PATH").context("JWT_PUBLIC_KEY_PATH must be set")?;
         let jwt_public_key = read(&public_key_path)
             .with_context(|| format!("failed to read {}", public_key_path))?;
-        Ok(Self { jwt_public_key })
+        let catalogue_service_url =
+            var("CATALOGUE_SERVICE_URL").context("CATALOGUE_SERVICE_URL must be set")?;
+        Ok(Self {
+            jwt_public_key,
+            catalogue_service_url,
+        })
     }
 }
 
