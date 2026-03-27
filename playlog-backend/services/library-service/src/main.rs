@@ -1,7 +1,9 @@
+mod config;
 mod dto;
 mod error;
 mod model;
 mod repository;
+mod setup;
 
 use axum::{
     routing::get,
