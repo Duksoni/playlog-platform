@@ -4,6 +4,7 @@ pub mod multimedia_service;
 pub mod client;
 pub mod handler;
 pub mod user_service;
+pub mod library_service;
 
 pub use state::ServiceAppState;
 pub use client::ProxyClient;

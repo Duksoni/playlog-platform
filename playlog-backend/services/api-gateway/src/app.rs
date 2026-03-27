@@ -2,6 +2,7 @@ use crate::{
     docs::{load_service_docs, OPENAPI_DOC_PATH},
     proxy::{
         catalogue_service::{catalogue_health_router, entity_router, games_router},
+        library_service::{library_health_router, library_router},
         multimedia_service::{multimedia_router, multimedia_health_router},
         user_service::{auth_router, users_health_router, users_router},
         ServiceAppState,
@@ -46,6 +47,12 @@ pub async fn build_app(config: Config) -> Router {
         jwt_config.clone(),
     ));
 
+    let library_app_state = Arc::new(ServiceAppState::new(
+        config.library_service_url.clone(),
+        proxy_client.clone(),
+        jwt_config.clone(),
+    ));
+
     let catalogue_app_state = Arc::new(ServiceAppState::new(
         config.catalogue_service_url.clone(),
         proxy_client.clone(),
@@ -78,6 +85,10 @@ pub async fn build_app(config: Config) -> Router {
             catalogue_health_router().with_state(Arc::clone(&catalogue_app_state)),
         )
         .nest(
+            "/api",
+            library_health_router().with_state(Arc::clone(&library_app_state)),
+        )
+        .nest(
             "/api/auth",
             auth_router().with_state(Arc::clone(&user_app_state)),
         )
@@ -94,6 +105,11 @@ pub async fn build_app(config: Config) -> Router {
             "/api/games",
             games_router(Arc::clone(&catalogue_app_state))
                 .with_state(Arc::clone(&catalogue_app_state)),
+        )
+        .nest(
+            "/api/library",
+            library_router(Arc::clone(&library_app_state))
+                .with_state(Arc::clone(&library_app_state)),
         )
         .nest(
             "/api/developers",

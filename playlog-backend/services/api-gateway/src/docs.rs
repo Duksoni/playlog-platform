@@ -21,6 +21,7 @@ pub async fn load_service_docs(config: &Config, client: &Client) -> OpenApiDocum
         &config.user_service_url,
         &config.multimedia_service_url,
         &config.catalogue_service_url,
+        &config.library_service_url,
     ];
 
     for base_url in service_urls {
