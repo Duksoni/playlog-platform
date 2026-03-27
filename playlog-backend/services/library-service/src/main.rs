@@ -3,6 +3,7 @@ mod dto;
 mod error;
 mod model;
 mod repository;
+mod service;
 mod setup;
 
 use axum::{
