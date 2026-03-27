@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT status AS \"status: GameLibraryStatus\", count(*) as \"count!\"\n            FROM user_games\n            WHERE user_id = $1\n            GROUP BY status\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "status: GameLibraryStatus",
+        "type_info": {
+          "Custom": {
+            "name": "game_library_status",
+            "kind": {
+              "Enum": [
+                "OWNED",
+                "PLAYING",
+                "WISHLIST",
+                "COMPLETED",
+                "DROPPED"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 1,
+        "name": "count!",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid"
+      ]
+    },
+    "nullable": [
+      false,
+      null
+    ]
+  },
+  "hash": "7cd3ba3600e8b6ec83eff41647fbf575310e6534e38bbdc7ce5bd15159110e2a"
+}

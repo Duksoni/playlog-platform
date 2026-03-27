@@ -1,0 +1,74 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO user_games (user_id, game_id, status)\n            VALUES ($1, $2, $3)\n            ON CONFLICT (user_id, game_id) DO UPDATE\n            SET status = EXCLUDED.status, last_updated = now()\n            RETURNING user_id, game_id, status AS \"status: GameLibraryStatus\", added_at, last_updated\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "user_id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "game_id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 2,
+        "name": "status: GameLibraryStatus",
+        "type_info": {
+          "Custom": {
+            "name": "game_library_status",
+            "kind": {
+              "Enum": [
+                "OWNED",
+                "PLAYING",
+                "WISHLIST",
+                "COMPLETED",
+                "DROPPED"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "ordinal": 3,
+        "name": "added_at",
+        "type_info": "Timestamptz"
+      },
+      {
+        "ordinal": 4,
+        "name": "last_updated",
+        "type_info": "Timestamptz"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int4",
+        {
+          "Custom": {
+            "name": "game_library_status",
+            "kind": {
+              "Enum": [
+                "OWNED",
+                "PLAYING",
+                "WISHLIST",
+                "COMPLETED",
+                "DROPPED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "4fd4eead521db51b6ee8f82bb1fc371cf25d98f6f309aaaa9d9794773e2a352c"
+}
