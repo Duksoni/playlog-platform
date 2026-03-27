@@ -15,6 +15,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET}
+      CATALOGUE_SERVICE_URL: ${CATALOGUE_SERVICE_URL}
     depends_on:
       mongo_multimedia:
         condition: service_healthy
