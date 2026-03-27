@@ -1,3 +1,7 @@
+mod dto;
+mod error;
+mod model;
+
 use axum::{
     routing::get,
     Router,
