@@ -1,0 +1,64 @@
+use crate::{config::AppConfig, docs::ApiDoc, handler::router, service::LibraryService};
+use axum::{
+    http::{
+        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method,
+        StatusCode,
+    },
+    response::{IntoResponse, Redirect},
+    routing::get,
+    Router,
+};
+use std::{sync::Arc, time::Duration};
+use tower_http::{cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer};
+use utoipa::OpenApi;
+use utoipa_axum::router::OpenApiRouter;
+use utoipa_swagger_ui::SwaggerUi;
+
+pub struct AppState {
+    pub config: AppConfig,
+    pub library_service: LibraryService,
+}
+
+pub fn build_app(state: Arc<AppState>) -> Router {
+    let cors = CorsLayer::new()
+        .allow_origin("http://localhost:4200".parse::<HeaderValue>().unwrap())
+        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap())
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
+        .allow_credentials(true)
+        .allow_methods([Method::GET, Method::POST, Method::DELETE]);
+
+    let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
+        .route("/library-service-health", get(health_check))
+        .nest("/library", router(Arc::clone(&state)))
+        .layer((
+            TraceLayer::new_for_http(),
+            TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(10)),
+        ))
+        .layer(cors)
+        .with_state(Arc::clone(&state))
+        .split_for_parts();
+
+    Router::new()
+        .route("/", get(root_redirect))
+        .nest("/api", router)
+        .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", api))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/library-service-health",
+    summary = "API Health check",
+    responses(
+        (status = 200, description = "Health check passed"),
+        (status = 500, description = "Internal Server Error"),
+    ),
+    tag = "library_service_health",
+    operation_id = "library_service_health"
+)]
+pub async fn health_check() -> Result<impl IntoResponse, StatusCode> {
+    Ok((StatusCode::OK, "API is healthy!".into_response()))
+}
+
+async fn root_redirect() -> Redirect {
+    Redirect::permanent("/docs")
+}
