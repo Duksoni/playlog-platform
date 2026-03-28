@@ -8,7 +8,7 @@ use mongodb::{bson::doc, options::ReplaceOptions, Collection};
 #[async_trait]
 pub trait MediaRepository: Send + Sync {
     async fn find_by_game_id(&self, game_id: i32) -> Result<Option<GameMedia>>;
-    async fn upsert(&self, media: GameMedia) -> Result<()>;
+    async fn upsert(&self, media: GameMedia, version: i64) -> Result<()>;
     async fn delete_by_game_id(&self, game_id: i32) -> Result<()>;
 }
 
@@ -31,16 +31,19 @@ impl MediaRepository for MongoMediaRepository {
             .map_err(|e| MediaError::DatabaseError(e.to_string()))
     }
 
-    async fn upsert(&self, media: GameMedia) -> Result<()> {
-        let filter = doc! { "game_id": media.game_id };
-        let options = ReplaceOptions::builder().upsert(true).build();
+    async fn upsert(&self, media: GameMedia, version: i64) -> Result<()> {
+        let filter = doc! { "game_id": media.game_id, "version": version };
+        let options = ReplaceOptions::builder().upsert(media.id.is_none()).build();
 
-        self.collection
-            .replace_one(filter, media)
+        let result = self.collection
+            .replace_one(filter, &media)
             .with_options(options)
             .await
             .map_err(|e| MediaError::DatabaseError(e.to_string()))?;
 
+        if result.matched_count == 0 && result.upserted_id.is_none() {
+            return Err(MediaError::Conflict(media.game_id));
+        }
         Ok(())
     }
 

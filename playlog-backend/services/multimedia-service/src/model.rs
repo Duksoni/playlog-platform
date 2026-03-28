@@ -12,6 +12,7 @@ pub struct GameMedia {
     pub cover: Option<MediaFile>,
     pub screenshots: Vec<MediaFile>,
     pub trailer: Option<MediaFile>,
+    pub version: i64,
 }
 
 impl GameMedia {
@@ -21,6 +22,7 @@ impl GameMedia {
         cover: Option<MediaFile>,
         screenshots: Vec<MediaFile>,
         trailer: Option<MediaFile>,
+        version: i64,
     ) -> Self {
         Self {
             id,
@@ -28,11 +30,12 @@ impl GameMedia {
             cover,
             screenshots,
             trailer,
+            version,
         }
     }
 
     pub fn new_for_game(game_id: i32) -> Self {
-        Self::new(None, game_id, None, vec![], None)
+        Self::new(None, game_id, None, vec![], None, 0)
     }
 }
 

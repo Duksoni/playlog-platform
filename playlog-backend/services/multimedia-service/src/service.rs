@@ -76,6 +76,7 @@ impl MediaService {
         &self,
         game_id: i32,
         files: Vec<UploadedFile>,
+        version: i64,
     ) -> Result<GameMediaResponse> {
         self.validate_upload_limits(&files)?;
 
@@ -84,6 +85,10 @@ impl MediaService {
             .find_by_game_id(game_id)
             .await?
             .unwrap_or_else(|| GameMedia::new_for_game(game_id));
+
+        if existing.version != version {
+            return Err(MediaError::Conflict(game_id));
+        }
 
         let (new_cover, new_screenshots, new_trailer) =
             self.process_and_upload_files(game_id, files).await?;
@@ -94,9 +99,10 @@ impl MediaService {
             new_cover.or(existing.cover),
             new_screenshots.unwrap_or(existing.screenshots),
             new_trailer.or(existing.trailer),
+            existing.version + 1,
         );
 
-        self.repository.upsert(media).await?;
+        self.repository.upsert(media, version).await?;
 
         let saved = self.find_by_game_id(game_id).await?;
         self.to_response(saved).await
@@ -273,6 +279,7 @@ impl MediaService {
             cover,
             screenshots,
             trailer,
+            media.version,
         ))
     }
 }

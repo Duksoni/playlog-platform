@@ -30,6 +30,9 @@ pub enum MediaError {
 
     #[error("Storage error: {0}")]
     StorageError(String),
+
+    #[error("Conflict: Version mismatch for game {0}")]
+    Conflict(i32),
 }
 
 pub type Result<T> = std::result::Result<T, MediaError>;
@@ -46,6 +49,7 @@ impl From<MediaError> for ApiError {
             MediaError::CatalogueServiceError(_)
             | MediaError::DatabaseError(_)
             | MediaError::StorageError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            MediaError::Conflict(_) => StatusCode::CONFLICT,
         };
         ApiError::new(status, error.to_string())
     }

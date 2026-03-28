@@ -8,6 +8,7 @@ pub struct GameMediaResponse {
     pub cover: Option<MediaFileResponse>,
     pub screenshots: Vec<MediaFileResponse>,
     pub trailer: Option<MediaFileResponse>,
+    pub version: i64,
 }
 
 impl GameMediaResponse {
@@ -16,12 +17,14 @@ impl GameMediaResponse {
         cover: Option<MediaFileResponse>,
         screenshots: Vec<MediaFileResponse>,
         trailer: Option<MediaFileResponse>,
+        version: i64,
     ) -> Self {
         Self {
             game_id,
             cover,
             screenshots,
             trailer,
+            version,
         }
     }
 }

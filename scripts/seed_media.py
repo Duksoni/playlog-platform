@@ -158,6 +158,7 @@ def main():
             "cover": cover,
             "screenshots": screenshots,
             "trailer": trailer,
+            "version": 0
         }
 
         try:

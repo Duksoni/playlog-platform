@@ -15,8 +15,8 @@ use axum_macros::debug_handler;
 use jwt_common::{auth, require_admin, JwtConfig};
 use utoipa_axum::router::OpenApiRouter;
 
-use crate::{app::AppState, dto::GameMediaResponse, error::MediaError, model::UploadedFile};
 use crate::model::FieldName;
+use crate::{app::AppState, dto::GameMediaResponse, error::MediaError, model::UploadedFile};
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
@@ -44,7 +44,6 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     responses(
         (status = 200, description = "Game media with presigned URLs", body = GameMediaResponse),
         (status = 404, description = "No media found for this game"),
-        (status = 500, description = "Internal server error"),
     ),
     tag = "multimedia"
 )]
@@ -69,6 +68,7 @@ Accepts a `multipart/form-data` body with any combination of the following named
 | `cover`      | image  | 10 MB  | Replaces the existing cover                |
 | `screenshot` | image  | 10 MB  | Repeat for multiple; replaces all existing |
 | `trailer`    | video  | 500 MB | Replaces the existing trailer              |
+| `version`    | i64    | -      | Current version of the game data           |
 
 All fields are optional, but at least one must be provided.
 Files must include a `Content-Type` header on their part.
@@ -79,14 +79,14 @@ Files must include a `Content-Type` header on their part.
     request_body(
         content_type = "multipart/form-data",
         content = inline(String),
-        description = "Multipart form with 'cover', 'screenshot' (repeatable), and/or 'trailer' file fields"
+        description = "Multipart form with 'cover', 'screenshot' (repeatable), 'trailer' file fields and 'version' field"
     ),
     responses(
         (status = 200, description = "Upload successful, returns updated media with presigned URLs", body = GameMediaResponse),
-        (status = 400, description = "No files provided, unknown field, file too large, or missing content-type"),
+        (status = 400, description = "No files provided, unknown field, file too large, missing content-type, or missing version"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
-        (status = 500, description = "Internal server error"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "multimedia",
     security(("bearer" = []))
@@ -99,35 +99,16 @@ async fn upload_game_media(
 ) -> Result<Json<GameMediaResponse>, ApiError> {
     state.media_service.ensure_game_exists(game_id).await?;
     let mut files: Vec<UploadedFile> = vec![];
+    let mut version: Option<i64> = None;
 
-    while let Some(field) = multipart
-        .next_field()
-        .await
-        .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?
-    {
-        let field_name = field
-            .name()
-            .ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "Multipart field missing name"))?;
-        let field_name = FieldName::from_str(field_name)?;
+    parse_multipart_request(&mut multipart, &mut files, &mut version).await?;
 
-        let file_name = field.file_name().unwrap_or("upload").to_string();
-
-        let content_type = field
-            .content_type()
-            .ok_or_else(|| MediaError::MissingContentType(field_name.as_string()))?
-            .to_string();
-
-        let data = field
-            .bytes()
-            .await
-            .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
-
-        files.push(UploadedFile::new(field_name, file_name, content_type, data));
-    }
+    let version = version
+        .ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "Version field is required"))?;
 
     let media = state
         .media_service
-        .upload_game_media(game_id, files)
+        .upload_game_media(game_id, files, version)
         .await?;
 
     Ok(Json(media))
@@ -145,7 +126,6 @@ async fn upload_game_media(
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
         (status = 404, description = "No media found for this game"),
-        (status = 500, description = "Internal server error"),
     ),
     tag = "multimedia",
     security(("bearer" = []))
@@ -157,4 +137,54 @@ async fn delete_game_media(
 ) -> Result<impl IntoResponse, ApiError> {
     state.media_service.delete_game_media(game_id).await?;
     Ok(StatusCode::NO_CONTENT)
+}
+
+async fn parse_multipart_request(
+    multipart: &mut Multipart,
+    files: &mut Vec<UploadedFile>,
+    version: &mut Option<i64>,
+) -> Result<(), ApiError> {
+    while let Some(field) = multipart
+        .next_field()
+        .await
+        .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?
+    {
+        let field_name = field.name().ok_or_else(|| {
+            ApiError::new(StatusCode::BAD_REQUEST, "Multipart field missing name")
+        })?;
+
+        if field_name == "version" {
+            let game_version: i64 = field
+                .text()
+                .await
+                .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?
+                .trim()
+                .parse()
+                .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid version format"))?;
+            *version = Some(game_version);
+            continue;
+        }
+
+        let field_name_enum = FieldName::from_str(field_name)?;
+
+        let file_name = field.file_name().unwrap_or("upload").to_string();
+
+        let content_type = field
+            .content_type()
+            .ok_or_else(|| MediaError::MissingContentType(field_name_enum.as_string()))?
+            .to_string();
+
+        let data = field
+            .bytes()
+            .await
+            .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
+
+        files.push(UploadedFile::new(
+            field_name_enum,
+            file_name,
+            content_type,
+            data,
+        ));
+    }
+    Ok(())
 }
