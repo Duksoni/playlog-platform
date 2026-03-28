@@ -1,0 +1,12 @@
+ALTER TABLE games
+    DROP COLUMN version;
+ALTER TABLE platforms
+    DROP COLUMN version;
+ALTER TABLE genres
+    DROP COLUMN version;
+ALTER TABLE tags
+    DROP COLUMN version;
+ALTER TABLE developers
+    DROP COLUMN version;
+ALTER TABLE publishers
+    DROP COLUMN version;

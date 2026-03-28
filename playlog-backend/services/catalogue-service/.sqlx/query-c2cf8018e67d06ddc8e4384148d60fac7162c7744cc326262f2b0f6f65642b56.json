@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT id, name, description, released, website, draft\n                FROM games\n                WHERE id = $1 AND ($2 OR draft = false)\n            ",
+  "query": "\n                SELECT id, name, description, released, website, draft, version\n                FROM games\n                WHERE id = $1 AND ($2 OR draft = false)\n            ",
   "describe": {
     "columns": [
       {
@@ -32,6 +32,11 @@
         "ordinal": 5,
         "name": "draft",
         "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "version",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -46,8 +51,9 @@
       false,
       true,
       true,
+      false,
       false
     ]
   },
-  "hash": "041de9849a54a3bc3df29a600929e8b159269384be2ad9abb54dc88c40268985"
+  "hash": "c2cf8018e67d06ddc8e4384148d60fac7162c7744cc326262f2b0f6f65642b56"
 }

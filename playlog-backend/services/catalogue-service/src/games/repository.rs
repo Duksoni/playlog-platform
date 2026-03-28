@@ -1,12 +1,9 @@
 use super::{
-    CreateUpdateGameRequest, Game, GameDetails, GameError, GameFilterQuery, GameSimple,
-    GameSortField, Result, SortDirection,
-};
-use crate::{
-    developers::Developer, genres::Genre, platforms::Platform, publishers::Publisher, tags::Tag,
+    CreateGameRequest, Developer, Game, GameDetails, GameError, GameFilterQuery, GameSimple,
+    GameSortField, Genre, Platform, Publisher, Result, SortDirection, Tag, UpdateGameRequest,
 };
 use async_trait::async_trait;
-use sqlx::{query, query_as, PgPool, Postgres, Transaction};
+use sqlx::{query, query_as, query_scalar, PgPool, Postgres, Transaction};
 
 #[async_trait]
 pub trait GameRepository: Send + Sync {
@@ -20,9 +17,9 @@ pub trait GameRepository: Send + Sync {
     async fn get_all_unpublished(&self) -> Result<Vec<GameSimple>>;
     async fn get(&self, id: i32, include_draft: bool) -> Result<Option<Game>>;
     async fn get_details(&self, id: i32, include_draft: bool) -> Result<Option<GameDetails>>;
-    async fn create(&self, data: CreateUpdateGameRequest) -> Result<Game>;
-    async fn update(&self, id: i32, data: CreateUpdateGameRequest) -> Result<GameDetails>;
-    async fn set_draft(&self, id: i32, draft: bool) -> Result<Game>;
+    async fn create(&self, data: CreateGameRequest) -> Result<Game>;
+    async fn update(&self, id: i32, data: UpdateGameRequest) -> Result<GameDetails>;
+    async fn set_draft(&self, id: i32, draft: bool, version: i64) -> Result<Game>;
     async fn delete(&self, id: i32) -> Result<()>;
 }
 
@@ -102,7 +99,7 @@ impl GameRepository for PostgresGameRepository {
         let game = query_as!(
             Game,
             r#"
-                SELECT id, name, description, released, website, draft
+                SELECT id, name, description, released, website, draft, version
                 FROM games
                 WHERE id = $1 AND ($2 OR draft = false)
             "#,
@@ -197,7 +194,7 @@ impl GameRepository for PostgresGameRepository {
         )))
     }
 
-    async fn create(&self, data: CreateUpdateGameRequest) -> Result<Game> {
+    async fn create(&self, data: CreateGameRequest) -> Result<Game> {
         let mut transaction = self.pool.begin().await?;
 
         let game = query_as!(
@@ -205,7 +202,7 @@ impl GameRepository for PostgresGameRepository {
             r#"
                 INSERT INTO games (name, description, released, website)
                 VALUES ($1, $2, $3, $4)
-                RETURNING id, name, description, released, website, draft
+                RETURNING id, name, description, released, website, draft, version
             "#,
             data.name,
             data.description,
@@ -214,7 +211,6 @@ impl GameRepository for PostgresGameRepository {
         )
         .fetch_one(&mut *transaction)
         .await?;
-
         self.set_developers(&mut transaction, game.id, &data.developer_ids)
             .await?;
         self.set_publishers(&mut transaction, game.id, &data.publisher_ids)
@@ -231,39 +227,62 @@ impl GameRepository for PostgresGameRepository {
         Ok(game)
     }
 
-    async fn update(&self, id: i32, data: CreateUpdateGameRequest) -> Result<GameDetails> {
+    async fn update(&self, id: i32, data: UpdateGameRequest) -> Result<GameDetails> {
         let mut transaction = self.pool.begin().await?;
 
-        query_as!(
+        let game = query_as!(
             Game,
             r#"
                 UPDATE games
                 SET name = COALESCE($1, name), 
                     description = COALESCE($2, description), 
                     released = COALESCE($3, released), 
-                    website = COALESCE($4, website)
-                WHERE id = $5
-                RETURNING id, name, description, released, website, draft
+                    website = COALESCE($4, website),
+                    version = version + 1
+                WHERE id = $5 AND version = $6
+                RETURNING id, name, description, released, website, draft, version
              "#,
             data.name,
             data.description,
             data.released,
             data.website,
-            id
+            id,
+            data.version
         )
         .fetch_optional(&mut *transaction)
-        .await?
-        .ok_or(GameError::NotFound(id))?;
+        .await?;
 
-        self.set_developers(&mut transaction, id, &data.developer_ids)
-            .await?;
-        self.set_publishers(&mut transaction, id, &data.publisher_ids)
-            .await?;
-        self.set_genres(&mut transaction, id, &data.genre_ids)
-            .await?;
-        self.set_platforms(&mut transaction, id, &data.platform_ids)
-            .await?;
-        self.set_tags(&mut transaction, id, &data.tag_ids).await?;
+        if game.is_none() {
+            let exists = query_scalar!("SELECT EXISTS(SELECT 1 FROM games WHERE id = $1)", id)
+                .fetch_one(&mut *transaction)
+                .await?
+                .unwrap_or(false);
+
+            return if exists {
+                Err(GameError::Conflict(id))
+            } else {
+                Err(GameError::NotFound(id))
+            }
+        }
+
+        if let Some(developer_ids) = data.developer_ids {
+            self.set_developers(&mut transaction, id, &developer_ids)
+                .await?;
+        }
+        if let Some(publisher_ids) = data.publisher_ids {
+            self.set_publishers(&mut transaction, id, &publisher_ids)
+                .await?;
+        }
+        if let Some(genre_ids) = data.genre_ids {
+            self.set_genres(&mut transaction, id, &genre_ids).await?;
+        }
+        if let Some(platform_ids) = data.platform_ids {
+            self.set_platforms(&mut transaction, id, &platform_ids)
+                .await?;
+        }
+        if let Some(tag_ids) = data.tag_ids {
+            self.set_tags(&mut transaction, id, &tag_ids).await?;
+        }
 
         transaction.commit().await?;
 
@@ -272,23 +291,36 @@ impl GameRepository for PostgresGameRepository {
             .ok_or(GameError::NotFound(id))
     }
 
-    async fn set_draft(&self, id: i32, draft: bool) -> Result<Game> {
+    async fn set_draft(&self, id: i32, draft: bool, version: i64) -> Result<Game> {
         let game = query_as!(
             Game,
             r#"
                 UPDATE games 
-                SET draft = $1 
-                WHERE id = $2
-                RETURNING id, name, description, released, website, draft
+                SET draft = $1, version = version + 1
+                WHERE id = $2 AND version = $3
+                RETURNING id, name, description, released, website, draft, version
              "#,
             draft,
-            id
+            id,
+            version
         )
         .fetch_optional(&self.pool)
-        .await?
-        .ok_or(GameError::NotFound(id))?;
+        .await?;
 
-        Ok(game)
+        match game {
+            Some(g) => Ok(g),
+            None => {
+                let exists = query_scalar!("SELECT EXISTS(SELECT 1 FROM games WHERE id = $1)", id)
+                    .fetch_one(&self.pool)
+                    .await?
+                    .unwrap_or(false);
+                if exists {
+                    Err(GameError::Conflict(id))
+                } else {
+                    Err(GameError::NotFound(id))
+                }
+            }
+        }
     }
 
     async fn delete(&self, id: i32) -> Result<()> {

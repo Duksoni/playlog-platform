@@ -1,6 +1,6 @@
 use super::{
-    CreateUpdateGameRequest, Game, GameDetails, GameError, GameFilterQuery, GameRepository,
-    GameSimple, Result,
+    CreateGameRequest, Game, GameDetails, GameError, GameFilterQuery, GameRepository, GameSimple,
+    Result, UpdateGameRequest,
 };
 use crate::entity::GameEntityRepository;
 
@@ -68,56 +68,94 @@ impl GameService {
             .ok_or(GameError::NotFound(id))
     }
 
-    pub async fn create(&self, request: CreateUpdateGameRequest) -> Result<Game> {
-        self.ensure_entities_exist(&request).await?;
+    pub async fn create(&self, request: CreateGameRequest) -> Result<Game> {
+        validate_entity_ids(
+            Some(&request.developer_ids),
+            "developers",
+            &*self.developer_repository,
+        )
+        .await?;
+        validate_entity_ids(
+            Some(&request.publisher_ids),
+            "publishers",
+            &*self.publisher_repository,
+        )
+        .await?;
+        validate_entity_ids(
+            Some(&request.platform_ids),
+            "platforms",
+            &*self.platform_repository,
+        )
+        .await?;
+        validate_entity_ids(Some(&request.genre_ids), "genres", &*self.genre_repository).await?;
+        validate_entity_ids(Some(&request.tag_ids), "tags", &*self.tag_repository).await?;
+
         self.game_repository.create(request).await
     }
 
-    pub async fn update(&self, id: i32, request: CreateUpdateGameRequest) -> Result<GameDetails> {
-        self.ensure_entities_exist(&request).await?;
+    pub async fn update(&self, id: i32, request: UpdateGameRequest) -> Result<GameDetails> {
+        validate_entity_ids(
+            request.developer_ids.as_deref(),
+            "developers",
+            &*self.developer_repository,
+        )
+        .await?;
+        validate_entity_ids(
+            request.publisher_ids.as_deref(),
+            "publishers",
+            &*self.publisher_repository,
+        )
+        .await?;
+        validate_entity_ids(
+            request.platform_ids.as_deref(),
+            "platforms",
+            &*self.platform_repository,
+        )
+        .await?;
+        validate_entity_ids(
+            request.genre_ids.as_deref(),
+            "genres",
+            &*self.genre_repository,
+        )
+        .await?;
+        validate_entity_ids(request.tag_ids.as_deref(), "tags", &*self.tag_repository).await?;
+
         self.game_repository.update(id, request).await
     }
 
     pub async fn delete(&self, id: i32) -> Result<()> {
-        if let Some(_game) = self.game_repository.get(id, true).await? {
-            self.game_repository.delete(id).await
-        } else {
-            Err(GameError::NotFound(id))
-        }
+        self.game_repository.delete(id).await
     }
 
-    pub async fn publish(&self, id: i32) -> Result<Game> {
-        if let Some(_game) = self.game_repository.get(id, true).await? {
-            self.game_repository.set_draft(id, false).await
-        } else {
-            Err(GameError::NotFound(id))
-        }
+    pub async fn publish(&self, id: i32, version: i64) -> Result<Game> {
+        self.change_draft(id, false, version).await
     }
 
-    pub async fn unpublish(&self, id: i32) -> Result<Game> {
-        if let Some(_game) = self.game_repository.get(id, false).await? {
-            self.game_repository.set_draft(id, true).await
-        } else {
-            Err(GameError::NotFound(id))
-        }
+    pub async fn unpublish(&self, id: i32, version: i64) -> Result<Game> {
+        self.change_draft(id, true, version).await
     }
 
-    async fn ensure_entities_exist(&self, request: &CreateUpdateGameRequest) -> Result<()> {
-        for developer_id in &request.developer_ids {
-            self.developer_repository.exists(*developer_id).await?;
-        }
-        for publisher_id in &request.publisher_ids {
-            self.publisher_repository.exists(*publisher_id).await?;
-        }
-        for platform_id in &request.platform_ids {
-            self.platform_repository.exists(*platform_id).await?;
-        }
-        for genre_id in &request.genre_ids {
-            self.genre_repository.exists(*genre_id).await?;
-        }
-        for tag_id in &request.tag_ids {
-            self.tag_repository.exists(*tag_id).await?;
-        }
-        Ok(())
+    async fn change_draft(&self, id: i32, draft: bool, version: i64) -> Result<Game> {
+        self.game_repository.set_draft(id, draft, version).await
     }
+}
+
+async fn validate_entity_ids(
+    entity_ids: Option<&[i32]>,
+    entity_type: &str,
+    repository: &dyn GameEntityRepository,
+) -> Result<()> {
+    let Some(ids) = entity_ids else {
+        return Ok(());
+    };
+
+    if ids.is_empty() {
+        return Err(GameError::NoIdsProvided(String::from(entity_type)));
+    }
+
+    for id in ids {
+        repository.exists(*id).await?;
+    }
+
+    Ok(())
 }

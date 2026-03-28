@@ -3,9 +3,17 @@ use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(Validate, Deserialize, ToSchema)]
-pub struct CreateUpdateGameEntityRequest {
+pub struct CreateGameEntityRequest {
     #[validate(length(min = 1, max = 100))]
     pub name: String,
+}
+
+#[derive(Validate, Deserialize, ToSchema)]
+pub struct UpdateGameEntityRequest {
+    #[validate(length(min = 1, max = 100))]    
+    pub name: String,
+    #[validate(range(min = 0))]
+    pub version: i64
 }
 
 #[derive(Deserialize, IntoParams)]

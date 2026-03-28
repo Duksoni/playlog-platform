@@ -6,6 +6,13 @@ use utoipa::ToSchema;
 pub struct GameEntity {
     pub id: i32,
     pub name: String,
+    pub version: i64,
+}
+
+#[derive(Serialize, FromRow, ToSchema)]
+pub struct GameEntitySimple {
+    pub id: i32,
+    pub name: String,
 }
 
 #[derive(Clone, Copy, Debug)]

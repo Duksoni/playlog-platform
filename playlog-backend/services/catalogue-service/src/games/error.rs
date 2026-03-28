@@ -8,6 +8,12 @@ pub enum GameError {
     #[error("Game with id {0} not found")]
     NotFound(i32),
 
+    #[error("Conflict: Version mismatch for game with id {0}")]
+    Conflict(i32),
+
+    #[error("No ids provided for field {0}")]
+    NoIdsProvided(String),
+
     #[error("Entity error: {0}")]
     EntityError(#[from] GameEntityError),
 
@@ -21,7 +27,8 @@ impl From<GameError> for ApiError {
     fn from(error: GameError) -> Self {
         let status_code = match error {
             GameError::NotFound(_) => StatusCode::NOT_FOUND,
-            GameError::EntityError(_) => StatusCode::BAD_REQUEST,
+            GameError::Conflict(_) => StatusCode::CONFLICT,
+            GameError::NoIdsProvided(_) | GameError::EntityError(_) => StatusCode::BAD_REQUEST,
             GameError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError::new(status_code, error.to_string())

@@ -4,7 +4,7 @@ use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(Validate, Deserialize, ToSchema)]
-pub struct CreateUpdateGameRequest {
+pub struct CreateGameRequest {
     #[validate(length(min = 1, max = 200))]
     pub name: String,
     #[validate(length(min = 1))]
@@ -12,8 +12,6 @@ pub struct CreateUpdateGameRequest {
     pub released: Option<NaiveDate>,
     #[validate(url)]
     pub website: Option<String>,
-
-    // Associated entities - may be empty but must be valid ids
     #[serde(rename = "developers")]
     pub developer_ids: Vec<i32>,
     #[serde(rename = "publishers")]
@@ -24,6 +22,35 @@ pub struct CreateUpdateGameRequest {
     pub platform_ids: Vec<i32>,
     #[serde(rename = "tags")]
     pub tag_ids: Vec<i32>,
+}
+
+#[derive(Validate, Deserialize, ToSchema)]
+pub struct UpdateGameRequest {
+    #[validate(length(min = 1, max = 200))]
+    pub name: String,
+    #[validate(length(min = 1))]
+    pub description: String,
+    pub released: Option<NaiveDate>,
+    #[validate(url)]
+    pub website: Option<String>,
+    #[validate(range(min = 0))]
+    pub version: i64,
+    #[serde(rename = "developers")]
+    pub developer_ids: Option<Vec<i32>>,
+    #[serde(rename = "publishers")]
+    pub publisher_ids: Option<Vec<i32>>,
+    #[serde(rename = "genres")]
+    pub genre_ids: Option<Vec<i32>>,
+    #[serde(rename = "platforms")]
+    pub platform_ids: Option<Vec<i32>>,
+    #[serde(rename = "tags")]
+    pub tag_ids: Option<Vec<i32>>,
+}
+
+#[derive(Validate, Deserialize, ToSchema)]
+pub struct PublishUnpublishGameRequest {
+    #[validate(range(min = 0))]
+    pub version: i64,
 }
 
 #[derive(Deserialize, IntoParams)]

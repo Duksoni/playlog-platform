@@ -1,6 +1,9 @@
 use crate::{
     app::AppState,
-    entity::{CreateUpdateGameEntityRequest, GameEntity, GameEntityError, PagedQuery, SearchQuery},
+    entity::{
+        CreateGameEntityRequest, GameEntity, GameEntityError, GameEntitySimple, PagedQuery,
+        SearchQuery, UpdateGameEntityRequest,
+    },
 };
 use api_error::ApiError;
 use axum::{
@@ -42,7 +45,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     summary = "Get all developers (paged)",
     params(PagedQuery),
     responses(
-        (status = 200, description = "List of developers", body = Vec<GameEntity>),
+        (status = 200, description = "List of developers", body = Vec<GameEntitySimple>),
     ),
     tag = "developers",
     operation_id = "get_all_developers_paged"
@@ -51,7 +54,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 pub async fn get_all_paged(
     State(state): State<Arc<AppState>>,
     Query(query): Query<PagedQuery>,
-) -> Result<Json<Vec<GameEntity>>, ApiError> {
+) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
     let result = state.developer_repository.get_all_paged(query.page).await?;
     Ok(Json(result))
 }
@@ -84,7 +87,7 @@ pub async fn get_by_id(
     summary = "Search developers by name",
     params(SearchQuery),
     responses(
-        (status = 200, description = "Matching developers", body = Vec<GameEntity>),
+        (status = 200, description = "Matching developers", body = Vec<GameEntitySimple>),
     ),
     tag = "developers",
     operation_id = "search_developers"
@@ -93,7 +96,7 @@ pub async fn get_by_id(
 pub async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
-) -> Result<Json<Vec<GameEntity>>, ApiError> {
+) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
     let result = state.developer_repository.find_by_name(&query.q).await?;
     Ok(Json(result))
 }
@@ -102,7 +105,7 @@ pub async fn search(
     post,
     path = "/api/developers",
     summary = "Create a developer (Admin only)",
-    request_body = CreateUpdateGameEntityRequest,
+    request_body = CreateGameEntityRequest,
     responses(
         (status = 201, description = "Developer created", body = GameEntity),
         (status = 400, description = "Validation error"),
@@ -116,10 +119,10 @@ pub async fn search(
 #[debug_handler]
 pub async fn create(
     State(state): State<Arc<AppState>>,
-    Json(req): Json<CreateUpdateGameEntityRequest>,
+    Json(request): Json<CreateGameEntityRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
-    req.validate().map_err(ApiError::from)?;
-    let result = state.developer_repository.create(&req.name).await?;
+    request.validate().map_err(ApiError::from)?;
+    let result = state.developer_repository.create(&request.name).await?;
     Ok((StatusCode::CREATED, Json(result)))
 }
 
@@ -128,13 +131,14 @@ pub async fn create(
     path = "/api/developers/{id}",
     summary = "Update a developer's name (Admin only)",
     params(("id" = i32, Path, description = "Developer id")),
-    request_body = CreateUpdateGameEntityRequest,
+    request_body = UpdateGameEntityRequest,
     responses(
         (status = 200, description = "Developer updated", body = GameEntity),
         (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Developer not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "developers",
     security(("bearer" = [])),
@@ -144,12 +148,12 @@ pub async fn create(
 pub async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-    Json(req): Json<CreateUpdateGameEntityRequest>,
+    Json(request): Json<UpdateGameEntityRequest>,
 ) -> Result<Json<GameEntity>, ApiError> {
-    req.validate().map_err(ApiError::from)?;
+    request.validate().map_err(ApiError::from)?;
     let result = state
         .developer_repository
-        .update_name(id, &req.name)
+        .update_name(id, &request.name, request.version)
         .await?;
     Ok(Json(result))
 }

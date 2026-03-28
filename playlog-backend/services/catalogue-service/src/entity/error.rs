@@ -12,6 +12,9 @@ pub enum GameEntityError {
 
     #[error("Operation {1} is not supported for {0}")]
     UnsupportedOperation(String, String),
+
+    #[error("Conflict: Version mismatch for {0} with id {1}")]
+    Conflict(String, i32),
 }
 
 pub type Result<T> = std::result::Result<T, GameEntityError>;
@@ -22,6 +25,7 @@ impl From<GameEntityError> for ApiError {
             GameEntityError::NotFound(_, _) => StatusCode::NOT_FOUND,
             GameEntityError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             GameEntityError::UnsupportedOperation(_, _) => StatusCode::NOT_IMPLEMENTED,
+            GameEntityError::Conflict(_, _) => StatusCode::CONFLICT,
         };
 
         ApiError::new(status, error.to_string())

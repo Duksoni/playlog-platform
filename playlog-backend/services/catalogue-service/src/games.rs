@@ -5,8 +5,15 @@ pub mod model;
 pub mod repository;
 pub mod service;
 
-pub use dto::{CreateUpdateGameRequest, GameFilterQuery, GameSortField, SortDirection};
+pub use dto::{CreateGameRequest, UpdateGameRequest, PublishUnpublishGameRequest, GameFilterQuery, GameSortField, SortDirection};
 pub use error::{GameError, Result};
 pub use model::{Game, GameDetails, GameSimple};
 pub use repository::{GameRepository, PostgresGameRepository};
 pub use service::GameService;
+
+use crate::entity::GameEntitySimple;
+pub type Developer = GameEntitySimple;
+pub type Publisher = GameEntitySimple;
+pub type Platform = GameEntitySimple;
+pub type Genre = GameEntitySimple;
+pub type Tag = GameEntitySimple;

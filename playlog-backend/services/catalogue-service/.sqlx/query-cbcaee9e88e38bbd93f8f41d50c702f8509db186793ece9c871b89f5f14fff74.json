@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                INSERT INTO games (name, description, released, website)\n                VALUES ($1, $2, $3, $4)\n                RETURNING id, name, description, released, website, draft\n            ",
+  "query": "\n                INSERT INTO games (name, description, released, website)\n                VALUES ($1, $2, $3, $4)\n                RETURNING id, name, description, released, website, draft, version\n            ",
   "describe": {
     "columns": [
       {
@@ -32,6 +32,11 @@
         "ordinal": 5,
         "name": "draft",
         "type_info": "Bool"
+      },
+      {
+        "ordinal": 6,
+        "name": "version",
+        "type_info": "Int8"
       }
     ],
     "parameters": {
@@ -48,8 +53,9 @@
       false,
       true,
       true,
+      false,
       false
     ]
   },
-  "hash": "80961685847390374eff1568c238c0c40b9b1d96508bd37c55c524f8216547d0"
+  "hash": "cbcaee9e88e38bbd93f8f41d50c702f8509db186793ece9c871b89f5f14fff74"
 }

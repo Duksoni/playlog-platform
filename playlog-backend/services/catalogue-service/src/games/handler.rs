@@ -1,4 +1,4 @@
-use super::{CreateUpdateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple};
+use super::{CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest, UpdateGameRequest};
 use crate::app::AppState;
 use api_error::ApiError;
 use axum::{
@@ -188,7 +188,7 @@ pub async fn get_unpublished(
     post,
     path = "/api/games",
     summary = "Create a game (Admin only)",
-    request_body = CreateUpdateGameRequest,
+    request_body = CreateGameRequest,
     responses(
         (status = 201, description = "Game created", body = GameDetails),
         (status = 400, description = "Validation error"),
@@ -202,10 +202,10 @@ pub async fn get_unpublished(
 #[debug_handler]
 pub async fn create(
     State(state): State<Arc<AppState>>,
-    Json(req): Json<CreateUpdateGameRequest>,
+    Json(request): Json<CreateGameRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
-    req.validate().map_err(ApiError::from)?;
-    let game = state.game_service.create(req).await?;
+    request.validate().map_err(ApiError::from)?;
+    let game = state.game_service.create(request).await?;
     Ok((StatusCode::CREATED, Json(game)))
 }
 
@@ -214,13 +214,14 @@ pub async fn create(
     path = "/api/games/{id}",
     summary = "Update a game (Admin only)",
     params(("id" = i32, Path, description = "Game id")),
-    request_body = CreateUpdateGameRequest,
+    request_body = UpdateGameRequest,
     responses(
         (status = 200, description = "Game updated", body = GameDetails),
         (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -230,10 +231,10 @@ pub async fn create(
 pub async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-    Json(req): Json<CreateUpdateGameRequest>,
+    Json(request): Json<UpdateGameRequest>,
 ) -> Result<Json<GameDetails>, ApiError> {
-    req.validate().map_err(ApiError::from)?;
-    let game = state.game_service.update(id, req).await?;
+    request.validate().map_err(ApiError::from)?;
+    let game = state.game_service.update(id, request).await?;
     Ok(Json(game))
 }
 
@@ -266,11 +267,13 @@ pub async fn delete_game(
     path = "/api/games/{id}/publish",
     summary = "Publish a draft game (Admin only)",
     params(("id" = i32, Path, description = "Game id")),
+    request_body = PublishUnpublishGameRequest,
     responses(
         (status = 200, description = "Game published", body = Game),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -280,8 +283,10 @@ pub async fn delete_game(
 pub async fn publish(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
+    Json(request): Json<PublishUnpublishGameRequest>,
 ) -> Result<Json<Game>, ApiError> {
-    let game = state.game_service.publish(id).await?;
+    request.validate().map_err(ApiError::from)?;
+    let game = state.game_service.publish(id, request.version).await?;
     Ok(Json(game))
 }
 
@@ -290,11 +295,13 @@ pub async fn publish(
     path = "/api/games/{id}/unpublish",
     summary = "Unpublish a game back to draft (Admin only)",
     params(("id" = i32, Path, description = "Game id")),
+    request_body = PublishUnpublishGameRequest,
     responses(
         (status = 200, description = "Game unpublished", body = Game),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -304,7 +311,9 @@ pub async fn publish(
 pub async fn unpublish(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
+    Json(request): Json<PublishUnpublishGameRequest>,
 ) -> Result<Json<Game>, ApiError> {
-    let game = state.game_service.unpublish(id).await?;
+    request.validate().map_err(ApiError::from)?;
+    let game = state.game_service.unpublish(id, request.version).await?;
     Ok(Json(game))
 }

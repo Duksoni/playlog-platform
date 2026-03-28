@@ -1,6 +1,8 @@
 use crate::{
     app::AppState,
-    entity::{CreateUpdateGameEntityRequest, GameEntity, GameEntityError, SearchQuery},
+    entity::{
+        CreateGameEntityRequest, GameEntity, GameEntityError, SearchQuery, UpdateGameEntityRequest,
+    },
 };
 use api_error::ApiError;
 use axum::{
@@ -16,6 +18,7 @@ use jwt_common::{auth, require_admin, JwtConfig};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use validator::Validate;
+use crate::entity::GameEntitySimple;
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
@@ -41,7 +44,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     path = "/api/genres",
     summary = "Get all genres",
     responses(
-        (status = 200, description = "List of genres", body = Vec<GameEntity>),
+        (status = 200, description = "List of genres", body = Vec<GameEntitySimple>),
     ),
     tag = "genres",
     operation_id = "get_all_genres"
@@ -49,7 +52,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 #[debug_handler]
 pub async fn get_all(
     State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<GameEntity>>, ApiError> {
+) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
     let result = state.genre_repository.get_all().await?;
     Ok(Json(result))
 }
@@ -82,7 +85,7 @@ pub async fn get_by_id(
     summary = "Search genres by name",
     params(SearchQuery),
     responses(
-        (status = 200, description = "Matching genres", body = Vec<GameEntity>),
+        (status = 200, description = "Matching genres", body = Vec<GameEntitySimple>),
     ),
     tag = "genres",
     operation_id = "search_genres"
@@ -91,7 +94,7 @@ pub async fn get_by_id(
 pub async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
-) -> Result<Json<Vec<GameEntity>>, ApiError> {
+) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
     let result = state.genre_repository.find_by_name(&query.q).await?;
     Ok(Json(result))
 }
@@ -100,7 +103,7 @@ pub async fn search(
     post,
     path = "/api/genres",
     summary = "Create a genre (Admin only)",
-    request_body = CreateUpdateGameEntityRequest,
+    request_body = CreateGameEntityRequest,
     responses(
         (status = 201, description = "Genre created", body = GameEntity),
         (status = 400, description = "Validation error"),
@@ -114,10 +117,10 @@ pub async fn search(
 #[debug_handler]
 pub async fn create(
     State(state): State<Arc<AppState>>,
-    Json(req): Json<CreateUpdateGameEntityRequest>,
+    Json(request): Json<CreateGameEntityRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
-    req.validate().map_err(ApiError::from)?;
-    let result = state.genre_repository.create(&req.name).await?;
+    request.validate().map_err(ApiError::from)?;
+    let result = state.genre_repository.create(&request.name).await?;
     Ok((StatusCode::CREATED, Json(result)))
 }
 
@@ -126,13 +129,14 @@ pub async fn create(
     path = "/api/genres/{id}",
     summary = "Update a genre's name (Admin only)",
     params(("id" = i32, Path, description = "Genre id")),
-    request_body = CreateUpdateGameEntityRequest,
+    request_body = UpdateGameEntityRequest,
     responses(
         (status = 200, description = "Genre updated", body = GameEntity),
         (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Genre not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "genres",
     security(("bearer" = [])),
@@ -142,9 +146,9 @@ pub async fn create(
 pub async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-    Json(req): Json<CreateUpdateGameEntityRequest>,
+    Json(request): Json<UpdateGameEntityRequest>,
 ) -> Result<Json<GameEntity>, ApiError> {
-    req.validate().map_err(ApiError::from)?;
-    let result = state.genre_repository.update_name(id, &req.name).await?;
+    request.validate().map_err(ApiError::from)?;
+    let result = state.genre_repository.update_name(id, &request.name, request.version).await?;
     Ok(Json(result))
 }

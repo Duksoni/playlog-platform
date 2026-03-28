@@ -1,6 +1,4 @@
-use crate::{
-    developers::Developer, genres::Genre, platforms::Platform, publishers::Publisher, tags::Tag,
-};
+use super::{Developer, Genre, Platform, Publisher, Tag};
 use chrono::NaiveDate;
 use serde::Serialize;
 use sqlx::FromRow;
@@ -14,6 +12,7 @@ pub struct Game {
     pub released: Option<NaiveDate>,
     pub website: Option<String>,
     pub draft: bool,
+    pub version: i64,
 }
 
 #[derive(Serialize, FromRow, ToSchema, Default)]
