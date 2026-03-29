@@ -3501,6 +3501,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "service-common"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "axum",
+ "mongodb",
+ "reqwest 0.13.2",
+ "sqlx",
+ "tokio",
+ "tower-http",
+ "tracing-subscriber",
+ "utoipa",
+]
+
+[[package]]
 name = "sha1"
 version = "0.10.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
