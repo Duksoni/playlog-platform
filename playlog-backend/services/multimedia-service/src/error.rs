@@ -26,7 +26,7 @@ pub enum MediaError {
     MissingContentType(String),
 
     #[error("Database error: {0}")]
-    DatabaseError(String),
+    DatabaseError(#[from] mongodb::error::Error),
 
     #[error("Storage error: {0}")]
     StorageError(String),

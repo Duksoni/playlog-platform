@@ -3,9 +3,7 @@ use crate::shared::AccountStatus;
 use async_trait::async_trait;
 use chrono::{DateTime, Utc};
 use jwt_common::Role;
-use sqlx::{
-    query, query_as, query_scalar, Error as SqlxError, FromRow, PgPool, Postgres, Transaction,
-};
+use sqlx::{query, query_as, query_scalar, FromRow, PgPool, Postgres, Transaction};
 use uuid::Uuid;
 
 #[async_trait]
@@ -259,18 +257,4 @@ struct InsertedUser {
     id: Uuid,
     username: String,
     email: String,
-}
-
-impl From<SqlxError> for AuthError {
-    fn from(err: SqlxError) -> Self {
-        match err {
-            SqlxError::RowNotFound => AuthError::UserNotFound,
-            SqlxError::Database(db_err) => match db_err.constraint() {
-                Some("users_email_key") => AuthError::EmailAlreadyExists,
-                Some("users_username_key") => AuthError::UsernameTaken,
-                _ => AuthError::InternalError,
-            },
-            _ => AuthError::InternalError,
-        }
-    }
 }

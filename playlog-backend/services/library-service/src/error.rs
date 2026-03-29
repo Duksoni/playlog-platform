@@ -14,7 +14,7 @@ pub enum LibraryError {
     CatalogueServiceError(String),
 
     #[error("Database error: {0}")]
-    DatabaseError(String),
+    DatabaseError(#[from] sqlx::Error),
 
     #[error("Internal error")]
     InternalError,
@@ -32,14 +32,5 @@ impl From<LibraryError> for ApiError {
             | LibraryError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError::new(status, error.to_string())
-    }
-}
-
-impl From<sqlx::Error> for LibraryError {
-    fn from(err: sqlx::Error) -> Self {
-        match err {
-            sqlx::Error::RowNotFound => LibraryError::NotFound,
-            _ => LibraryError::DatabaseError(err.to_string()),
-        }
     }
 }

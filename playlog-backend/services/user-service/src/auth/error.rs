@@ -22,6 +22,9 @@ pub enum AuthError {
     #[error("Error with token: {0}")]
     TokenError(String),
 
+    #[error("Database error: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+    
     #[error("Internal error")]
     InternalError,
 }
@@ -37,7 +40,7 @@ impl From<AuthError> for ApiError {
             UserBlocked => StatusCode::FORBIDDEN,
             UserNotFound => StatusCode::NOT_FOUND,
             UsernameTaken | EmailAlreadyExists => StatusCode::CONFLICT,
-            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            DatabaseError(_) | InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError::new(status_code, error.to_string())
     }

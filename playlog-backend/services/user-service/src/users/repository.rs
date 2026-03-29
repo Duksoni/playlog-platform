@@ -2,10 +2,7 @@ use super::{Result, SimpleUser, UpdateProfileRequest, UserDetails, UserError};
 use crate::shared::AccountStatus;
 use async_trait::async_trait;
 use jwt_common::Role;
-use sqlx::{
-    postgres::PgArguments, query, query::Query, query_as, query_scalar, Error as SqlxError, PgPool,
-    Postgres,
-};
+use sqlx::{postgres::PgArguments, query, query::Query, query_as, query_scalar, PgPool, Postgres};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -217,14 +214,5 @@ impl PostgresUserRepository {
             self.clear_refresh_tokens(user_id).await?;
         }
         Ok(())
-    }
-}
-
-impl From<SqlxError> for UserError {
-    fn from(err: SqlxError) -> Self {
-        match err {
-            SqlxError::RowNotFound => UserError::UserNotFound,
-            _ => UserError::InternalError,
-        }
     }
 }

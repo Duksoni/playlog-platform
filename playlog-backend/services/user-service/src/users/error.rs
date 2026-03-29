@@ -43,6 +43,9 @@ pub enum UserError {
     #[error("Can't demote from ${0} to ${1}")]
     CantDemote(String, String),
 
+    #[error("Database error: {0}")]
+    DatabaseError(#[from] sqlx::Error),
+
     #[error("Internal error")]
     InternalError,
 }
@@ -54,7 +57,7 @@ use UserError::*;
 impl From<UserError> for ApiError {
     fn from(error: UserError) -> Self {
         let status_code = match error {
-            | CantPromote(_, _)
+            CantPromote(_, _)
             | CantDemote(_, _)
             | CanOnlyBlockActiveAccount(_)
             | CanOnlyDeactivateActiveAccount(_)
@@ -67,7 +70,7 @@ impl From<UserError> for ApiError {
             | UserIsBlocked => StatusCode::BAD_REQUEST,
             WrongPassword => StatusCode::UNAUTHORIZED,
             UserNotFound => StatusCode::NOT_FOUND,
-            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            DatabaseError(_) | InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError::new(status_code, error.to_string())
     }
