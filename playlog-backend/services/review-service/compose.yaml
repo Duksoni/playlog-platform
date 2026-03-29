@@ -1,0 +1,24 @@
+services:
+  axum-server:
+    image: playlog/review-service:latest
+    container_name: review-service-axum-server
+    build:
+      context: ../..
+      dockerfile: services/review-service/Dockerfile
+      target: final
+    environment:
+      JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH}
+      MONGODB_URI: ${MONGODB_URI}
+      MONGODB_DATABASE: ${MONGODB_DATABASE}
+      REVIEWS_COLLECTION: ${REVIEWS_COLLECTION}
+      COMMENTS_COLLECTION: ${COMMENTS_COLLECTION}
+      REPORTS_COLLECTION: ${REPORTS_COLLECTION}
+      CATALOGUE_SERVICE_URL: ${CATALOGUE_SERVICE_URL}
+    depends_on:
+      mongo_review:
+        condition: service_healthy
+    networks:
+      - playlog_network
+networks:
+  playlog_network:
+    external: true
