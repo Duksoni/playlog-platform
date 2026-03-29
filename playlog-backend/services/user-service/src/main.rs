@@ -2,29 +2,33 @@ mod app;
 mod auth;
 mod config;
 mod docs;
-mod setup;
 mod shared;
 mod task;
 mod users;
 
+use anyhow::Context;
 use dotenvy::dotenv;
+use service_common::setup::{init_sqlx_db, init_tracing, shutdown_signal};
 use std::{net::SocketAddr, sync::Arc};
 use tracing::info;
 
 use app::{build_app, AppState};
 use auth::{AuthService, PostgresAuthRepository};
-use setup::*;
 use users::{PostgresUserRepository, UserService};
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
-    init_tracing();
+    init_tracing(env!("CARGO_CRATE_NAME"));
 
     let env = config::load_from_environment()?;
 
-    let pool = init_db(&env.database_url).await?;
+    let pool = init_sqlx_db(&env.database_url).await?;
+    sqlx::migrate!()
+        .run(&pool)
+        .await
+        .context("Migrations failed")?;
 
     let auth_repo = Box::new(PostgresAuthRepository::new(pool.clone()));
     let auth_service = AuthService::new(auth_repo.clone());

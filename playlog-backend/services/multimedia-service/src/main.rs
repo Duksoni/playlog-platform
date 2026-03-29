@@ -10,29 +10,29 @@ mod service;
 mod setup;
 
 use dotenvy::dotenv;
+use service_common::setup::{init_mongodb, init_tracing, shutdown_signal};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::info;
 
-use crate::repository::MongoMediaRepository;
-use crate::service::MediaService;
 use app::{build_app, AppState};
-use setup::*;
+use repository::MongoMediaRepository;
+use service::MediaService;
+use setup::init_minio;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
-    init_tracing();
+    init_tracing(env!("CARGO_CRATE_NAME"));
 
     let env = config::load_from_environment()?;
 
-    let collection = init_db(
-        &env.mongodb_uri,
-        &env.mongodb_database,
-        &env.mongodb_collection,
-    )
-    .await?;
+    let mongodb_client = init_mongodb(&env.mongodb_uri).await?;
+    let collection = mongodb_client
+        .database(&env.mongodb_database)
+        .collection(&env.mongodb_collection);
+
     let minio = init_minio(
         &env.minio_server_url,
         &env.minio_access_key,

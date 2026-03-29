@@ -7,30 +7,34 @@ mod games;
 mod genres;
 mod platforms;
 mod publishers;
-mod setup;
 mod tags;
+
+use anyhow::Context;
+use dotenvy::dotenv;
+use service_common::setup::{init_sqlx_db, init_tracing, shutdown_signal};
+use std::{net::SocketAddr, sync::Arc};
+use tracing::info;
 
 use crate::{
     app::{build_app, AppState},
     entity::{GameEntityTable, PostgresGameEntityRepository},
     games::{GameService, PostgresGameRepository},
 };
-use dotenvy::dotenv;
-use std::net::SocketAddr;
-use std::sync::Arc;
-use tracing::info;
-
-use setup::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
-    init_tracing();
+    init_tracing(env!("CARGO_CRATE_NAME"));
 
     let env = config::load_from_environment()?;
 
-    let pool = init_db(&env.database_url).await?;
+    let pool = init_sqlx_db(&env.database_url).await?;
+
+    sqlx::migrate!()
+        .run(&pool)
+        .await
+        .context("Migrations failed")?;
 
     let game_repository = PostgresGameRepository::new(pool.clone());
     let dev_repository =

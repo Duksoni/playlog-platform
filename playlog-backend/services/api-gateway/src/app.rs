@@ -1,35 +1,26 @@
 use crate::{
+    config::Config,
     docs::{load_service_docs, OPENAPI_DOC_PATH},
     proxy::{
-        catalogue_service::{catalogue_health_router, entity_router, games_router},
-        library_service::{library_health_router, library_router},
-        multimedia_service::{multimedia_router, multimedia_health_router},
+        catalogue_service::{catalogue_health_router, entity_router, games_router}, library_service::{library_health_router, library_router},
+        multimedia_service::{multimedia_health_router, multimedia_router},
         user_service::{auth_router, users_health_router, users_router},
+        ProxyClient,
         ServiceAppState,
-        ProxyClient
     },
-    config::Config,
 };
-use axum::{
-    http::{
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
-        HeaderValue, Method, StatusCode,
-    },
-    response::{IntoResponse, Redirect},
-    routing::get,
-    Router,
-};
+use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
 use jwt_common::JwtConfig;
-use reqwest::Client;
-use std::{sync::Arc, time::Duration};
-use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use service_common::{
+    app::{cors_layer, root_redirect},
+    http_client::build_client,
+};
+use std::sync::Arc;
+use tower_http::trace::TraceLayer;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub async fn build_app(config: Config) -> Router {
-    let client = Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()
-        .expect("Failed to create HTTP client");
+    let client = build_client();
 
     let docs = load_service_docs(&config, &client).await;
     let proxy_client = ProxyClient::new(client.clone());
@@ -58,13 +49,6 @@ pub async fn build_app(config: Config) -> Router {
         proxy_client.clone(),
         jwt_config,
     ));
-
-    let cors = CorsLayer::new()
-        .allow_origin("http://localhost:4200".parse::<HeaderValue>().unwrap())
-        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap())
-        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
-        .allow_credentials(true)
-        .allow_methods([Method::GET, Method::POST, Method::PUT, Method::DELETE]);
 
     // Swagger UI with merged OpenAPI spec
     let swagger_ui = SwaggerUi::new("/docs").url(OPENAPI_DOC_PATH, docs);
@@ -138,7 +122,7 @@ pub async fn build_app(config: Config) -> Router {
         )
         .merge(swagger_ui)
         .layer(TraceLayer::new_for_http())
-        .layer(cors)
+        .layer(cors_layer(true))
 }
 
 #[utoipa::path(
@@ -152,8 +136,4 @@ pub async fn build_app(config: Config) -> Router {
 )]
 async fn health_check() -> impl IntoResponse {
     (StatusCode::OK, "API is healthy!")
-}
-
-async fn root_redirect() -> Redirect {
-    Redirect::permanent("/docs")
 }

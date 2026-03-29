@@ -1,15 +1,8 @@
 use crate::{config::AppConfig, docs::ApiDoc, handler::router, service::LibraryService};
-use axum::{
-    http::{
-        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE}, HeaderValue, Method,
-        StatusCode,
-    },
-    response::{IntoResponse, Redirect},
-    routing::get,
-    Router,
-};
-use std::{sync::Arc, time::Duration};
-use tower_http::{cors::CorsLayer, timeout::TimeoutLayer, trace::TraceLayer};
+use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
+use service_common::app::{cors_layer, root_redirect, timeout_layer};
+use std::sync::Arc;
+use tower_http::trace::TraceLayer;
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
@@ -20,21 +13,11 @@ pub struct AppState {
 }
 
 pub fn build_app(state: Arc<AppState>) -> Router {
-    let cors = CorsLayer::new()
-        .allow_origin("http://localhost:4200".parse::<HeaderValue>().unwrap())
-        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap())
-        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
-        .allow_credentials(true)
-        .allow_methods([Method::GET, Method::POST, Method::DELETE]);
-
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
         .route("/library-service-health", get(health_check))
         .nest("/library", router(Arc::clone(&state)))
-        .layer((
-            TraceLayer::new_for_http(),
-            TimeoutLayer::with_status_code(StatusCode::REQUEST_TIMEOUT, Duration::from_secs(10)),
-        ))
-        .layer(cors)
+        .layer((TraceLayer::new_for_http(), timeout_layer()))
+        .layer(cors_layer(false))
         .with_state(Arc::clone(&state))
         .split_for_parts();
 
@@ -57,8 +40,4 @@ pub fn build_app(state: Arc<AppState>) -> Router {
 )]
 pub async fn health_check() -> Result<impl IntoResponse, StatusCode> {
     Ok((StatusCode::OK, "API is healthy!".into_response()))
-}
-
-async fn root_redirect() -> Redirect {
-    Redirect::permanent("/docs")
 }

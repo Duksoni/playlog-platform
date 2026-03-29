@@ -3,21 +3,20 @@ mod config;
 mod docs;
 mod error;
 mod proxy;
-mod setup;
 
 use dotenvy::dotenv;
+use service_common::setup::{init_tracing, shutdown_signal};
 use std::net::SocketAddr;
 use tracing::info;
 
 use app::build_app;
 use config::Config;
-use setup::*;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
-    init_tracing();
+    init_tracing(env!("CARGO_CRATE_NAME"));
 
     let config = Config::from_env()?;
 

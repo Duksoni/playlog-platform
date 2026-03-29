@@ -12,6 +12,7 @@ pub trait MediaRepository: Send + Sync {
     async fn delete_by_game_id(&self, game_id: i32) -> Result<()>;
 }
 
+#[derive(Debug, Clone)]
 pub struct MongoMediaRepository {
     collection: Collection<GameMedia>,
 }

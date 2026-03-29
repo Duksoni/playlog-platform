@@ -4,13 +4,13 @@ use sqlx::{postgres::PgPoolOptions, PgPool};
 use tokio::signal;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
-pub fn init_tracing() {
+pub fn init_tracing(crate_name: &str) {
     tracing_subscriber::registry()
         .with(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| {
                 format!(
                     "{}=debug,tower_http=debug,axum=trace",
-                    env!("CARGO_CRATE_NAME")
+                    crate_name
                 )
                 .into()
             }),

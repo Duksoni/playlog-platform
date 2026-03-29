@@ -7,39 +7,44 @@ mod handler;
 mod model;
 mod repository;
 mod service;
-mod setup;
+
+use anyhow::Context;
+use dotenvy::dotenv;
+use service_common::{
+    http_client::build_client,
+    setup::{init_sqlx_db, init_tracing, shutdown_signal},
+};
+use std::{net::SocketAddr, sync::Arc};
+use tracing::info;
 
 use crate::{
     app::{build_app, AppState},
     config::load_from_environment,
     repository::PostgresLibraryRepository,
     service::LibraryService,
-    setup::{init_db, init_tracing, shutdown_signal},
 };
-use dotenvy::dotenv;
-use reqwest::Client;
-use std::{net::SocketAddr, sync::Arc, time::Duration};
-use tracing::info;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
 
-    init_tracing();
+    init_tracing(env!("CARGO_CRATE_NAME"));
 
     let env = load_from_environment()?;
 
-    let pool = init_db(&env.database_url).await?;
+    let pool = init_sqlx_db(&env.database_url).await?;
 
-    let client = Client::builder()
-        .timeout(Duration::from_secs(30))
-        .build()
-        .expect("Failed to create HTTP client");
+    sqlx::migrate!()
+        .run(&pool)
+        .await
+        .context("Migrations failed")?;
+
+    let http_client = build_client();
 
     let repository = Box::new(PostgresLibraryRepository::new(pool));
     let library_service = LibraryService::new(
         repository,
-        client,
+        http_client,
         env.app_config.catalogue_service_url.clone(),
     );
 
