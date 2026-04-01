@@ -1,6 +1,7 @@
 pub mod dto;
 pub mod error;
 pub mod model;
+pub mod repository;
 
 pub use dto::{
     CreateUpdateReviewRequest, GameReviewResponse, ReviewDetailedResponse, ReviewQuery,
@@ -8,3 +9,4 @@ pub use dto::{
 };
 pub use error::{Result, ReviewError};
 pub use model::{Rating, Review};
+pub use repository::{MongoReviewRepository, ReviewRepository};
