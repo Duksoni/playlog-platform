@@ -1,6 +1,7 @@
 mod app;
 mod comment;
 mod config;
+mod report;
 mod review;
 mod shared;
 
