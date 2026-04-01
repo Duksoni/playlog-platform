@@ -6,6 +6,8 @@ NETWORK := playlog_network
 COMPOSE_USER_SERVICE := cd ./playlog-backend/services/user-service ; docker compose --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/postgres/user/compose.yaml
 COMPOSE_MULTIMEDIA_SERVICE := cd ./playlog-backend/services/multimedia-service; docker compose --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/mongodb/multimedia/compose.yaml -f ../../docker/minio/compose.yaml
 COMPOSE_CATALOGUE_SERVICE := cd ./playlog-backend/services/catalogue-service; docker compose --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/postgres/catalogue/compose.yaml
+COMPOSE_LIBRARY_SERVICE := cd ./playlog-backend/services/library-service; docker compose --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/postgres/library/compose.yaml
+COMPOSE_REVIEW_SERVICE := cd ./playlog-backend/services/review-service; docker compose --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/mongodb/review/compose.yaml
 COMPOSE_API_GATEWAY := cd ./playlog-backend/services/api-gateway ; docker compose --env-file $(ENV_FILE)
 COMPOSE_FRONTEND := cd ./playlog-frontend ; docker compose --env-file $(ENV_FILE)
 
@@ -23,6 +25,8 @@ start:
 	@$(COMPOSE_CATALOGUE_SERVICE) up -d
 	@$(COMPOSE_USER_SERVICE) up -d
 	@$(COMPOSE_MULTIMEDIA_SERVICE) up -d
+	@$(COMPOSE_LIBRARY_SERVICE) up -d
+	@$(COMPOSE_REVIEW_SERVICE) up -d
 	@$(COMPOSE_API_GATEWAY) up -d
 	@$(COMPOSE_FRONTEND) up -d
 	@echo "  Access the app at:		http://localhost:8080";
@@ -33,6 +37,8 @@ stop:
 	@$(COMPOSE_USER_SERVICE) down
 	@$(COMPOSE_MULTIMEDIA_SERVICE) down
 	@$(COMPOSE_CATALOGUE_SERVICE) down
+	@$(COMPOSE_LIBRARY_SERVICE) down
+	@$(COMPOSE_REVIEW_SERVICE) down
 	@$(COMPOSE_FRONTEND) down
 
 build:
@@ -40,6 +46,8 @@ build:
 	@$(COMPOSE_USER_SERVICE) build
 	@$(COMPOSE_MULTIMEDIA_SERVICE) build
 	@$(COMPOSE_CATALOGUE_SERVICE) build
+	@$(COMPOSE_LIBRARY_SERVICE) build
+	@$(COMPOSE_REVIEW_SERVICE) build
 	@$(COMPOSE_API_GATEWAY) build
 	@$(COMPOSE_FRONTEND) build
 
@@ -48,6 +56,8 @@ rebuild:
 	@$(COMPOSE_USER_SERVICE) build --no-cache
 	@$(COMPOSE_MULTIMEDIA_SERVICE) build --no-cache
 	@$(COMPOSE_CATALOGUE_SERVICE) build --no-cache
+	@$(COMPOSE_LIBRARY_SERVICE) build --no-cache
+	@$(COMPOSE_REVIEW_SERVICE) build --no-cache
 	@$(COMPOSE_API_GATEWAY) build --no-cache
 	@$(COMPOSE_FRONTEND) build --no-cache
 
@@ -56,6 +66,8 @@ logs:
 	@$(COMPOSE_USER_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
 	@$(COMPOSE_MULTIMEDIA_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
 	@$(COMPOSE_CATALOGUE_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_LIBRARY_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_REVIEW_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
 	@$(COMPOSE_FRONTEND) logs -f $(filter-out $@,$(MAKECMDGOALS))
 
 init-network:
