@@ -1,4 +1,5 @@
 mod app;
+mod comment;
 mod config;
 mod review;
 mod shared;
