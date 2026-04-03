@@ -4,6 +4,7 @@ use crate::{
     proxy::{
         catalogue_service::{catalogue_health_router, entity_router, games_router}, library_service::{library_health_router, library_router},
         multimedia_service::{multimedia_health_router, multimedia_router},
+        review_service::{comments_router, reports_router, reviews_health_router, reviews_router},
         user_service::{auth_router, users_health_router, users_router},
         ProxyClient,
         ServiceAppState,
@@ -21,36 +22,36 @@ use utoipa_swagger_ui::SwaggerUi;
 
 pub async fn build_app(config: Config) -> Router {
     let client = build_client();
-
     let docs = load_service_docs(&config, &client).await;
     let proxy_client = ProxyClient::new(client.clone());
     let jwt_config = JwtConfig::new(config.jwt_public_key.clone());
 
-    let user_app_state = Arc::new(ServiceAppState::new(
+    let user_app_state = service_state(
         config.user_service_url.clone(),
         proxy_client.clone(),
         jwt_config.clone(),
-    ));
-
-    let multimedia_app_state = Arc::new(ServiceAppState::new(
+    );
+    let multimedia_app_state = service_state(
         config.multimedia_service_url.clone(),
         proxy_client.clone(),
         jwt_config.clone(),
-    ));
-
-    let library_app_state = Arc::new(ServiceAppState::new(
+    );
+    let library_app_state = service_state(
         config.library_service_url.clone(),
         proxy_client.clone(),
         jwt_config.clone(),
-    ));
-
-    let catalogue_app_state = Arc::new(ServiceAppState::new(
+    );
+    let catalogue_app_state = service_state(
         config.catalogue_service_url.clone(),
         proxy_client.clone(),
+        jwt_config.clone(),
+    );
+    let review_app_state = service_state(
+        config.reviews_service_url.clone(),
+        proxy_client.clone(),
         jwt_config,
-    ));
+    );
 
-    // Swagger UI with merged OpenAPI spec
     let swagger_ui = SwaggerUi::new("/docs").url(OPENAPI_DOC_PATH, docs);
 
     Router::new()
@@ -71,6 +72,10 @@ pub async fn build_app(config: Config) -> Router {
         .nest(
             "/api",
             library_health_router().with_state(Arc::clone(&library_app_state)),
+        )
+        .nest(
+            "/api",
+            reviews_health_router().with_state(Arc::clone(&review_app_state)),
         )
         .nest(
             "/api/auth",
@@ -94,6 +99,19 @@ pub async fn build_app(config: Config) -> Router {
             "/api/library",
             library_router(Arc::clone(&library_app_state))
                 .with_state(Arc::clone(&library_app_state)),
+        )
+        .nest(
+            "/api/reviews",
+            reviews_router(Arc::clone(&review_app_state)).with_state(Arc::clone(&review_app_state)),
+        )
+        .nest(
+            "/api/comments",
+            comments_router(Arc::clone(&review_app_state))
+                .with_state(Arc::clone(&review_app_state)),
+        )
+        .nest(
+            "/api/reports",
+            reports_router(Arc::clone(&review_app_state)).with_state(Arc::clone(&review_app_state)),
         )
         .nest(
             "/api/developers",
@@ -123,6 +141,14 @@ pub async fn build_app(config: Config) -> Router {
         .merge(swagger_ui)
         .layer(TraceLayer::new_for_http())
         .layer(cors_layer(true))
+}
+
+fn service_state(
+    service_url: String,
+    proxy_client: ProxyClient,
+    jwt_config: JwtConfig,
+) -> Arc<ServiceAppState> {
+    Arc::new(ServiceAppState::new(service_url, proxy_client, jwt_config))
 }
 
 #[utoipa::path(
