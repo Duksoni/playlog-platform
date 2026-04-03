@@ -43,7 +43,7 @@ mod tests {
     use super::*;
     use crate::{
         model::{AccessTokenClaims, RefreshTokenClaims},
-        Role::User
+        Role::User,
     };
     use axum::http::{HeaderMap, HeaderValue};
     use chrono::{Duration, Utc};
@@ -107,6 +107,8 @@ mod tests {
             (now + Duration::seconds(60)).timestamp() as usize,
             now.timestamp() as usize,
             User,
+            "testuser".to_string(),
+            "test@example.com".to_string(),
         );
 
         let token = encode(
@@ -167,6 +169,8 @@ mod tests {
             iat: now.timestamp() as usize,
             iss: "https://evil.playlog".to_string(),
             role: Some(User),
+            username: Some("testuser".to_string()),
+            email: Some("test@example.com".to_string()),
         };
 
         let token = encode(

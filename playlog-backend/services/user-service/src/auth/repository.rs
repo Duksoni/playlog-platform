@@ -9,6 +9,7 @@ use uuid::Uuid;
 #[async_trait]
 pub trait AuthRepository: Send + Sync {
     async fn find_by_email_or_username(&self, identifier: &str) -> Result<User>;
+    async fn find_by_id(&self, id: Uuid) -> Result<User>;
     async fn email_exists(&self, email: &str) -> Result<bool>;
     async fn username_exists(&self, username: &str) -> Result<bool>;
     async fn create_user(
@@ -48,6 +49,21 @@ impl AuthRepository for PostgresAuthRepository {
         )
             .fetch_one(&self.pool)
             .await?;
+        Ok(user)
+    }
+
+    async fn find_by_id(&self, id: Uuid) -> Result<User> {
+        let user = query_as!(
+            User,
+            r#"
+                SELECT id, username, email, password, account_status AS "account_status!: AccountStatus"
+                FROM users
+                WHERE id = $1
+            "#,
+            id
+        )
+        .fetch_one(&self.pool)
+        .await?;
         Ok(user)
     }
 

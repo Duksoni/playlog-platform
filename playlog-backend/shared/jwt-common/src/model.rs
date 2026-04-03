@@ -47,16 +47,27 @@ pub struct Claims {
     pub iat: usize,  // Issued at (as UTC timestamp)
     pub iss: String, // Issuer
     pub role: Option<Role>,
+    pub username: Option<String>,
+    pub email: Option<String>,
 }
 
 impl Claims {
-    pub fn for_access_token(sub: String, exp: usize, iat: usize, role: Role) -> Self {
+    pub fn for_access_token(
+        sub: String,
+        exp: usize,
+        iat: usize,
+        role: Role,
+        username: String,
+        email: String,
+    ) -> Self {
         Claims {
             sub,
             exp,
             iat,
             iss: String::from(ISSUER),
             role: Some(role),
+            username: Some(username),
+            email: Some(email),
         }
     }
 
@@ -67,6 +78,8 @@ impl Claims {
             iat,
             iss: String::from(ISSUER),
             role: None,
+            username: None,
+            email: None,
         }
     }
 
@@ -80,6 +93,8 @@ impl Claims {
 pub struct AccessTokenClaims {
     pub user_id: Uuid,
     pub role: Role,
+    pub username: String,
+    pub email: String,
 }
 
 impl TryFrom<Claims> for AccessTokenClaims {
@@ -87,10 +102,21 @@ impl TryFrom<Claims> for AccessTokenClaims {
 
     fn try_from(value: Claims) -> Result<Self> {
         let user_id = value.user_id()?;
-        let role = value
-            .role
-            .ok_or(JwtError::InvalidToken(String::from("Missing role in access token")))?;
-        Ok(Self { user_id, role })
+        let role = value.role.ok_or(JwtError::InvalidToken(String::from(
+            "Missing role in access token",
+        )))?;
+        let username = value.username.ok_or(JwtError::InvalidToken(String::from(
+            "Missing username in access token",
+        )))?;
+        let email = value.email.ok_or(JwtError::InvalidToken(String::from(
+            "Missing email in access token",
+        )))?;
+        Ok(Self {
+            user_id,
+            role,
+            username,
+            email,
+        })
     }
 }
 
@@ -117,6 +143,8 @@ impl TryFrom<Claims> for RefreshTokenClaims {
 pub struct AuthClaims {
     pub user_id: Uuid,
     pub role: Role,
+    pub username: String,
+    pub email: String,
 }
 
 impl From<AccessTokenClaims> for AuthClaims {
@@ -124,6 +152,8 @@ impl From<AccessTokenClaims> for AuthClaims {
         Self {
             user_id: access.user_id,
             role: access.role,
+            username: access.username,
+            email: access.email,
         }
     }
 }

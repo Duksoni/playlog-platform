@@ -14,6 +14,8 @@ pub fn create_tokens(
     jwt_private_key: &[u8],
     user_id: Uuid,
     role: Role,
+    username: String,
+    email: String,
 ) -> Result<(Tokens, DateTime<Utc>)> {
     let now = Utc::now();
 
@@ -23,6 +25,8 @@ pub fn create_tokens(
         expiration_date.timestamp() as usize,
         now.timestamp() as usize,
         role,
+        username,
+        email,
     );
     let access_token = create_token(claims, jwt_private_key)?;
 

@@ -1,11 +1,10 @@
 use super::{
     create_tokens, AuthError, AuthRepository, LoginRequest, RegisterRequest, RegisterResponse, Result,
-    Tokens,
+    Tokens, User,
 };
 use crate::config::{AdminBootstrapConfig, AppConfig};
 use crate::shared::{hash_password, verify_password, AccountStatus};
 use jwt_common::{decode_token, RefreshTokenClaims};
-use uuid::Uuid;
 
 pub struct AuthService {
     repository: Box<dyn AuthRepository>,
@@ -32,7 +31,7 @@ impl AuthService {
         verify_password(&request.password, &user.password)
             .map_err(|_| AuthError::InvalidCredentials)?;
 
-        let tokens = self.generate_tokens(config, user.id).await?;
+        let tokens = self.generate_tokens(config, user).await?;
         Ok(tokens)
     }
 
@@ -67,7 +66,10 @@ impl AuthService {
             .map_err(|err| AuthError::TokenError(err.to_string()))?;
 
         self.revoke_token(token).await?;
-        let tokens = self.generate_tokens(config, claims.user_id).await?;
+
+        let user = self.repository.find_by_id(claims.user_id).await?;
+
+        let tokens = self.generate_tokens(config, user).await?;
         Ok(tokens)
     }
 
@@ -92,18 +94,20 @@ impl AuthService {
         self.repository.email_exists(email).await
     }
 
-    async fn generate_tokens(&self, config: &AppConfig, user_id: Uuid) -> Result<Tokens> {
-        let role = self.repository.get_user_role(user_id).await?;
+    async fn generate_tokens(&self, config: &AppConfig, user: User) -> Result<Tokens> {
+        let role = self.repository.get_user_role(user.id).await?;
         let (tokens, refresh_expiration) = create_tokens(
             config.access_token_validity,
             config.refresh_token_validity,
             &config.jwt_private_key,
-            user_id,
+            user.id,
             role,
+            user.username,
+            user.email,
         )?;
 
         self.repository
-            .save_refresh_token(user_id, &tokens.1, &refresh_expiration)
+            .save_refresh_token(user.id, &tokens.1, &refresh_expiration)
             .await?;
 
         Ok(tokens)
