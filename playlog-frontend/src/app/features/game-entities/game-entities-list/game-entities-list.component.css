@@ -1,0 +1,68 @@
+.list-container {
+	padding: 24px;
+	max-width: 1000px;
+	margin: 0 auto;
+}
+
+.header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 24px;
+}
+
+.header h2 {
+	margin: 0;
+}
+
+.filters {
+	margin-bottom: 24px;
+}
+
+.search-field {
+	width: 100%;
+}
+
+.table-container {
+	position: relative;
+	min-height: 200px;
+	border-radius: 8px;
+	overflow: hidden;
+	background-color: var(--mat-sys-surface-container);
+}
+
+.loading-shade {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	background: rgba(0, 0, 0, 0.15);
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+table {
+	width: 100%;
+}
+
+.mat-column-id {
+	width: 80px;
+}
+
+.mat-column-actions {
+	width: 100px;
+	text-align: end;
+}
+
+.mat-row:hover {
+	background-color: var(--mat-sys-surface-container-high);
+}
+
+.no-data {
+	padding: 32px;
+	text-align: center;
+	color: var(--mat-sys-on-surface-variant);
+}

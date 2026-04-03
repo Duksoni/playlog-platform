@@ -1,0 +1,11 @@
+.entity-dialog {
+     min-width: 380px; 
+     padding: 20px;
+}
+
+.entity-form { 
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin: 20px 0;
+}

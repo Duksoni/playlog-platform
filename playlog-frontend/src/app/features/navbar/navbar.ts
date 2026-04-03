@@ -26,7 +26,8 @@ import {RegisterDialog} from '../auth/register-dialog/register.dialog';
 		MatDivider,
 		MatMenuTrigger,
 		MatMenu,
-		MatMenuItem
+		MatMenuItem,
+		MatButton
 	],
 	templateUrl: './navbar.html',
 	styleUrl: './navbar.css',
@@ -41,7 +42,11 @@ export class Navbar {
 
 	private topLevelDestinations = [
 		'home',
-
+		'genres',
+		'tags',
+		'platforms',
+		'publishers',
+		'developers',
 	];
 
 	protected get topLevelDestination() {

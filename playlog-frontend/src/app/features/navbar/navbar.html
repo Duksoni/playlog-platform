@@ -7,6 +7,26 @@
 
 	<span class="navbar-brand-text px-3" routerLink="/" i18n="@@nav.brand">Playlog</span>
 
+	@if (sessionService.user().role === Role.ADMIN) {
+		<button
+			mat-button
+			[matMenuTriggerFor]="gameEntitiesAdminMenu"
+			i18n="@@nav.gameEntities"
+			matTooltip="Manage Game Entities"
+			i18n-matTooltip="@@nav.manageGameEntities"
+			matTooltipShowDelay="300"
+		>
+			Game Entities
+			<mat-icon fontSet="material-symbols-rounded">expand_more</mat-icon>
+		</button>
+		<mat-menu #gameEntitiesAdminMenu="matMenu">
+			<button mat-menu-item routerLink="/genres" i18n="@@genres">Genres</button>
+			<button mat-menu-item routerLink="/tags" i18n="@@tags">Tags</button>
+			<button mat-menu-item routerLink="/platforms" i18n="@@tags">Platforms</button>
+			<button mat-menu-item routerLink="/publishers" i18n="@@publishers">Publishers</button>
+			<button mat-menu-item routerLink="/developers" i18n="@@developers">Developers</button>
+		</mat-menu>
+	}
 
 	<span class="toolbar-spacer"></span>
 

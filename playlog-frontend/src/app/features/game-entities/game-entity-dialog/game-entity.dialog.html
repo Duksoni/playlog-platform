@@ -1,0 +1,43 @@
+<div class="entity-dialog">
+	<h2 mat-dialog-title>
+		@if (isEditing) {
+			<span i18n="@@gameEntityDialog.titleEdit">Edit {{ data.entityLabel }}</span>
+		} @else {
+			<span i18n="@@gameEntityDialog.titleCreate">Create {{ data.entityLabel }}</span>
+		}
+	</h2>
+	<mat-dialog-content>
+		<form [formGroup]="form" class="entity-form">
+			<mat-form-field appearance="outline" class="w-100">
+				<mat-label i18n="@@gameEntityDialog.nameLabel">Name</mat-label>
+				<input matInput formControlName="name" maxlength="100"
+					   placeholder="Enter name" i18n-placeholder="@@gameEntityDialog.namePlaceholder"/>
+				@if (form.get('name')?.hasError('required')) {
+					<mat-error i18n="@@gameEntityDialog.nameRequired">Name is required</mat-error>
+				}
+				@if (form.get('name')?.hasError('minlength')) {
+					<mat-error i18n="@@gameEntityDialog.nameMinLength">Name must be at least 2 characters</mat-error>
+				}
+			</mat-form-field>
+			@if (error()) {
+				<div class="error-message">
+					<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+					<span>{{ error()?.errors }}</span>
+				</div>
+			}
+		</form>
+	</mat-dialog-content>
+	<mat-dialog-actions>
+		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@gameEntityDialog.cancel">Cancel</button>
+		<button mat-flat-button (click)="onSubmit()" [disabled]="form.invalid || submitting()">
+			@if (submitting()) {
+				<mat-spinner diameter="20" class="me-2"></mat-spinner>
+				<span i18n="@@gameEntityDialog.saving">Saving...</span>
+			} @else if (isEditing) {
+				<span i18n="@@gameEntityDialog.save">Save</span>
+			} @else {
+				<span i18n="@@gameEntityDialog.create">Create</span>
+			}
+		</button>
+	</mat-dialog-actions>
+</div>
