@@ -53,7 +53,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     operation_id = "report_content"
 )]
 #[debug_handler]
-pub async fn report_content(
+async fn report_content(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<CreateReportRequest>,
@@ -88,12 +88,11 @@ pub async fn report_content(
     operation_id = "get_pending_reports"
 )]
 #[debug_handler]
-pub async fn get_pending_reports(
+async fn get_pending_reports(
     State(state): State<Arc<AppState>>,
     Query(query): Query<ReportQuery>,
 ) -> Result<Json<Vec<ReportResponse>>, ApiError> {
-    let page = query.page.unwrap_or(1);
-    let reports = state.report_service.get_pending_reports(page).await?;
+    let reports = state.report_service.get_pending_reports(query.page).await?;
     Ok(Json(reports))
 }
 
@@ -110,7 +109,7 @@ pub async fn get_pending_reports(
     ),
 )]
 #[debug_handler]
-pub async fn get_report(
+async fn get_report(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<ReportResponse>, ApiError> {
@@ -138,7 +137,7 @@ pub async fn get_report(
     operation_id = "resolve_report"
 )]
 #[debug_handler]
-pub async fn resolve_report(
+async fn resolve_report(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
     Json(request): Json<UpdateReportStatusRequest>,

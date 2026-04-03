@@ -16,7 +16,8 @@ pub struct CreateUpdateReviewRequest {
 
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct ReviewQuery {
-    pub page: Option<u64>,
+    #[param(required = false, example = "1")]
+    pub page: u64,
     pub rating: Option<Rating>,
 }
 

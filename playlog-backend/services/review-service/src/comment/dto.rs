@@ -29,7 +29,8 @@ pub struct CommentQuery {
     #[validate(length(min = 1))]
     #[serde(rename = "targetId")]
     pub target_id: String,
-    pub page: Option<u64>,
+    #[param(required = false, example = "1")]
+    pub page: u64,
 }
 
 #[derive(Debug, Serialize, ToSchema)]

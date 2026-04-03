@@ -49,16 +49,15 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     operation_id = "get_comments"
 )]
 #[debug_handler]
-pub async fn get_comments(
+async fn get_comments(
     State(state): State<Arc<AppState>>,
     Query(query): Query<CommentQuery>,
 ) -> Result<Json<Vec<SimpleCommentResponse>>, ApiError> {
     query.validate().map_err(ApiError::from)?;
     let target_type_str = query.target_type.as_string();
-    let page = query.page.unwrap_or(1);
     let comments = state
         .comment_service
-        .get_for_target(&target_type_str, &query.target_id, page)
+        .get_for_target(&target_type_str, &query.target_id, query.page)
         .await?;
     Ok(Json(comments))
 }
@@ -77,7 +76,7 @@ pub async fn get_comments(
     operation_id = "get_comment"
 )]
 #[debug_handler]
-pub async fn get_comment(
+async fn get_comment(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<DetailedCommentResponse>, ApiError> {
@@ -103,7 +102,7 @@ pub async fn get_comment(
     operation_id = "get_my_comment"
 )]
 #[debug_handler]
-pub async fn get_own_comment(
+async fn get_own_comment(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,
@@ -133,7 +132,7 @@ pub async fn get_own_comment(
     operation_id = "add_comment"
 )]
 #[debug_handler]
-pub async fn add_comment(
+async fn add_comment(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<CreateCommentRequest>,
@@ -165,7 +164,7 @@ pub async fn add_comment(
     operation_id = "update_comment"
 )]
 #[debug_handler]
-pub async fn update_comment(
+async fn update_comment(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,
@@ -198,7 +197,7 @@ pub async fn update_comment(
     operation_id = "delete_comment"
 )]
 #[debug_handler]
-pub async fn delete_comment(
+async fn delete_comment(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,

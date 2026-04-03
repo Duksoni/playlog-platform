@@ -54,7 +54,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     operation_id = "get_review"
 )]
 #[debug_handler]
-pub async fn get_review(
+async fn get_review(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
 ) -> Result<Json<ReviewDetailedResponse>, ApiError> {
@@ -79,15 +79,14 @@ pub async fn get_review(
     operation_id = "get_reviews_for_game"
 )]
 #[debug_handler]
-pub async fn get_reviews_for_game(
+async fn get_reviews_for_game(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
     Query(query): Query<ReviewQuery>,
 ) -> Result<Json<Vec<GameReviewResponse>>, ApiError> {
-    let page = query.page.unwrap_or(0);
     let reviews = state
         .review_service
-        .get_for_game(game_id, query.rating, page)
+        .get_for_game(game_id, query.rating, query.page)
         .await?;
     Ok(Json(reviews))
 }
@@ -108,7 +107,7 @@ pub async fn get_reviews_for_game(
     operation_id = "get_review_for_user_and_game"
 )]
 #[debug_handler]
-pub async fn get_review_for_user_and_game(
+async fn get_review_for_user_and_game(
     State(state): State<Arc<AppState>>,
     Path((user_id, game_id)): Path<(Uuid, i32)>,
 ) -> Result<Json<ReviewSimpleResponse>, ApiError> {
@@ -135,7 +134,7 @@ pub async fn get_review_for_user_and_game(
     operation_id = "upsert_review"
 )]
 #[debug_handler]
-pub async fn upsert_review(
+async fn upsert_review(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<CreateUpdateReviewRequest>,
@@ -165,7 +164,7 @@ pub async fn upsert_review(
     operation_id = "delete_review"
 )]
 #[debug_handler]
-pub async fn delete_review(
+async fn delete_review(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,

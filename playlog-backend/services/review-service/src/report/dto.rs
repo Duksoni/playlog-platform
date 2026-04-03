@@ -24,7 +24,8 @@ pub struct UpdateReportStatusRequest {
 
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct ReportQuery {
-    pub page: Option<u64>,
+    #[param(required = false, example = "1")]
+    pub page: u64,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
