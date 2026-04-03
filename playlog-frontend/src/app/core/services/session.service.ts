@@ -1,6 +1,6 @@
 import {computed, effect, inject, Injectable, signal} from '@angular/core';
 import {JwtHelperService} from '@auth0/angular-jwt';
-import {Role, TokenResponse, UserClaims} from '../../features/auth/auth.dto';
+import {Role, TokenPayload, TokenResponse, UserClaims} from '../../features/auth/auth.dto';
 import {HttpBackend, HttpClient} from '@angular/common/http';
 import {SnackbarService} from '../../shared/services/snackbar.service';
 import {Router} from '@angular/router';
@@ -11,22 +11,27 @@ import {environment} from '../../../environments/environment';
 	providedIn: 'root',
 })
 export class SessionService {
+
+	private readonly ACCESS_TOKEN_KEY = 'playlogAccessToken';
+
 	private helper = new JwtHelperService();
 	private snackbarService = inject(SnackbarService);
 	private router = inject(Router);
 	private rawHttp = new HttpClient(inject(HttpBackend));
 
-	readonly accessToken = signal<string | null>(localStorage.getItem('playlogAccessToken'));
+	readonly accessToken = signal<string | null>(localStorage.getItem(this.ACCESS_TOKEN_KEY));
 	readonly theme = signal<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light');
 
 	readonly user = computed<UserClaims>(() => {
 		const token = this.accessToken();
 		if (token) {
 			try {
-				const payload = this.helper.decodeToken(token);
+				const payload = this.helper.decodeToken(token) as TokenPayload;
 				console.log("Token decoded, user claims updated.");
 				return {
 					userId: payload.sub,
+					username: payload.username,
+					email: payload.email,
 					role: payload.role as Role,
 					exp: new Date(payload.exp * 1000),
 				};
@@ -44,7 +49,7 @@ export class SessionService {
 		// Persist tokens automatically
 		effect(() => {
 			const access = this.accessToken();
-			if (access) localStorage.setItem('playlogAccessToken', access); else localStorage.removeItem('accessToken');
+			if (access) localStorage.setItem(this.ACCESS_TOKEN_KEY, access); else localStorage.removeItem(this.ACCESS_TOKEN_KEY);
 		});
 
 		// Persist and apply the theme
@@ -110,6 +115,8 @@ export class SessionService {
 	private getDefaultUser(): UserClaims {
 		return {
 			userId: "",
+			username: "",
+			email: "",
 			role: Role.GUEST,
 		}
 	}

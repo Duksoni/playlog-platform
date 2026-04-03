@@ -1,0 +1,104 @@
+<div class="login-dialog">
+	<h2 mat-dialog-title i18n="@@login.title">Sign In</h2>
+
+	<mat-dialog-content>
+		<div class="container">
+			<p>
+				<span i18n="@@login.noAccount">Don't have an account? </span>
+				<u class="hover-pointer" (click)="openLoginDialog()" i18n="@@login.signUpLink">Sign up now</u>
+			</p>
+			<form [formGroup]="loginForm" class="login-form">
+				<div class="row">
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@login.identifierLabel">Username or email</mat-label>
+						<input
+							matInput
+							formControlName="identifier"
+							maxlength="50"
+							placeholder="Enter your username or email"
+							i18n-placeholder="@@login.identifierPlaceholder"
+							autocomplete="username">
+						@if (loginForm.get('identifier')?.hasError('required')) {
+							<mat-error i18n="@@login.identifierRequired">
+								Username or email is required
+							</mat-error>
+						}
+						@if (loginForm.get('identifier')?.hasError('minlength')) {
+							<mat-error i18n="@@login.identifierMinLength">
+								Username must have at least 3 characters
+							</mat-error>
+						}
+					</mat-form-field>
+				</div>
+
+				<div class="row">
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@login.passwordLabel">Password</mat-label>
+						<input
+							matInput
+							[type]="hidePassword ? 'password' : 'text'"
+							formControlName="password"
+							placeholder="Enter your password"
+							i18n-placeholder="@@login.passwordPlaceholder"
+							(keydown.enter)="onLogin()"
+						>
+						<button
+							mat-icon-button
+							matSuffix
+							type="button"
+							(click)="togglePasswordVisibility()"
+							[matTooltip]="hidePassword ? 'Show password' : 'Hide password'"
+							matTooltipShowDelay="300"
+						>
+							<mat-icon
+								fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+						</button>
+						@if (loginForm.get('password')?.hasError('required')) {
+							<mat-error i18n="@@login.passwordRequired">
+								Password is required
+							</mat-error>
+						}
+						@if (loginForm.get('password')?.hasError('minlength')) {
+							<mat-error i18n="@@login.passwordMinLength">
+								Password must be at least 8 characters long
+							</mat-error>
+						}
+					</mat-form-field>
+				</div>
+
+				@if (loginService.error()) {
+					<div class="error-message">
+						<mat-icon fontSet="material-symbols-rounded" color="warn" class="me-2">error</mat-icon>
+						<span>{{ loginService.error()?.errors }}</span>
+					</div>
+				}
+			</form>
+		</div>
+	</mat-dialog-content>
+
+	<mat-dialog-actions>
+		<button
+			mat-button
+			mat-dialog-close
+			[disabled]="loginService.submitting()"
+			i18n="@@login.cancel"
+		>
+			Cancel
+		</button>
+		<button
+			mat-raised-button
+			color="primary"
+			(click)="onLogin()"
+			[disabled]="loginForm.invalid || loginService.submitting()"
+		>
+			@if (loginService.submitting()) {
+				<span class="d-flex align-items-center justify-content-center w-100">
+				  <mat-spinner diameter="20" class="me-2"></mat-spinner>
+				  <span i18n="@@login.signingIn">Signing In...</span>
+				</span>
+			} @else {
+				<span i18n="@@login.submit">Sign In</span>
+			}
+		</button>
+	</mat-dialog-actions>
+</div>

@@ -1,11 +1,11 @@
 <mat-toolbar>
 	@if (!topLevelDestination) {
-		<button mat-icon-button (click)="location.back()" matTooltip="Go Back">
+		<button mat-icon-button (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack">
 			<mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
 		</button>
 	}
 
-	<span class="navbar-brand-text px-3" routerLink="/">Playlog</span>
+	<span class="navbar-brand-text px-3" routerLink="/" i18n="@@nav.brand">Playlog</span>
 
 
 	<span class="toolbar-spacer"></span>
@@ -13,11 +13,23 @@
 	<button
 		mat-icon-button
 		(click)="changeTheme()"
-		[matTooltip]="sessionService.theme() === 'light' ? 'Switch to Dark Theme' : 'Switch to Light Theme'"
 	>
-		<mat-icon fontSet="material-symbols-rounded">
-			{{ sessionService.theme() === 'light' ? 'dark_mode' : 'light_mode' }}
-		</mat-icon>
+		@if (sessionService.theme() === 'light') {
+			<mat-icon
+				fontSet="material-symbols-rounded"
+				matTooltip="Switch to Dark Theme"
+				i18n-matTooltip="@@nav.switchToDark"
+			>
+				dark_mode
+			</mat-icon>
+		} @else {
+			<mat-icon
+				fontSet="material-symbols-rounded"
+				matTooltip="Switch to Light Theme"
+				i18n-matTooltip="@@nav.switchToLight">
+				light_mode
+			</mat-icon>
+		}
 	</button>
 
 	<mat-divider vertical class="ps-2"></mat-divider>
@@ -26,12 +38,13 @@
 		[matMenuTriggerFor]="sessionService.user().role === Role.GUEST ? profileMenuGuest : profileMenuUser"
 		class="profile-menu-trigger"
 		matTooltip="Profile"
+		i18n-matTooltip="@@nav.profile"
 	>
 		<mat-icon fontSet="material-symbols-rounded">account_circle</mat-icon>
 	</button>
 
 	<mat-menu #profileMenuUser="matMenu">
-		<button mat-menu-item routerLink="/profile">
+		<button mat-menu-item routerLink="/profile" i18n="@@nav.myAccount">
 			My Account
 		</button>
 		<mat-divider></mat-divider>
@@ -41,18 +54,18 @@
 			routerLink="/home"
 		>
 			<mat-icon fontSet="material-symbols-rounded">logout</mat-icon>
-			Sign out
+			<span i18n="@@nav.signOut">Sign out</span>
 		</button>
 	</mat-menu>
 
 	<mat-menu #profileMenuGuest="matMenu">
 		<button mat-menu-item (click)="openLoginDialog()">
 			<mat-icon fontSet="material-symbols-rounded">login</mat-icon>
-			Sign in
+			<span i18n="@@nav.signIn">Sign in</span>
 		</button>
 		<button mat-menu-item (click)="openRegisterDialog()">
 			<mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
-			Sign up
+			<span i18n="@@nav.signUp">Sign up</span>
 		</button>
 	</mat-menu>
 

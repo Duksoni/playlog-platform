@@ -1,0 +1,26 @@
+.login-dialog {
+	min-width: 400px;
+	padding: 20px;
+}
+
+.login-form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	margin: 20px 0;
+}
+
+mat-dialog-actions {
+	margin: 0;
+}
+
+mat-dialog-title {
+	margin-bottom: 0;
+}
+
+@media (max-width: 600px) {
+	.login-dialog {
+		min-width: 280px;
+		padding: 16px;
+	}
+}

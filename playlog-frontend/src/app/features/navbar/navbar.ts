@@ -11,6 +11,9 @@ import {SessionService} from '../../core/services/session.service';
 import {Role} from '../auth/auth.dto';
 import {HttpClient} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
+import {DialogService} from '../../shared/services/dialog.service';
+import {LoginDialog} from '../auth/login-dialog/login.dialog';
+import {RegisterDialog} from '../auth/register-dialog/register.dialog';
 
 @Component({
 	selector: 'app-navbar',
@@ -30,6 +33,8 @@ import {environment} from '../../../environments/environment';
 })
 export class Navbar {
 	protected sessionService = inject(SessionService);
+	private dialogService = inject(DialogService);
+
 	protected location = inject(Location);
 	private router = inject(Router);
 	private http = inject(HttpClient);
@@ -45,7 +50,7 @@ export class Navbar {
 	}
 
 	protected logout() {
-		this.http.post(`${environment.apiUrl}`, {}, {withCredentials: true}).subscribe({
+		this.http.post(`${environment.apiUrl}/auth/logout`, {}, {withCredentials: true}).subscribe({
 			next: () => {
 				this.sessionService.handleLogout();
 				this.router.navigate(['/home']);
@@ -58,11 +63,17 @@ export class Navbar {
 	}
 
 	protected openLoginDialog() {
-
+		this.dialogService.openDialog(LoginDialog, {
+			disableClose: true,
+			autoFocus: false,
+		});
 	}
 
 	protected openRegisterDialog() {
-
+		this.dialogService.openDialog(RegisterDialog, {
+			disableClose: true,
+			autoFocus: false,
+		});
 	}
 
 	protected readonly Role = Role;

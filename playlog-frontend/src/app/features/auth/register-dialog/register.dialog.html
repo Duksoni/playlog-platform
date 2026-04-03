@@ -1,0 +1,161 @@
+<div class="register-dialog">
+	<h2 mat-dialog-title i18n="@@register.title">Sign Up</h2>
+
+	<mat-dialog-content>
+		<div class="container">
+			<p>
+				<span i18n="@@register.hasAccount">Already have an account? </span>
+				<u class="hover-pointer" (click)="openLoginDialog()" i18n="@@register.signInLink">Sign in</u>
+			</p>
+			<form [formGroup]="registerForm" class="register-form">
+				<div class="row g-3">
+					<div class="col-md-6">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.firstNameLabel">First Name</mat-label>
+							<input matInput formControlName="firstName" maxlength="50"
+								   placeholder="Enter your first name" i18n-placeholder="@@register.firstNamePlaceholder" autocomplete="given-name">
+							@if (registerForm.get('first_name')?.hasError('required')) {
+								<mat-error i18n="@@register.firstNameRequired">
+									First name is required
+								</mat-error>
+							}
+						</mat-form-field>
+					</div>
+
+					<div class="col-md-6">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.lastNameLabel">Last Name</mat-label>
+							<input matInput formControlName="lastName" maxlength="50"
+								   placeholder="Enter your last name" i18n-placeholder="@@register.lastNamePlaceholder" autocomplete="family-name">
+							@if (registerForm.get('last_name')?.hasError('required')) {
+								<mat-error i18n="@@register.lastNameRequired">
+									Last name is required
+								</mat-error>
+							}
+						</mat-form-field>
+					</div>
+				</div>
+
+				<!-- Birthdate + Username Row -->
+				<div class="row g-3">
+					<div class="col-md-6">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.birthdateLabel">Birthdate</mat-label>
+							<input matInput
+								   formControlName="birthdate"
+								   [matDatepicker]="birthdatePicker"
+								   [min]="minDate"
+								   [max]="maxDate"
+							>
+							<mat-datepicker-toggle matIconSuffix [for]="birthdatePicker">
+							</mat-datepicker-toggle>
+							<mat-datepicker [startAt]="startDate" #birthdatePicker></mat-datepicker>
+							@if (registerForm.get('birthdate')?.hasError('required')) {
+								<mat-error i18n="@@register.birthdateRequired">
+									Birthdate is required
+								</mat-error>
+							}
+						</mat-form-field>
+					</div>
+
+					<div class="col-md-6">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.usernameLabel">Username</mat-label>
+							<input matInput formControlName="username" maxlength="50" placeholder="Choose a username"
+								   i18n-placeholder="@@register.usernamePlaceholder"
+								   autocomplete="username">
+							@if (registerForm.get('username')?.hasError('required')) {
+								<mat-error i18n="@@register.usernameRequired">
+									Username is required
+								</mat-error>
+							}
+							@if (registerForm.get('username')?.hasError('minlength')) {
+								<mat-error i18n="@@register.usernameMinLength">
+									Username must have at least 3 characters
+								</mat-error>
+							}
+						</mat-form-field>
+					</div>
+				</div>
+
+				<!-- Email Row -->
+				<div class="row g-3">
+					<div class="col-12">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.emailLabel">Email</mat-label>
+							<input matInput formControlName="email" type="email" placeholder="Enter your email"
+								   i18n-placeholder="@@register.emailPlaceholder"
+								   autocomplete="email">
+							@if (registerForm.get('email')?.hasError('required')) {
+								<mat-error i18n="@@register.emailRequired">
+									Email is required
+								</mat-error>
+							}
+							@if (registerForm.get('email')?.hasError('email')) {
+								<mat-error i18n="@@register.emailInvalid">
+									Invalid email format
+								</mat-error>
+							}
+						</mat-form-field>
+					</div>
+				</div>
+
+				<!-- Password Row -->
+				<div class="row g-3">
+					<div class="col-12">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.passwordLabel">Password</mat-label>
+							<input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password"
+								   placeholder="Enter your password" i18n-placeholder="@@register.passwordPlaceholder" (keydown.enter)="onRegister()">
+							<button
+								mat-icon-button
+								matSuffix type="button"
+								(click)="togglePasswordVisibility()"
+								[matTooltip]="hidePassword ? 'Show password' : 'Hide password'"
+								matTooltipShowDelay="300"
+							>
+								<mat-icon
+									fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+							</button>
+							@if (registerForm.get('password')?.hasError('required')) {
+								<mat-error i18n="@@register.passwordRequired">
+									Password is required
+								</mat-error>
+							}
+							@if (registerForm.get('password')?.hasError('pattern')) {
+								<mat-error i18n="@@register.passwordPattern">
+									Password must contain at least 8 characters, 1 uppercase letter, 1 lowercase letter,
+									1 special character and 1 digit from: &#64;$!%*?&
+								</mat-error>
+							}
+						</mat-form-field>
+					</div>
+				</div>
+
+				@if (registerService.error()) {
+					<div class="error-message">
+						<mat-icon fontSet="material-symbols-rounded" color="warn" class="me-2">error</mat-icon>
+						<span>{{ registerService.error() }}</span>
+					</div>
+				}
+			</form>
+		</div>
+	</mat-dialog-content>
+
+	<mat-dialog-actions class="d-flex justify-content-end">
+		<button mat-button mat-dialog-close [disabled]="registerService.submitting()" i18n="@@register.cancel">Cancel</button>
+		<button mat-raised-button
+				(click)="onRegister()"
+				[disabled]="registerForm.invalid || registerService.submitting()">
+			@if (registerService.submitting()) {
+				<span class="d-flex align-items-center justify-content-center w-100">
+          <mat-spinner diameter="20" class="me-2"></mat-spinner>
+          <span i18n="@@register.submitting">Creating account...</span>
+        </span>
+			} @else {
+				<span i18n="@@register.submit">Sign Up</span>
+			}
+		</button>
+
+	</mat-dialog-actions>
+</div>
