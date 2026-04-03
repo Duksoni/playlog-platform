@@ -68,7 +68,7 @@
 
 				@if (loginService.error()) {
 					<div class="error-message">
-						<mat-icon fontSet="material-symbols-rounded" color="warn" class="me-2">error</mat-icon>
+						<mat-icon fontSet="material-symbols-rounded" class="me-2">error</mat-icon>
 						<span>{{ loginService.error()?.errors }}</span>
 					</div>
 				}
@@ -87,7 +87,6 @@
 		</button>
 		<button
 			mat-raised-button
-			color="primary"
 			(click)="onLogin()"
 			[disabled]="loginForm.invalid || loginService.submitting()"
 		>

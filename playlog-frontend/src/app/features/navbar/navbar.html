@@ -44,7 +44,12 @@
 	</button>
 
 	<mat-menu #profileMenuUser="matMenu">
-		<button mat-menu-item routerLink="/profile" i18n="@@nav.myAccount">
+		<button
+			mat-menu-item
+			routerLink="/profile"
+			i18n="@@nav.myAccount"
+		>
+			<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
 			My Account
 		</button>
 		<mat-divider></mat-divider>
@@ -52,20 +57,21 @@
 			mat-menu-item
 			(click)="logout()"
 			routerLink="/home"
+			i18n="@@nav.signOut"
 		>
 			<mat-icon fontSet="material-symbols-rounded">logout</mat-icon>
-			<span i18n="@@nav.signOut">Sign out</span>
+			Sign Out
 		</button>
 	</mat-menu>
 
 	<mat-menu #profileMenuGuest="matMenu">
-		<button mat-menu-item (click)="openLoginDialog()">
+		<button mat-menu-item (click)="openLoginDialog()" i18n="@@nav.signIn">
 			<mat-icon fontSet="material-symbols-rounded">login</mat-icon>
-			<span i18n="@@nav.signIn">Sign in</span>
+			Sign in
 		</button>
-		<button mat-menu-item (click)="openRegisterDialog()">
+		<button mat-menu-item (click)="openRegisterDialog() " i18n="@@nav.signUp">
 			<mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
-			<span i18n="@@nav.signUp">Sign up</span>
+			Sign up
 		</button>
 	</mat-menu>
 

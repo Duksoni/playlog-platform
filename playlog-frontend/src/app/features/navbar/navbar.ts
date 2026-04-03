@@ -1,6 +1,6 @@
 import {Component, inject} from '@angular/core';
 import {MatToolbar} from '@angular/material/toolbar';
-import {MatIconButton} from '@angular/material/button';
+import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {Location} from '@angular/common';
 import {MatTooltip} from '@angular/material/tooltip';
