@@ -1,10 +1,12 @@
 use crate::{
     app::AppState,
     entity::{
-        CreateGameEntityRequest, GameEntity, GameEntityError, SearchQuery, UpdateGameEntityRequest,
+        CreateGameEntityRequest, GameEntity, GameEntityError, GameEntitySimple, PagedQuery,
+        SearchQuery, UpdateGameEntityRequest,
     },
 };
 use api_error::ApiError;
+use axum::routing::delete;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -18,19 +20,19 @@ use jwt_common::{auth, require_admin, JwtConfig};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use validator::Validate;
-use crate::entity::GameEntitySimple;
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
 
     let public_routes = OpenApiRouter::new()
-        .route("/", get(get_all))
+        .route("/", get(get_all_paged))
         .route("/search", get(search))
         .route("/{id}", get(get_by_id));
 
     let admin_routes = OpenApiRouter::new()
         .route("/", post(create))
         .route("/{id}", put(update))
+        .route("/{id}", delete(delete_genre))
         .route_layer(from_fn(require_admin))
         .route_layer(from_fn_with_state(jwt_config, auth));
 
@@ -42,7 +44,8 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 #[utoipa::path(
     get,
     path = "/api/genres",
-    summary = "Get all genres",
+    summary = "Get all genres (paged)",
+    params(PagedQuery),
     responses(
         (status = 200, description = "List of genres", body = Vec<GameEntitySimple>),
     ),
@@ -50,10 +53,11 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     operation_id = "get_all_genres"
 )]
 #[debug_handler]
-pub async fn get_all(
+async fn get_all_paged(
     State(state): State<Arc<AppState>>,
+    Query(query): Query<PagedQuery>,
 ) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
-    let result = state.genre_repository.get_all().await?;
+    let result = state.genre_repository.get_all_paged(query.page).await?;
     Ok(Json(result))
 }
 
@@ -70,7 +74,7 @@ pub async fn get_all(
     operation_id = "get_genre_by_id"
 )]
 #[debug_handler]
-pub async fn get_by_id(
+async fn get_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
 ) -> Result<Json<GameEntity>, ApiError> {
@@ -91,7 +95,7 @@ pub async fn get_by_id(
     operation_id = "search_genres"
 )]
 #[debug_handler]
-pub async fn search(
+async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
 ) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
@@ -115,7 +119,7 @@ pub async fn search(
     operation_id = "create_genre"
 )]
 #[debug_handler]
-pub async fn create(
+async fn create(
     State(state): State<Arc<AppState>>,
     Json(request): Json<CreateGameEntityRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
@@ -143,12 +147,37 @@ pub async fn create(
     operation_id = "update_genre"
 )]
 #[debug_handler]
-pub async fn update(
+async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<UpdateGameEntityRequest>,
 ) -> Result<Json<GameEntity>, ApiError> {
     request.validate().map_err(ApiError::from)?;
-    let result = state.genre_repository.update_name(id, &request.name, request.version).await?;
+    let result = state
+        .genre_repository
+        .update_name(id, &request.name, request.version)
+        .await?;
     Ok(Json(result))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/genres/{id}",
+    summary = "Delete genre",
+    params(("id" = String, Path, description = "Genre ID")),
+    responses(
+        (status = 204, description = "Genre deleted"),
+        (status = 404, description = "Genre not found"),
+    ),
+    tag = "genres",
+    security(("bearer" = [])),
+    operation_id = "delete_genre"
+)]
+#[debug_handler]
+async fn delete_genre(
+    state: State<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> Result<impl IntoResponse, ApiError> {
+    state.genre_repository.delete(id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }

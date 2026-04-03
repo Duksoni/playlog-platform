@@ -2,7 +2,7 @@ use crate::{
     config::AppConfig,
     developers::handler::router as developers_router,
     docs::ApiDoc,
-    entity::{GameEntityRepository, SmallGameEntityRepository},
+    entity::{GameEntityRepository, DeletableGameEntityRepository},
     games::{handler::router as games_router, GameService},
     genres::handler::router as genres_router,
     platforms::handler::router as platforms_router,
@@ -21,10 +21,10 @@ pub struct AppState {
     pub config: AppConfig,
     pub game_service: GameService,
     pub developer_repository: Arc<dyn GameEntityRepository>,
-    pub genre_repository: Arc<dyn SmallGameEntityRepository>,
-    pub platform_repository: Arc<dyn SmallGameEntityRepository>,
+    pub genre_repository: Arc<dyn DeletableGameEntityRepository>,
+    pub platform_repository: Arc<dyn DeletableGameEntityRepository>,
     pub publisher_repository: Arc<dyn GameEntityRepository>,
-    pub tag_repository: Arc<dyn GameEntityRepository>,
+    pub tag_repository: Arc<dyn DeletableGameEntityRepository>,
 }
 
 impl AppState {
@@ -32,10 +32,10 @@ impl AppState {
         config: AppConfig,
         game_service: GameService,
         developer_repository: Arc<dyn GameEntityRepository>,
-        genre_repository: Arc<dyn SmallGameEntityRepository>,
-        platform_repository: Arc<dyn SmallGameEntityRepository>,
+        genre_repository: Arc<dyn DeletableGameEntityRepository>,
+        platform_repository: Arc<dyn DeletableGameEntityRepository>,
         publisher_repository: Arc<dyn GameEntityRepository>,
-        tag_repository: Arc<dyn GameEntityRepository>,
+        tag_repository: Arc<dyn DeletableGameEntityRepository>,
     ) -> Self {
         Self {
             config,

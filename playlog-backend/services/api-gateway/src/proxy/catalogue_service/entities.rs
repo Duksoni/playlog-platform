@@ -1,7 +1,7 @@
 use crate::proxy::{proxy_handler, ServiceAppState};
 use axum::{
     middleware::{from_fn, from_fn_with_state},
-    routing::{get, post, put},
+    routing::{delete, get, post, put},
     Router,
 };
 use jwt_common::{auth, require_admin};
@@ -18,10 +18,9 @@ pub fn router(state: Arc<ServiceAppState>, _entity_path: &str) -> Router<Arc<Ser
     let admin_routes = Router::new()
         .route("/", post(proxy_handler))
         .route("/{id}", put(proxy_handler))
+        .route("/{id}", delete(proxy_handler))
         .route_layer(from_fn(require_admin))
         .route_layer(from_fn_with_state(jwt_config, auth));
 
-    Router::new()
-        .merge(public_routes)
-        .merge(admin_routes)
+    Router::new().merge(public_routes).merge(admin_routes)
 }

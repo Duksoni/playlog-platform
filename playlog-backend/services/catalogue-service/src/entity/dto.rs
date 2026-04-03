@@ -25,6 +25,6 @@ pub struct SearchQuery {
 #[derive(Deserialize, IntoParams)]
 pub struct PagedQuery {
     #[serde(default)]
-    #[param(required = false, example = "0")]
+    #[param(required = false, example = "1")]
     pub page: u64,
 }

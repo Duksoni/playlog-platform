@@ -23,16 +23,18 @@ use utoipa::OpenApi;
         crate::developers::handler::search,
         crate::developers::handler::create,
         crate::developers::handler::update,
-        crate::genres::handler::get_all,
+        crate::genres::handler::get_all_paged,
         crate::genres::handler::get_by_id,
         crate::genres::handler::search,
         crate::genres::handler::create,
         crate::genres::handler::update,
-        crate::platforms::handler::get_all,
+        crate::genres::handler::delete_genre,
+        crate::platforms::handler::get_all_paged,
         crate::platforms::handler::get_by_id,
         crate::platforms::handler::search,
         crate::platforms::handler::create,
         crate::platforms::handler::update,
+        crate::platforms::handler::delete_platform,
         crate::publishers::handler::get_all_paged,
         crate::publishers::handler::get_by_id,
         crate::publishers::handler::search,
@@ -43,6 +45,7 @@ use utoipa::OpenApi;
         crate::tags::handler::search,
         crate::tags::handler::create,
         crate::tags::handler::update,
+        crate::tags::handler::delete_tag,
     )
 )]
 pub struct ApiDoc;

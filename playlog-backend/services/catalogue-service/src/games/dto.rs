@@ -71,7 +71,7 @@ pub struct GameFilterQuery {
     pub tag_ids: Vec<i32>,
 
     #[serde(default)]
-    #[param(required = false, example = "0")]
+    #[param(required = false, example = "1")]
     pub page: u64,
 
     #[param(

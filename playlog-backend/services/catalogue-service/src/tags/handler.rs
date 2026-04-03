@@ -1,12 +1,12 @@
 use crate::{
     app::AppState,
     entity::{
-        GameEntitySimple,
-        CreateGameEntityRequest, GameEntity, GameEntityError, PagedQuery, SearchQuery,
-        UpdateGameEntityRequest,
+        CreateGameEntityRequest, GameEntity, GameEntityError, GameEntitySimple, PagedQuery,
+        SearchQuery, UpdateGameEntityRequest,
     },
 };
 use api_error::ApiError;
+use axum::routing::delete;
 use axum::{
     extract::{Path, Query, State},
     http::StatusCode,
@@ -32,6 +32,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let admin_routes = OpenApiRouter::new()
         .route("/", post(create))
         .route("/{id}", put(update))
+        .route("/{id}", delete(delete_tag))
         .route_layer(from_fn(require_admin))
         .route_layer(from_fn_with_state(jwt_config, auth));
 
@@ -52,7 +53,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     operation_id = "get_all_tags_paged"
     )]
 #[debug_handler]
-pub async fn get_all_paged(
+async fn get_all_paged(
     State(state): State<Arc<AppState>>,
     Query(query): Query<PagedQuery>,
 ) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
@@ -74,7 +75,7 @@ pub async fn get_all_paged(
     operation_id = "get_tag_by_id"
 )]
 #[debug_handler]
-pub async fn get_by_id(
+async fn get_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
 ) -> Result<Json<GameEntity>, ApiError> {
@@ -95,7 +96,7 @@ pub async fn get_by_id(
     operation_id = "search_tags"
 )]
 #[debug_handler]
-pub async fn search(
+async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
 ) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
@@ -119,7 +120,7 @@ pub async fn search(
     operation_id = "create_tag"
 )]
 #[debug_handler]
-pub async fn create(
+async fn create(
     State(state): State<Arc<AppState>>,
     Json(request): Json<CreateGameEntityRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
@@ -147,12 +148,37 @@ pub async fn create(
     operation_id = "update_tag"
 )]
 #[debug_handler]
-pub async fn update(
+async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<UpdateGameEntityRequest>,
 ) -> Result<Json<GameEntity>, ApiError> {
     request.validate().map_err(ApiError::from)?;
-    let result = state.tag_repository.update_name(id, &request.name, request.version).await?;
+    let result = state
+        .tag_repository
+        .update_name(id, &request.name, request.version)
+        .await?;
     Ok(Json(result))
+}
+
+#[utoipa::path(
+    delete,
+    path = "/api/tags/{id}",
+    summary = "Delete tag",
+    params(("id" = String, Path, description = "Tag ID")),
+    responses(
+        (status = 204, description = "Tag deleted"),
+        (status = 404, description = "Tag not found"),
+    ),
+    tag = "tags",
+    security(("bearer" = [])),
+    operation_id = "delete_tag"
+)]
+#[debug_handler]
+async fn delete_tag(
+    state: State<Arc<AppState>>,
+    Path(id): Path<i32>,
+) -> Result<impl IntoResponse, ApiError> {
+    state.tag_repository.delete(id).await?;
+    Ok(StatusCode::NO_CONTENT)
 }

@@ -13,8 +13,8 @@ pub trait GameEntityRepository: Send + Sync {
 }
 
 #[async_trait]
-pub trait SmallGameEntityRepository: GameEntityRepository {
-    async fn get_all(&self) -> Result<Vec<GameEntitySimple>>;
+pub trait DeletableGameEntityRepository: GameEntityRepository {
+    async fn delete(&self, id: i32) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -135,23 +135,20 @@ impl GameEntityRepository for PostgresGameEntityRepository {
 }
 
 #[async_trait]
-impl SmallGameEntityRepository for PostgresGameEntityRepository {
-    async fn get_all(&self) -> Result<Vec<GameEntitySimple>> {
-        match self.table {
-            GameEntityTable::Platforms | GameEntityTable::Genres => {
-                let query = format!(
-                    "SELECT id, name FROM {} ORDER BY name",
-                    self.table.table_name()
-                );
-                let result = query_as::<_, GameEntitySimple>(&query)
-                    .fetch_all(&self.pool)
-                    .await?;
-                Ok(result)
-            }
-            _ => Err(GameEntityError::UnsupportedOperation(
+impl DeletableGameEntityRepository for PostgresGameEntityRepository {
+    async fn delete(&self, id: i32) -> Result<()> {
+        let query = format!("DELETE FROM {} WHERE id = $1", self.table.table_name());
+
+        let result = sqlx::query(&query).bind(id).execute(&self.pool).await?;
+
+        if result.rows_affected() > 0 {
+            Ok(())
+        } else {
+            self.exists(id).await?;
+            Err(GameEntityError::Conflict(
                 self.table.entity_name().to_string(),
-                "get_all".to_string(),
-            )),
+                id,
+            ))
         }
     }
 }

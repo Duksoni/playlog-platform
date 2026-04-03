@@ -54,7 +54,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     operation_id = "filter_games"
 )]
 #[debug_handler]
-pub async fn filter(
+async fn filter(
     State(state): State<Arc<AppState>>,
     extensions: Extensions,
     Query(params): Query<GameFilterQuery>,
@@ -78,7 +78,7 @@ pub async fn filter(
     operation_id = "get_games_by_developer"
 )]
 #[debug_handler]
-pub async fn find_by_developer(
+async fn find_by_developer(
     State(state): State<Arc<AppState>>,
     Path(developer_id): Path<i32>,
 ) -> Result<Json<Vec<GameSimple>>, ApiError> {
@@ -101,7 +101,7 @@ pub async fn find_by_developer(
     operation_id = "get_games_by_publisher"
 )]
 #[debug_handler]
-pub async fn find_by_publisher(
+async fn find_by_publisher(
     State(state): State<Arc<AppState>>,
     Path(publisher_id): Path<i32>,
     Query(page): Query<u64>,
@@ -127,7 +127,7 @@ pub async fn find_by_publisher(
     operation_id = "get_game"
 )]
 #[debug_handler]
-pub async fn get_game(
+async fn get_game(
     State(state): State<Arc<AppState>>,
     extensions: Extensions,
     Path(id): Path<i32>,
@@ -153,7 +153,7 @@ pub async fn get_game(
     operation_id = "get_game_detail"
 )]
 #[debug_handler]
-pub async fn get_details(
+async fn get_details(
     State(state): State<Arc<AppState>>,
     extensions: Extensions,
     Path(id): Path<i32>,
@@ -177,7 +177,7 @@ pub async fn get_details(
     operation_id = "get_unpublished_games"
 )]
 #[debug_handler]
-pub async fn get_unpublished(
+async fn get_unpublished(
     State(state): State<Arc<AppState>>,
 ) -> Result<Json<Vec<GameSimple>>, ApiError> {
     let games = state.game_service.get_all_unpublished().await?;
@@ -200,7 +200,7 @@ pub async fn get_unpublished(
     operation_id = "create_game"
 )]
 #[debug_handler]
-pub async fn create(
+async fn create(
     State(state): State<Arc<AppState>>,
     Json(request): Json<CreateGameRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
@@ -228,7 +228,7 @@ pub async fn create(
     operation_id = "update_game"
 )]
 #[debug_handler]
-pub async fn update(
+async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<UpdateGameRequest>,
@@ -254,7 +254,7 @@ pub async fn update(
     operation_id = "delete_game"
 )]
 #[debug_handler]
-pub async fn delete_game(
+async fn delete_game(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
 ) -> Result<impl IntoResponse, ApiError> {
@@ -280,7 +280,7 @@ pub async fn delete_game(
     operation_id = "publish_game"
 )]
 #[debug_handler]
-pub async fn publish(
+async fn publish(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<PublishUnpublishGameRequest>,
@@ -308,7 +308,7 @@ pub async fn publish(
     operation_id = "unpublish_game"
 )]
 #[debug_handler]
-pub async fn unpublish(
+async fn unpublish(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<PublishUnpublishGameRequest>,

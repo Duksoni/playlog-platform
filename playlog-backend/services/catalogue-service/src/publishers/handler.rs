@@ -51,7 +51,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     operation_id = "get_all_publishers_paged"
 )]
 #[debug_handler]
-pub async fn get_all_paged(
+async fn get_all_paged(
     State(state): State<Arc<AppState>>,
     Query(query): Query<PagedQuery>,
 ) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
@@ -72,7 +72,7 @@ pub async fn get_all_paged(
     operation_id = "get_publisher_by_id"
 )]
 #[debug_handler]
-pub async fn get_by_id(
+async fn get_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
 ) -> Result<Json<GameEntity>, ApiError> {
@@ -93,7 +93,7 @@ pub async fn get_by_id(
     operation_id = "search_publishers"
 )]
 #[debug_handler]
-pub async fn search(
+async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
 ) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
@@ -117,7 +117,7 @@ pub async fn search(
     operation_id = "create_publisher"
 )]
 #[debug_handler]
-pub async fn create(
+async fn create(
     State(state): State<Arc<AppState>>,
     Json(request): Json<CreateGameEntityRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
@@ -145,7 +145,7 @@ pub async fn create(
     operation_id = "update_publisher"
 )]
 #[debug_handler]
-pub async fn update(
+async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<UpdateGameEntityRequest>,
