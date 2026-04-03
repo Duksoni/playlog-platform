@@ -19,6 +19,7 @@ pub struct Review {
     pub id: Option<ObjectId>,
     pub game_id: i32,
     pub user_id: Uuid,
+    pub username: String,
     pub rating: Rating,
     pub text: Option<String>,
     pub created_at: DateTime,
@@ -31,6 +32,7 @@ impl Review {
     pub fn new(
         game_id: i32,
         user_id: Uuid,
+        username: String,
         rating: Rating,
         text: Option<String>,
         created_at: DateTime,
@@ -39,6 +41,7 @@ impl Review {
             id: None,
             game_id,
             user_id,
+            username,
             rating,
             text,
             created_at,

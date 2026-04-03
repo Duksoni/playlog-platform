@@ -16,12 +16,20 @@ impl ReportService {
 
     pub async fn report_content(
         &self,
-        user_id: Uuid,
+        reporter_id: Uuid,
+        reporter_username: String,
         target_type: ReportTargetType,
         target_id: ObjectId,
         reason: String,
     ) -> Result<ReportResponse> {
-        let report = Report::new(target_type, target_id, user_id, reason, DateTime::now());
+        let report = Report::new(
+            target_type,
+            target_id,
+            reporter_id,
+            reporter_username,
+            reason,
+            DateTime::now(),
+        );
         self.report_repository
             .create_report(report)
             .await

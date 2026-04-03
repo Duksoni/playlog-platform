@@ -62,6 +62,7 @@ impl CommentService {
     pub async fn create(
         &self,
         user_id: Uuid,
+        username: String,
         request: CreateCommentRequest,
     ) -> Result<DetailedCommentResponse> {
         match request.target_type {
@@ -86,6 +87,7 @@ impl CommentService {
             request.target_type,
             request.target_id,
             user_id,
+            username,
             request.text,
             DateTime::now(),
         );

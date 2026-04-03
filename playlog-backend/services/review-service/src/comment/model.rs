@@ -23,9 +23,10 @@ pub struct Comment {
     pub target_type: CommentTargetType,
     pub target_id: String, // Can be game_id or review_id
     pub user_id: Uuid,
+    pub username: String,
     pub text: String,
     pub created_at: DateTime,
-    pub updated_at: DateTime,    
+    pub updated_at: DateTime,
     pub version: i64,
     pub deleted: bool,
 }
@@ -35,6 +36,7 @@ impl Comment {
         target_type: CommentTargetType,
         target_id: String,
         user_id: Uuid,
+        username: String,
         text: String,
         created_at: DateTime,
     ) -> Self {
@@ -43,6 +45,7 @@ impl Comment {
             target_type,
             target_id,
             user_id,
+            username,
             text,
             created_at,
             updated_at: created_at,

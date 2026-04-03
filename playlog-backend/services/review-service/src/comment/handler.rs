@@ -141,7 +141,7 @@ pub async fn add_comment(
     request.validate().map_err(ApiError::from)?;
     let comment = state
         .comment_service
-        .create(claims.user_id, request)
+        .create(claims.user_id, claims.username, request)
         .await?;
     Ok(Json(comment))
 }

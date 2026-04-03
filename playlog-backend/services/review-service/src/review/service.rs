@@ -59,6 +59,7 @@ impl ReviewService {
     pub async fn upsert(
         &self,
         user_id: Uuid,
+        username: String,
         request: CreateUpdateReviewRequest,
     ) -> Result<ReviewDetailedResponse> {
         ensure_game_exists(&self.client, &self.catalogue_service_url, request.game_id).await?;
@@ -76,7 +77,14 @@ impl ReviewService {
                 review.updated_at = now;
                 review
             }
-            None => Review::new(request.game_id, user_id, request.rating, request.text, now),
+            None => Review::new(
+                request.game_id,
+                user_id,
+                username,
+                request.rating,
+                request.text,
+                now,
+            ),
         };
 
         self.repository.upsert(review).await.map(Review::into)

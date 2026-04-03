@@ -64,6 +64,7 @@ pub async fn report_content(
         .report_service
         .report_content(
             claims.user_id,
+            claims.username,
             request.target_type,
             target_id,
             request.reason,

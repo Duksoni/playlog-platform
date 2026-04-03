@@ -31,6 +31,7 @@ pub struct Report {
     pub target_type: ReportTargetType,
     pub target_id: ObjectId, // Either review or comment
     pub reporter_id: Uuid,
+    pub reporter_username: String,
     pub reason: String,
     pub status: ReportStatus,
     pub created_at: DateTime,
@@ -42,6 +43,7 @@ impl Report {
         target_type: ReportTargetType,
         target_id: ObjectId,
         reporter_id: Uuid,
+        reporter_username: String,
         reason: String,
         created_at: DateTime,
     ) -> Self {
@@ -50,6 +52,7 @@ impl Report {
             target_type,
             target_id,
             reporter_id,
+            reporter_username,
             reason,
             status: ReportStatus::Pending,
             created_at,

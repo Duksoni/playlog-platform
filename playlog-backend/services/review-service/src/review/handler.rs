@@ -143,7 +143,7 @@ pub async fn upsert_review(
     request.validate().map_err(ApiError::from)?;
     let review = state
         .review_service
-        .upsert(claims.user_id, request)
+        .upsert(claims.user_id, claims.username, request)
         .await?;
     Ok(Json(review))
 }
