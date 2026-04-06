@@ -1,13 +1,17 @@
 use crate::{
     error::{MediaError, Result},
     model::GameMedia,
+    model::MediaFile,
 };
 use async_trait::async_trait;
+use futures::TryStreamExt;
 use mongodb::{bson::doc, options::ReplaceOptions, Collection};
+use std::collections::HashMap;
 
 #[async_trait]
 pub trait MediaRepository: Send + Sync {
     async fn find_by_game_id(&self, game_id: i32) -> Result<Option<GameMedia>>;
+    async fn find_covers(&self, game_ids: &[i32]) -> Result<HashMap<i32, Option<MediaFile>>>;
     async fn upsert(&self, media: GameMedia, version: i64) -> Result<()>;
     async fn delete_by_game_id(&self, game_id: i32) -> Result<()>;
 }
@@ -31,6 +35,32 @@ impl MediaRepository for MongoMediaRepository {
             .find_one(doc! { "game_id": game_id })
             .await?;
         Ok(media)
+    }
+
+    async fn find_covers(&self, game_ids: &[i32]) -> Result<HashMap<i32, Option<MediaFile>>> {
+        if game_ids.is_empty() {
+            return Ok(HashMap::new());
+        }
+        let mut cursor = self
+            .collection
+            .find(doc! { "game_id": { "$in": game_ids } })
+            .await?;
+
+        let mut by_game_id = HashMap::new();
+        while let Some(media) = cursor.try_next().await? {
+            by_game_id.insert(media.game_id, media.cover);
+        }
+
+        let result = game_ids
+            .iter()
+            .copied()
+            .map(|game_id| {
+                let cover = by_game_id.get(&game_id).cloned().flatten();
+                (game_id, cover)
+            })
+            .collect();
+
+        Ok(result)
     }
 
     async fn upsert(&self, media: GameMedia, version: i64) -> Result<()> {

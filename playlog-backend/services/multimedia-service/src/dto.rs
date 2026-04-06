@@ -1,5 +1,6 @@
-use serde::Serialize;
-use utoipa::ToSchema;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use utoipa::{IntoParams, ToSchema};
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct GameMediaResponse {
@@ -45,5 +46,27 @@ impl MediaFileResponse {
             mime_type,
             size_bytes,
         }
+    }
+}
+
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct GetGameCoversRequest {
+    #[serde(rename = "gameIds")]
+    pub game_ids: Vec<i32>,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct GetGameCoversResponse {
+    #[serde(rename = "gameCovers")]
+    pub game_covers: HashMap<i32, Option<String>>,
+}
+
+impl GetGameCoversResponse {
+    pub fn new(game_covers: HashMap<i32, Option<String>>) -> Self {
+        Self { game_covers }
+    }
+
+    pub fn empty() -> Self {
+        Self { game_covers: Default::default() }
     }
 }

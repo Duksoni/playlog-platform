@@ -9,6 +9,7 @@ use crate::{
 };
 use axum::http::Method;
 use bytes::Bytes;
+use futures::{stream, StreamExt, TryStreamExt};
 use minio::s3::{
     client::Client as MinioClient,
     multimap::{Multimap, MultimapExt},
@@ -17,7 +18,7 @@ use minio::s3::{
 };
 use mongodb::bson::DateTime;
 use reqwest::Client as HttpClient;
-use std::time::SystemTime;
+use std::{collections::HashMap, time::SystemTime};
 
 const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024; // 10 MB
 const MAX_VIDEO_BYTES: usize = 500 * 1024 * 1024; // 500 MB
@@ -50,6 +51,26 @@ impl MediaService {
     pub async fn get_game_media(&self, game_id: i32) -> Result<GameMediaResponse> {
         let media = self.find_by_game_id(game_id).await?;
         self.to_response(media).await
+    }
+
+    pub async fn get_game_covers_presigned_urls(
+        &self,
+        game_ids: &[i32],
+    ) -> Result<HashMap<i32, Option<String>>> {
+        let game_ids = game_ids.to_vec();
+        let covers = self.repository.find_covers(&game_ids).await?;
+
+        stream::iter(covers)
+            .then(|(game_id, cover)| async move {
+                let cover = match cover {
+                    Some(cover) => Some(self.presign(&cover.object_key).await?),
+                    None => None,
+                };
+
+                Ok((game_id, cover))
+            })
+            .try_collect()
+            .await
     }
 
     pub async fn ensure_game_exists(&self, game_id: i32) -> Result<()> {

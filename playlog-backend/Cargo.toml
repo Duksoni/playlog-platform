@@ -6,7 +6,7 @@ resolver = "3"
 # --- Async runtime & HTTP ---
 tokio = { version = "1", features = ["full"] }
 axum = { version = "0.8" }
-axum-extra = { version = "0.12", features = ["cookie", "multipart"] }
+axum-extra = { version = "0.12", features = ["cookie", "multipart", "query"] }
 axum-macros = "0.5"
 tower-http = { version = "0.6", features = ["timeout", "trace", "cors"] }
 reqwest = { version = "0.13", features = ["json", "rustls"] }

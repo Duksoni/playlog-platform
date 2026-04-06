@@ -6,6 +6,7 @@ use utoipa::OpenApi;
     modifiers(&SecurityAddon),
     info(title = "Multimedia Service"),
     paths(
+        crate::handler::get_game_covers,
         crate::handler::get_game_media,
         crate::handler::upload_game_media,
         crate::handler::delete_game_media,

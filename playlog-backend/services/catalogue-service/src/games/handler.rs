@@ -1,16 +1,19 @@
-use super::{CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest, UpdateGameRequest};
+use super::{
+    CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest,
+    UpdateGameRequest,
+};
 use crate::app::AppState;
 use api_error::ApiError;
 use axum::{
+    Json,
     extract::{Path, Query, State},
     http::{Extensions, StatusCode},
     middleware::{from_fn, from_fn_with_state},
     response::IntoResponse,
     routing::{delete, get, post, put},
-    Json,
 };
 use axum_macros::debug_handler;
-use jwt_common::{auth, middleware::auth_optional, require_admin, AuthClaims, JwtConfig, Role};
+use jwt_common::{AuthClaims, JwtConfig, Role, auth, middleware::auth_optional, require_admin};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use validator::Validate;

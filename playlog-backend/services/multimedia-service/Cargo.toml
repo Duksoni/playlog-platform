@@ -12,6 +12,7 @@ axum-macros.workspace = true
 axum.workspace = true
 bytes.workspace = true
 dotenvy.workspace = true
+futures.workspace = true
 jwt-common.workspace = true
 minio.workspace = true
 mongodb.workspace = true

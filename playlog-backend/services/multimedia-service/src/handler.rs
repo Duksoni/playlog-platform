@@ -10,18 +10,21 @@ use axum::{
     routing::{delete, get, post},
     Json,
 };
-use axum_extra::extract::Multipart;
+use axum_extra::extract::{Multipart, Query};
 use axum_macros::debug_handler;
 use jwt_common::{auth, require_admin, JwtConfig};
 use utoipa_axum::router::OpenApiRouter;
 
+use crate::dto::{GetGameCoversRequest, GetGameCoversResponse};
 use crate::model::FieldName;
 use crate::{app::AppState, dto::GameMediaResponse, error::MediaError, model::UploadedFile};
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
 
-    let public_routes = OpenApiRouter::new().route("/games/{game_id}", get(get_game_media));
+    let public_routes = OpenApiRouter::new()
+        .route("/games/covers", get(get_game_covers))
+        .route("/games/{game_id}", get(get_game_media));
 
     let admin_routes = OpenApiRouter::new()
         .route("/games/{game_id}/upload", post(upload_game_media))
@@ -32,6 +35,36 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     OpenApiRouter::new()
         .merge(public_routes)
         .merge(admin_routes)
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/media/games/covers",
+    summary = "Get presigned URLs for game covers",
+    description = r#"
+Accepts an array of game IDs.
+Returns a object mapping game IDs to presigned URLs for the game cover image.
+If no game covers are found, an empty object is returned.
+    "#,
+    responses(
+        (status = 200, body = GetGameCoversResponse),
+    ),
+    params(GetGameCoversRequest),
+    tag = "multimedia"
+)]
+#[debug_handler]
+async fn get_game_covers(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<GetGameCoversRequest>,
+) -> Result<Json<GetGameCoversResponse>, ApiError> {
+    if params.game_ids.is_empty() {
+        return Ok(Json(GetGameCoversResponse::empty()));
+    }
+    let cover_map = state
+        .media_service
+        .get_game_covers_presigned_urls(&params.game_ids)
+        .await?;
+    Ok(Json(GetGameCoversResponse::new(cover_map)))
 }
 
 #[utoipa::path(
