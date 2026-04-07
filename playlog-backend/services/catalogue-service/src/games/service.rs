@@ -54,9 +54,9 @@ impl GameService {
         self.game_repository.get_all_unpublished().await
     }
 
-    pub async fn get(&self, id: i32, include_draft: bool) -> Result<Game> {
+    pub async fn get(&self, id: i32) -> Result<Game> {
         self.game_repository
-            .get(id, include_draft)
+            .get(id, true)
             .await?
             .ok_or(GameError::NotFound(id))
     }

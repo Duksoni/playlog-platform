@@ -349,11 +349,11 @@ impl PostgresGameRepository {
                 LEFT JOIN game_tags gt ON gt.game_id = g.id
                 LEFT JOIN game_genres gg ON gg.game_id = g.id
                 LEFT JOIN game_platforms gp ON gp.game_id = g.id
-            WHERE g.draft = 
         "#,
         );
-
-        query.push_str(if include_drafts { "true " } else { "false " });
+        if !include_drafts {
+            query.push_str(" WHERE g.draft = false ");
+        }
 
         if !params.platform_ids.is_empty() {
             let id_str = params

@@ -5,7 +5,10 @@ pub mod model;
 pub mod repository;
 pub mod service;
 
-pub use dto::{CreateGameRequest, UpdateGameRequest, PublishUnpublishGameRequest, GameFilterQuery, GameSortField, SortDirection};
+pub use dto::{
+    CreateGameRequest, GameFilterQuery, GameSortField, PublishUnpublishGameRequest,
+    PublsherGamesQuery, SortDirection, UpdateGameRequest,
+};
 pub use error::{GameError, Result};
 pub use model::{Game, GameDetails, GameSimple};
 pub use repository::{GameRepository, PostgresGameRepository};

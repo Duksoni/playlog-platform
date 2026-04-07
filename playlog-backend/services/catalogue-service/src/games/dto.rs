@@ -54,19 +54,24 @@ pub struct PublishUnpublishGameRequest {
 }
 
 #[derive(Deserialize, IntoParams)]
+pub struct PublsherGamesQuery {
+    pub page: u64,
+}
+
+#[derive(Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct GameFilterQuery {
     pub name: Option<String>,
 
-    #[serde(default)]
+    #[serde(default, rename = "platforms")]
     #[param(rename = "platforms", required = false, style = Form, explode = true)]
     pub platform_ids: Vec<i32>,
 
-    #[serde(default)]
+    #[serde(default, rename = "genres")]
     #[param(rename = "genres", required = false, style = Form, explode = true)]
     pub genre_ids: Vec<i32>,
 
-    #[serde(default)]
+    #[serde(default, rename = "tags")]
     #[param(rename = "tags", required = false, style = Form, explode = true)]
     pub tag_ids: Vec<i32>,
 

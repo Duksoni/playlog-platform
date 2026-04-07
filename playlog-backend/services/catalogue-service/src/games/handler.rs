@@ -1,17 +1,15 @@
-use super::{
-    CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest,
-    UpdateGameRequest,
-};
+use super::{CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest, PublsherGamesQuery, UpdateGameRequest};
 use crate::app::AppState;
 use api_error::ApiError;
 use axum::{
     Json,
-    extract::{Path, Query, State},
+    extract::{Path, State},
     http::{Extensions, StatusCode},
     middleware::{from_fn, from_fn_with_state},
     response::IntoResponse,
     routing::{delete, get, post, put},
 };
+use axum_extra::extract::Query;
 use axum_macros::debug_handler;
 use jwt_common::{AuthClaims, JwtConfig, Role, auth, middleware::auth_optional, require_admin};
 use std::sync::Arc;
@@ -95,7 +93,7 @@ async fn find_by_developer(
     summary = "Get games by publisher",
     params(
         ("publisher_id" = i32, Path, description = "Publisher id"),
-        ("page" = u64, Query, description = "Page number")
+        PublsherGamesQuery
     ),
     responses(
         (status = 200, description = "List of games", body = Vec<GameSimple>),
@@ -107,11 +105,11 @@ async fn find_by_developer(
 async fn find_by_publisher(
     State(state): State<Arc<AppState>>,
     Path(publisher_id): Path<i32>,
-    Query(page): Query<u64>,
+    Query(params): Query<PublsherGamesQuery>,
 ) -> Result<Json<Vec<GameSimple>>, ApiError> {
     let games = state
         .game_service
-        .find_by_publisher(publisher_id, page)
+        .find_by_publisher(publisher_id, params.page)
         .await?;
     Ok(Json(games))
 }
@@ -132,13 +130,10 @@ async fn find_by_publisher(
 #[debug_handler]
 async fn get_game(
     State(state): State<Arc<AppState>>,
-    extensions: Extensions,
     Path(id): Path<i32>,
 ) -> Result<Json<Game>, ApiError> {
-    let claims = extensions.get::<AuthClaims>();
-    let include_draft = claims.map(|c| c.role == Role::Admin).unwrap_or(false);
 
-    let game = state.game_service.get(id, include_draft).await?;
+    let game = state.game_service.get(id).await?;
     Ok(Json(game))
 }
 

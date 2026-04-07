@@ -594,6 +594,7 @@ dependencies = [
  "api-error",
  "async-trait",
  "axum",
+ "axum-extra",
  "axum-macros",
  "chrono",
  "dotenvy",
