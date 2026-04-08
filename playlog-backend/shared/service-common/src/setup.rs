@@ -15,7 +15,10 @@ pub fn init_tracing(crate_name: &str) {
                 .into()
             }),
         )
-        .with(tracing_subscriber::fmt::layer().without_time())
+        .with(
+            tracing_subscriber::fmt::layer()
+                .with_timer(tracing_subscriber::fmt::time::UtcTime::rfc_3339()),
+        )
         .init();
 }
 

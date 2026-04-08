@@ -4,8 +4,12 @@ use axum::http::StatusCode;
 use reqwest::Client as HttpClient;
 
 pub fn build_client() -> HttpClient {
+    build_client_with_timeout(Duration::from_secs(30))
+}
+
+pub fn build_client_with_timeout(timeout: Duration) -> HttpClient {
     HttpClient::builder()
-        .timeout(Duration::from_secs(30))
+        .timeout(timeout)
         .build()
         .expect("Failed to create HTTP client")
 }
