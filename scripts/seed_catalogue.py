@@ -6,17 +6,17 @@ from pathlib import Path
 load_dotenv()
 
 DB_HOST = os.getenv("DB_HOST", "localhost")
-DB_PORT = os.getenv("DB_PORT", "5434")
-DB_NAME = os.getenv("DB_NAME")
+DB_PORT = os.getenv("CATALOGUE_DB_PORT", "5434")
+DB_NAME = os.getenv("CATALOGUE_DB_NAME")
 DB_USER = os.getenv("DB_USER")
-DB_PASSWORD = os.getenv("DB_PASSWORD")
+DB_PASSWORD = os.getenv("CATALOGUE_DB_PASSWORD")
 
 SQL_ROOT = Path("sql_seed")
 
 
 def main():
     if not all([DB_NAME, DB_USER, DB_PASSWORD]):
-        raise ValueError("DB_NAME, DB_USER, and DB_PASSWORD must be set in your .env file.")
+        raise ValueError("CATALOGUE_DB_NAME, DB_USER, and DB_PASSWORD must be set in your .env file.")
 
     sql_files = sorted(SQL_ROOT.glob("*.sql"))
 
