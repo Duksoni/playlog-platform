@@ -241,11 +241,9 @@ impl MediaService {
         content_type: String,
         data: Bytes,
     ) -> Result<()> {
-        let size = data.len();
         let segmented = SegmentedBytes::from(data);
         let mut extra_headers = Multimap::new();
         extra_headers.add("Content-Type", content_type);
-        extra_headers.add("Content-Length", size.to_string());
 
         self.minio
             .put_object(&self.bucket, object_key, segmented)
