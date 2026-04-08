@@ -1,0 +1,151 @@
+<div class="media-dialog">
+	<h2 mat-dialog-title i18n="@@mediaDialog.title">Manage Media</h2>
+
+	<mat-dialog-content>
+		<div class="media-sections">
+
+			<!-- Cover -->
+			<section class="media-section">
+				<div class="section-header">
+					<h3 i18n="@@mediaDialog.cover">Cover Image</h3>
+					<span class="section-hint" i18n="@@mediaDialog.coverHint">Max 10 MB · Replaces existing</span>
+				</div>
+
+				<div class="cover-row">
+					@if (pendingCover()) {
+						<div class="preview-item">
+							<img [src]="pendingCover()!.previewUrl" alt="Cover preview"
+							     i18n-alt="@@mediaDialog.coverPreviewAlt" class="cover-preview no-pointer-events"/>
+							<button mat-icon-button class="remove-btn"
+							        (click)="removePending(pendingFiles().indexOf(pendingCover()!))"
+							        matTooltip="Remove" i18n-matTooltip="@@mediaDialog.remove">
+								<mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+							</button>
+							<span class="new-badge" i18n="@@mediaDialog.new">NEW</span>
+						</div>
+					} @else if (currentCover()) {
+						<div class="preview-item">
+							<img [src]="currentCover()!.url" alt="Current cover"
+							     i18n-alt="@@mediaDialog.currentCoverAlt" class="cover-preview no-pointer-events"/>
+							<span class="current-badge" i18n="@@mediaDialog.current">CURRENT</span>
+						</div>
+					} @else {
+						<div class="empty-preview cover-preview">
+							<mat-icon fontSet="material-symbols-rounded">image</mat-icon>
+						</div>
+					}
+
+					<input #coverInput type="file" accept="image/*" (change)="selectCover($event)" hidden/>
+					<button mat-stroked-button type="button" (click)="coverInput.click()">
+						<mat-icon fontSet="material-symbols-rounded">upload</mat-icon>
+						<span i18n="@@mediaDialog.selectCover">Select Cover</span>
+					</button>
+				</div>
+			</section>
+
+			<mat-divider></mat-divider>
+
+			<!-- Screenshots -->
+			<section class="media-section">
+				<div class="section-header">
+					<h3 i18n="@@mediaDialog.screenshots">Screenshots</h3>
+					<span class="section-hint" i18n="@@mediaDialog.screenshotsHint">Max 10 MB each · Adding new ones replaces all existing</span>
+				</div>
+
+				<div class="screenshot-grid">
+					<!-- Show existing only if nothing new is staged -->
+					@if (pendingScreenshots().length === 0) {
+						@for (ss of currentScreenshots(); track ss.url) {
+							<div class="preview-item small">
+								<img [src]="ss.url" alt="Screenshot" i18n-alt="@@mediaDialog.screenshotAlt"
+								     class="screenshot-preview no-pointer-events"/>
+								<span class="current-badge" i18n="@@mediaDialog.current">CURRENT</span>
+							</div>
+						}
+					}
+					<!-- Pending screenshots -->
+					@for (pending of pendingScreenshots(); track pending.previewUrl) {
+						<div class="preview-item small">
+							<img [src]="pending.previewUrl" alt="Screenshot preview"
+							     i18n-alt="@@mediaDialog.screenshotPreviewAlt"
+							     class="screenshot-preview no-pointer-events"/>
+							<button mat-icon-button class="remove-btn small"
+							        (click)="removePending(pendingFiles().indexOf(pending))"
+							        matTooltip="Remove" i18n-matTooltip="@@mediaDialog.remove">
+								<mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+							</button>
+							<span class="new-badge" i18n="@@mediaDialog.new">NEW</span>
+						</div>
+					}
+				</div>
+
+				<input #ssInput type="file" accept="image/*" multiple (change)="selectScreenshots($event)" hidden/>
+				<button mat-stroked-button type="button" (click)="ssInput.click()">
+					<mat-icon fontSet="material-symbols-rounded">add_photo_alternate</mat-icon>
+					<span i18n="@@mediaDialog.addScreenshots">Add Screenshots</span>
+				</button>
+			</section>
+
+			<mat-divider></mat-divider>
+
+			<!-- Trailer -->
+			<section class="media-section">
+				<div class="section-header">
+					<h3 i18n="@@mediaDialog.trailer">Trailer</h3>
+					<span class="section-hint" i18n="@@mediaDialog.trailerHint">Max 500 MB · Replaces existing</span>
+				</div>
+
+				@if (pendingTrailer()) {
+					<div class="trailer-preview-row">
+						<video [src]="pendingTrailer()!.previewUrl" controls oncontextmenu="return false;"
+						       class="trailer-preview"
+						       aria-label="Trailer preview" i18n-aria-label="@@mediaDialog.trailerPreviewAria"></video>
+						<div class="trailer-meta">
+							<span class="new-badge inline" i18n="@@mediaDialog.new">NEW</span>
+							<span class="file-name">{{ pendingTrailer()!.file.name }}</span>
+							<button mat-stroked-button type="button"
+							        (click)="removePending(pendingFiles().indexOf(pendingTrailer()!))">
+								<mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+								<span i18n="@@mediaDialog.removeTrailer">Remove</span>
+							</button>
+						</div>
+					</div>
+				} @else if (currentTrailer()) {
+					<div class="trailer-preview-row">
+						<video [src]="currentTrailer()!.url" controls class="trailer-preview"
+						       oncontextmenu="return false;"
+						       aria-label="Current trailer" i18n-aria-label="@@mediaDialog.currentTrailerAria"></video>
+						<span class="current-badge inline" i18n="@@mediaDialog.current">CURRENT</span>
+					</div>
+				}
+
+				<input #trailerInput type="file" accept="video/*" (change)="selectTrailer($event)" hidden/>
+				<button mat-stroked-button type="button" (click)="trailerInput.click()">
+					<mat-icon fontSet="material-symbols-rounded">videocam</mat-icon>
+					<span i18n="@@mediaDialog.selectTrailer">Select Trailer</span>
+				</button>
+			</section>
+
+			@if (error()) {
+				@for (error of error()!.errors; track error) {
+					<div class="error-message">
+						<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+						<span>error</span>
+					</div>
+				}
+			}
+		</div>
+	</mat-dialog-content>
+
+	<mat-dialog-actions>
+		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@mediaDialog.cancel">Cancel</button>
+		<button mat-flat-button (click)="onUpload()" [disabled]="!hasPendingChanges || submitting()">
+			@if (submitting()) {
+				<mat-spinner diameter="20" class="me-2"></mat-spinner>
+				<span i18n="@@mediaDialog.uploading">Uploading...</span>
+			} @else {
+				<span i18n="@@mediaDialog.upload">Upload Changes</span>
+			}
+		</button>
+	</mat-dialog-actions>
+</div>
