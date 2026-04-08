@@ -1,0 +1,163 @@
+<div class="games-list-page">
+
+	<!-- Page Header -->
+	<div class="page-header">
+		<div class="page-header-title">
+			<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+			<h1>{{ pageTitle() }}</h1>
+		</div>
+
+		<div class="page-header-actions">
+
+			@if (isStandaloneList() && isAnyFilterActive()) {
+				<button mat-button (click)="clearFilters()">
+					<mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
+					<span i18n="@@games.clearFilters">Clear Filters</span>
+				</button>
+			}
+
+			@if (sessionService.user().role === Role.ADMIN) {
+				<button mat-flat-button (click)="openCreateDialog()">
+					<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+					<span i18n="@@games.addGame">Add Game</span>
+				</button>
+			}
+		</div>
+	</div>
+
+	<div class="content-layout">
+
+		<!-- Filters Sidebar -->
+		@if (isStandaloneList()) {
+			<aside class="filters-sidebar">
+				<div class="filter-header">
+					<span class="filter-title" i18n="@@games.filters">Filters</span>
+				</div>
+
+				@if (sessionService.user().role === Role.ADMIN) {
+					<mat-slide-toggle
+						[checked]="showOnlyDrafts()"
+						(change)="onDraftToggle($event)"
+						class="mb-3"
+					>
+						Only Draft
+					</mat-slide-toggle>
+				}
+
+				<form [formGroup]="filterForm" class="filter-form">
+
+					<!-- Name search -->
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@games.searchByName">Search by name</mat-label>
+						<input matInput formControlName="name" autocomplete="off" />
+						<mat-icon matSuffix fontSet="material-symbols-rounded">search</mat-icon>
+					</mat-form-field>
+
+					<app-searchable-multi-select
+						entityType="genres"
+						label="Genres"
+						i18n-label="@@games.genres"
+						[disabled]="showOnlyDrafts()"
+						(selectedIdsChange)="onGenresChange($event)"
+					/>
+
+					<app-searchable-multi-select
+						entityType="platforms"
+						label="Platforms"
+						i18n-label="@@games.platforms"
+						[disabled]="showOnlyDrafts()"
+						(selectedIdsChange)="onPlatformsChange($event)"
+					/>
+
+					<app-searchable-multi-select
+						entityType="tags"
+						label="Tags"
+						i18n-label="@@games.tags"
+						[disabled]="showOnlyDrafts()"
+						(selectedIdsChange)="onTagsChange($event)"
+					/>
+
+					<mat-divider></mat-divider>
+
+					<!-- Sort -->
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@games.sortBy">Sort by</mat-label>
+						<mat-select formControlName="sort">
+							<mat-option value="name" i18n="@@games.sortName">Name</mat-option>
+							<mat-option value="released" i18n="@@games.sortReleased">Release date</mat-option>
+						</mat-select>
+					</mat-form-field>
+
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@games.sortDirection">Order</mat-label>
+						<mat-select formControlName="sortDirection">
+							<mat-option value="asc" i18n="@@sort.asc">Ascending</mat-option>
+							<mat-option value="desc" i18n="@@sort.desc">Descending</mat-option>
+						</mat-select>
+					</mat-form-field>
+				</form>
+			</aside>
+		}
+
+		<!-- Games List -->
+		<div class="games-area">
+			@if (gameService.loading() && gameService.games().length === 0) {
+				<div class="loading-container">
+					<mat-spinner diameter="48"></mat-spinner>
+				</div>
+			} @else if (!gameService.loading() && gameService.games().length === 0) {
+				<div class="empty-state">
+					<mat-icon fontSet="material-symbols-rounded">search_off</mat-icon>
+					<p i18n="@@games.noResults">No games found matching your criteria.</p>
+				</div>
+			} @else {
+				<div class="games-list">
+					@for (game of gameService.games(); track game.id) {
+						<mat-card
+							class="game-card"
+							[class.draft-card]="game.draft"
+							(click)="navigateToGame(game.id)"
+							(keydown.enter)="navigateToGame(game.id)"
+							tabindex="0"
+							role="button"
+							[attr.aria-label]="game.name"
+						>
+							<div class="game-card-cover no-pointer-events">
+								@if (game.cover) {
+									<img [src]="game.cover" [alt]="game.name" />
+								} @else {
+									<div class="cover-placeholder">
+										<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+									</div>
+								}
+							</div>
+
+							<mat-card-content class="game-card-content">
+								<div class="game-card-title-row">
+									<h3 class="game-card-title">{{ game.name }}</h3>
+									@if (game.draft) {
+										<span class="draft-badge" i18n="@@games.draft">Draft</span>
+									}
+								</div>
+								@if (game.released) {
+									<p class="game-card-year">{{ game.released | date:'mediumDate'}}</p>
+								}
+							</mat-card-content>
+
+							<mat-icon fontSet="material-symbols-rounded" class="game-card-chevron">
+								chevron_right
+							</mat-icon>
+						</mat-card>
+					}
+				</div>
+
+				<div class="scroll-sentinel-area">
+					@if (gameService.loading()) {
+						<mat-spinner diameter="32"></mat-spinner>
+					}
+					<div #scrollSentinel class="scroll-sentinel"></div>
+				</div>
+			}
+		</div>
+	</div>
+</div>

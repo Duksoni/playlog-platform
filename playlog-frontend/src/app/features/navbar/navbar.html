@@ -1,58 +1,77 @@
 <mat-toolbar>
+	<div class="mobile-nav-trigger">
+		<button mat-icon-button [matMenuTriggerFor]="mobileMenu">
+			<mat-icon fontSet="material-symbols-rounded">menu</mat-icon>
+		</button>
+	</div>
+
 	@if (!topLevelDestination) {
-		<button mat-icon-button (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack">
+		<button mat-icon-button (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack" class="back-btn">
 			<mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
 		</button>
 	}
 
-	<span class="navbar-brand-text px-3" routerLink="/" i18n="@@nav.brand">Playlog</span>
+	<a class="navbar-brand-text px-3" routerLink="/" i18n="@@nav.brand">Playlog</a>
 
-	@if (sessionService.user().role === Role.ADMIN) {
-		<button
-			mat-button
-			[matMenuTriggerFor]="gameEntitiesAdminMenu"
-			i18n="@@nav.gameEntities"
-			matTooltip="Manage Game Entities"
-			i18n-matTooltip="@@nav.manageGameEntities"
-			matTooltipShowDelay="300"
+	<div class="desktop-nav">
+		<!-- Games link — visible to everyone -->
+		<a
+			class="nav-link-item"
+			routerLink="/games"
+			routerLinkActive="active-link"
+			i18n="@@nav.games"
 		>
-			Game Entities
-			<mat-icon fontSet="material-symbols-rounded">expand_more</mat-icon>
-		</button>
-		<mat-menu #gameEntitiesAdminMenu="matMenu">
-			<button mat-menu-item routerLink="/genres" i18n="@@genres">Genres</button>
-			<button mat-menu-item routerLink="/tags" i18n="@@tags">Tags</button>
-			<button mat-menu-item routerLink="/platforms" i18n="@@tags">Platforms</button>
-			<button mat-menu-item routerLink="/publishers" i18n="@@publishers">Publishers</button>
-			<button mat-menu-item routerLink="/developers" i18n="@@developers">Developers</button>
-		</mat-menu>
-	}
+			<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+			<span>Games</span>
+		</a>
+
+		<!-- Admin: Game Entities management -->
+		@if (sessionService.user().role === Role.ADMIN) {
+			<button
+				class="nav-link-item nav-trigger"
+				[class.active-link]="gameEntitiesActive"
+				[matMenuTriggerFor]="gameEntitiesAdminMenu"
+				matTooltip="Manage Game Entities"
+				i18n-matTooltip="@@nav.manageGameEntities"
+				matTooltipShowDelay="300"
+				i18n="@@nav.gameEntities"
+			>
+				<span>Game Entities</span>
+				<mat-icon fontSet="material-symbols-rounded">expand_more</mat-icon>
+			</button>
+
+			<mat-menu #gameEntitiesAdminMenu="matMenu">
+				<button mat-menu-item routerLink="/genres" i18n="@@genres">Genres</button>
+				<button mat-menu-item routerLink="/tags" i18n="@@tags">Tags</button>
+				<button mat-menu-item routerLink="/platforms" i18n="@@platforms">Platforms</button>
+				<button mat-menu-item routerLink="/publishers" i18n="@@publishers">Publishers</button>
+				<button mat-menu-item routerLink="/developers" i18n="@@developers">Developers</button>
+			</mat-menu>
+		}
+	</div>
 
 	<span class="toolbar-spacer"></span>
 
-	<button
-		mat-icon-button
-		(click)="changeTheme()"
-	>
+	<button mat-icon-button (click)="changeTheme()">
 		@if (sessionService.theme() === 'light') {
 			<mat-icon
 				fontSet="material-symbols-rounded"
 				matTooltip="Switch to Dark Theme"
 				i18n-matTooltip="@@nav.switchToDark"
-			>
-				dark_mode
+			>dark_mode
 			</mat-icon>
 		} @else {
 			<mat-icon
 				fontSet="material-symbols-rounded"
 				matTooltip="Switch to Light Theme"
-				i18n-matTooltip="@@nav.switchToLight">
-				light_mode
+				i18n-matTooltip="@@nav.switchToLight"
+			>light_mode
 			</mat-icon>
 		}
 	</button>
 
 	<mat-divider vertical class="ps-2"></mat-divider>
+
 	<button
 		mat-icon-button
 		[matMenuTriggerFor]="sessionService.user().role === Role.GUEST ? profileMenuGuest : profileMenuUser"
@@ -64,21 +83,12 @@
 	</button>
 
 	<mat-menu #profileMenuUser="matMenu">
-		<button
-			mat-menu-item
-			routerLink="/profile"
-			i18n="@@nav.myAccount"
-		>
+		<button mat-menu-item routerLink="/profile" i18n="@@nav.myAccount">
 			<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
 			My Account
 		</button>
 		<mat-divider></mat-divider>
-		<button
-			mat-menu-item
-			(click)="logout()"
-			routerLink="/home"
-			i18n="@@nav.signOut"
-		>
+		<button mat-menu-item (click)="logout()" routerLink="/home" i18n="@@nav.signOut">
 			<mat-icon fontSet="material-symbols-rounded">logout</mat-icon>
 			Sign Out
 		</button>
@@ -89,10 +99,33 @@
 			<mat-icon fontSet="material-symbols-rounded">login</mat-icon>
 			Sign in
 		</button>
-		<button mat-menu-item (click)="openRegisterDialog() " i18n="@@nav.signUp">
+		<button mat-menu-item (click)="openRegisterDialog()" i18n="@@nav.signUp">
 			<mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
 			Sign up
 		</button>
+	</mat-menu>
+
+	<!-- Mobile Menu -->
+	<mat-menu #mobileMenu="matMenu">
+		<button mat-menu-item routerLink="/games">
+			<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+			<span i18n="@@nav.games">Games</span>
+		</button>
+
+		@if (sessionService.user().role === Role.ADMIN) {
+			<button mat-menu-item [matMenuTriggerFor]="mobileGameEntitiesMenu">
+				<mat-icon fontSet="material-symbols-rounded">database</mat-icon>
+				<span i18n="@@nav.gameEntities">Game Entities</span>
+			</button>
+		}
+	</mat-menu>
+
+	<mat-menu #mobileGameEntitiesMenu="matMenu">
+		<button mat-menu-item routerLink="/genres" i18n="@@genres">Genres</button>
+		<button mat-menu-item routerLink="/tags" i18n="@@tags">Tags</button>
+		<button mat-menu-item routerLink="/platforms" i18n="@@platforms">Platforms</button>
+		<button mat-menu-item routerLink="/publishers" i18n="@@publishers">Publishers</button>
+		<button mat-menu-item routerLink="/developers" i18n="@@developers">Developers</button>
 	</mat-menu>
 
 </mat-toolbar>

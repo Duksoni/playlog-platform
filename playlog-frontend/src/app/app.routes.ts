@@ -5,6 +5,7 @@ import {TagsPage} from './features/game-entities/tags-page/tags.page';
 import {PlatformsPage} from './features/game-entities/platforms-page/platforms.page';
 import {PublishersPage} from './features/game-entities/publishers-page/publishers.page';
 import {DevelopersPage} from './features/game-entities/developers-page/developers.page';
+import {GamesListPage} from './features/games/games-list-page/games-list.page';
 import {GameDetailPage} from './features/games/game-detail-page/game-detail.page';
 import {authGuard} from './core/guards/auth.guard';
 import {Role} from './features/auth/auth.dto';
@@ -15,14 +16,26 @@ export const routes: Routes = [
 		component: HomePage,
 	},
 	{
-		path: 'genres',
-		component: GenresPage,
-		canActivate: [authGuard],
-		data: {roles: [Role.ADMIN]},
+		path: 'games',
+		component: GamesListPage,
+	},
+	{
+		path: 'developers/:id/games',
+		component: GamesListPage,
+	},
+	{
+		path: 'publishers/:id/games',
+		component: GamesListPage,
 	},
 	{
 		path: 'games/:id',
 		component: GameDetailPage,
+	},
+	{
+		path: 'genres',
+		component: GenresPage,
+		canActivate: [authGuard],
+		data: {roles: [Role.ADMIN]},
 	},
 	{
 		path: 'tags',
