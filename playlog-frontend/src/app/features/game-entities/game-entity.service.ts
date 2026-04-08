@@ -37,6 +37,17 @@ export class GameEntityService {
 		});
 	}
 
+	/** First 20 by name — for dropdowns and autocomplete initial load. */
+	getAllForFilter(entityType: GameEntityType) {
+		return this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}`);
+	}
+
+	/** Search by partial name — for autocomplete. */
+	searchForFilter(entityType: GameEntityType, query: string) {
+		const params = new HttpParams().set('q', query);
+		return this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}/search`, {params});
+	}
+
 	getById(entityType: GameEntityType, id: number) {
 		return this.http.get<GameEntity>(`${environment.apiUrl}/${entityType}/${id}`);
 	}
@@ -71,4 +82,3 @@ export class GameEntityService {
 		return this.http.delete<void>(`${environment.apiUrl}/${entityType}/${id}`);
 	}
 }
-
