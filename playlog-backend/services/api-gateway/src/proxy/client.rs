@@ -11,6 +11,22 @@ pub struct ProxyClient {
     client: Client,
 }
 
+// List of hop-by-hop headers that should not be forwarded
+// These are headers that are specific to a single connection between two nodes.
+// They are meant for the proxy only.
+const HOP_BY_HOP_HEADERS: &[&str] = &[
+    "connection",
+    "keep-alive",
+    "proxy-authenticate",
+    "proxy-authorization",
+    "te",
+    "trailers",
+    "transfer-encoding",
+    "upgrade",
+    "host",
+    "content-length",
+];
+
 impl ProxyClient {
     pub fn new(client: Client) -> Self {
         Self { client }
@@ -32,28 +48,20 @@ impl ProxyClient {
     ) -> Result<Response> {
         let url = format!("{}{}", service_url, path);
 
-        // Convert axum Body to bytes
-        let body_bytes = axum::body::to_bytes(body, usize::MAX).await.map_err(|e| {
-            GatewayError::RequestFailed(format!("Failed to read request body: {}", e))
-        })?;
-
         // Build the proxied request
         let mut request = self.client.request(method.clone(), &url);
 
         // Forward relevant headers (especially Authorization for double verification)
-        for (name, value) in headers.iter() {
-            // Skip certain headers that should not be forwarded
-            let name_str = name.as_str();
-            if name_str.starts_with("host") || name_str.starts_with("content-length") {
-                continue;
-            }
+        for (name, value) in headers.iter().filter(|(name, _)| {
+            !HOP_BY_HOP_HEADERS
+                .iter()
+                .any(|&header| header.eq_ignore_ascii_case(name.as_str()))
+        }) {
             request = request.header(name, value);
         }
 
-        // Add body if present
-        if !body_bytes.is_empty() {
-            request = request.body(body_bytes.to_vec());
-        }
+        // Add body if present - stream it without reading it all into memory
+        request = request.body(reqwest::Body::wrap_stream(body.into_data_stream()));
 
         // Send the request
         let response = request.send().await.map_err(|e| {

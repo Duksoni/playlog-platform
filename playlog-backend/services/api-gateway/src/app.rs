@@ -10,18 +10,18 @@ use crate::{
         ServiceAppState,
     },
 };
-use axum::{http::StatusCode, response::IntoResponse, routing::get, Router};
+use axum::{extract::DefaultBodyLimit, http::StatusCode, response::IntoResponse, routing::get, Router};
 use jwt_common::JwtConfig;
 use service_common::{
     app::{cors_layer, root_redirect},
-    http_client::build_client,
+    http_client::build_client_with_timeout,
 };
-use std::sync::Arc;
+use std::{sync::Arc, time::Duration};
 use tower_http::trace::TraceLayer;
 use utoipa_swagger_ui::SwaggerUi;
 
 pub async fn build_app(config: Config) -> Router {
-    let client = build_client();
+    let client = build_client_with_timeout(Duration::from_secs(600));
     let docs = load_service_docs(&config, &client).await;
     let proxy_client = ProxyClient::new(client.clone());
     let jwt_config = JwtConfig::new(config.jwt_public_key.clone());
@@ -140,6 +140,7 @@ pub async fn build_app(config: Config) -> Router {
         )
         .merge(swagger_ui)
         .layer(TraceLayer::new_for_http())
+        .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
         .layer(cors_layer(true))
 }
 
