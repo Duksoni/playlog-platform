@@ -1,6 +1,7 @@
 use api_error::ApiError;
 use axum::http::StatusCode;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Debug, Error)]
 pub enum LibraryError {
@@ -15,9 +16,6 @@ pub enum LibraryError {
 
     #[error("Database error: {0}")]
     DatabaseError(#[from] sqlx::Error),
-
-    #[error("Internal error")]
-    InternalError,
 }
 
 pub type Result<T> = std::result::Result<T, LibraryError>;
@@ -27,9 +25,11 @@ impl From<LibraryError> for ApiError {
         let status = match &error {
             LibraryError::NotFound => StatusCode::NOT_FOUND,
             LibraryError::InvalidGameId(_) => StatusCode::BAD_REQUEST,
-            LibraryError::CatalogueServiceError(_)
-            | LibraryError::DatabaseError(_)
-            | LibraryError::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            LibraryError::DatabaseError(db_err) => {
+                error!(error = %db_err, "database error");
+                return ApiError::internal_error()
+            }
+            LibraryError::CatalogueServiceError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError::new(status, error.to_string())
     }

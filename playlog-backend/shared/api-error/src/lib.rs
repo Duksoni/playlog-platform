@@ -19,6 +19,13 @@ impl ApiError {
         }
     }
 
+    pub fn internal_error() -> Self {
+        Self {
+            code: StatusCode::INTERNAL_SERVER_ERROR,
+            errors: vec![],
+        }
+    }
+
     pub fn with_errors(code: StatusCode, errors: Vec<String>) -> Self {
         Self { code, errors }
     }

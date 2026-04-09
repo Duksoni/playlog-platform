@@ -1,6 +1,7 @@
 use api_error::ApiError;
 use axum::http::StatusCode;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Debug, Error)]
 pub enum GameEntityError {
@@ -23,7 +24,10 @@ impl From<GameEntityError> for ApiError {
     fn from(error: GameEntityError) -> Self {
         let status = match error {
             GameEntityError::NotFound(_, _) => StatusCode::NOT_FOUND,
-            GameEntityError::DatabaseError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            GameEntityError::DatabaseError(db_err) => {
+                error!(error = %db_err, "database error");
+                return ApiError::internal_error()
+            }
             GameEntityError::UnsupportedOperation(_, _) => StatusCode::NOT_IMPLEMENTED,
             GameEntityError::Conflict(_, _) => StatusCode::CONFLICT,
         };

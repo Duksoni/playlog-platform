@@ -1,6 +1,7 @@
 use api_error::ApiError;
 use axum::http::StatusCode;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Debug, Error)]
 pub enum MediaError {
@@ -46,9 +47,15 @@ impl From<MediaError> for ApiError {
             | MediaError::UnknownField(_)
             | MediaError::FileTooLarge { .. }
             | MediaError::MissingContentType(_) => StatusCode::BAD_REQUEST,
-            MediaError::CatalogueServiceError(_)
-            | MediaError::DatabaseError(_)
-            | MediaError::StorageError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            MediaError::DatabaseError(db_err) => {
+                error!(error = %db_err, "database error");
+                return ApiError::internal_error()
+            }
+            MediaError::StorageError(err) => {
+                error!(error = %err, "storage error");
+                return ApiError::internal_error()
+            }
+            MediaError::CatalogueServiceError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             MediaError::Conflict(_) => StatusCode::CONFLICT,
         };
         ApiError::new(status, error.to_string())
