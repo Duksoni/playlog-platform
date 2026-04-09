@@ -127,12 +127,14 @@
 			</section>
 
 			@if (error()) {
-				@for (error of error()!.errors; track error) {
-					<div class="error-message">
-						<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
-						<span>error</span>
+				<div class="error-message">
+					<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+					<div class="error-list">
+						@for (error of error()!.error; track error) {
+							<span>{{ error }}</span>
+						}
 					</div>
-				}
+				</div>
 			}
 		</div>
 	</mat-dialog-content>
@@ -141,8 +143,10 @@
 		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@mediaDialog.cancel">Cancel</button>
 		<button mat-flat-button (click)="onUpload()" [disabled]="!hasPendingChanges || submitting()">
 			@if (submitting()) {
-				<mat-spinner diameter="20" class="me-2"></mat-spinner>
-				<span i18n="@@mediaDialog.uploading">Uploading...</span>
+				<span class="d-flex align-items-center justify-content-center w-100">
+					<mat-spinner diameter="20" class="me-2"></mat-spinner>
+					<span i18n="@@uploading">Uploading...</span>
+				</span>
 			} @else {
 				<span i18n="@@mediaDialog.upload">Upload Changes</span>
 			}

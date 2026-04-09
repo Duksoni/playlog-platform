@@ -51,19 +51,35 @@ body {
 	cursor: pointer;
 }
 
+/*  Error Messages  */
 .error-message {
 	display: flex;
-	align-items: center;
-	gap: 8px;
-	color: #f44336;
-	font-size: 14px;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px 16px;
+	background-color: var(--mat-sys-error-container);
+	border-radius: 8px;
+	color: var(--mat-sys-on-error-container);
 	margin-top: 8px;
 }
 
 .error-message mat-icon {
-	font-size: 18px;
-	width: 18px;
-	height: 18px;
+	flex-shrink: 0;
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+.error-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 1;
+}
+
+.error-list span {
+	font-size: 14px;
+	line-height: 1.4;
 }
 
 .delete-button:enabled {

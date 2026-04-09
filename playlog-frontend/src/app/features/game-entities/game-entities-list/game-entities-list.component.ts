@@ -167,8 +167,8 @@ export class GameEntitiesListComponent implements OnInit {
 				},
 				error: (err) => {
 					const deleteFailed = $localize`:@@deleteFailed:Failed to delete.`;
-					const apiError = err.error as ApiError;
-					const errorMessage = apiError.errors?.join('\n') || deleteFailed;
+					const apiError = err as ApiError;
+					const errorMessage = apiError.error?.join('\n') || deleteFailed;
 					this.snackbarService.createSnackbar(errorMessage);
 					dialogRef.close();
 				},

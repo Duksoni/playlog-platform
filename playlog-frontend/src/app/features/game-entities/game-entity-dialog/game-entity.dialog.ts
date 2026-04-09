@@ -83,7 +83,7 @@ export class GameEntityDialog implements OnInit {
 				},
 				error: (err) => {
 					this.submitting.set(false);
-					this.error.set(err.error as ApiError);
+					this.error.set(err as ApiError);
 				},
 			});
 		} else {
@@ -95,7 +95,7 @@ export class GameEntityDialog implements OnInit {
 				},
 				error: (err) => {
 					this.submitting.set(false);
-					this.error.set(err.error as ApiError);
+					this.error.set(err as ApiError);
 				},
 			});
 		}

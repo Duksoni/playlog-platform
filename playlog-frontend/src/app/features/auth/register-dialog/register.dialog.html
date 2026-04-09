@@ -135,7 +135,11 @@
 				@if (registerService.error()) {
 					<div class="error-message">
 						<mat-icon fontSet="material-symbols-rounded" class="me-2">error</mat-icon>
-						<span>{{ registerService.error() }}</span>
+						<div class="error-list">
+							@for (error of registerService.error()!.error; track error) {
+								<span>{{ error }}</span>
+							}
+						</div>
 					</div>
 				}
 			</form>
@@ -149,9 +153,9 @@
 				[disabled]="registerForm.invalid || registerService.submitting()">
 			@if (registerService.submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">
-          <mat-spinner diameter="20" class="me-2"></mat-spinner>
-          <span i18n="@@register.submitting">Creating account...</span>
-        </span>
+					<mat-spinner diameter="20" class="me-2"></mat-spinner>
+				  	<span i18n="@@register.submitting">Creating account...</span>
+        		</span>
 			} @else {
 				<span i18n="@@register.submit">Sign Up</span>
 			}

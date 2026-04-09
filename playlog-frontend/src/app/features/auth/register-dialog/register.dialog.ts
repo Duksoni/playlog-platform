@@ -62,7 +62,7 @@ export class RegisterDialog {
 		birthdate: [null, [Validators.required]],
 		username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
 		email: ['', [Validators.required, Validators.email]],
-		password: ['', [Validators.required, Validators.pattern(/^(?=.*[A-Z])(?=.*[@$!%*?&])(?=.*[0-9]).{8,}$/)]]
+		password: ['', [Validators.required, Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[@$!%*?&])(?=.*[0-9]).{8,}$/)]]
 	});
 
 	startDate = new Date("2000-01-01");

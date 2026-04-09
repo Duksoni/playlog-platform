@@ -24,7 +24,7 @@ export class LoginService {
 				this.error.set(null);
 			},
 			error: (err) => {
-				const error = err.error as ApiError;
+				const error = err as ApiError;
 				this.error.set(error);
 				this.submitting.set(false);
 			}

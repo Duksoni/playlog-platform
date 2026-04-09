@@ -22,7 +22,11 @@
 			@if (error()) {
 				<div class="error-message">
 					<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
-					<span>{{ error()?.errors }}</span>
+					<div class="error-list">
+						@for (error of error()!.error; track error) {
+							<span>{{ error }}</span>
+						}
+					</div>
 				</div>
 			}
 		</form>
@@ -31,8 +35,10 @@
 		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@gameEntityDialog.cancel">Cancel</button>
 		<button mat-flat-button (click)="onSubmit()" [disabled]="form.invalid || submitting()">
 			@if (submitting()) {
-				<mat-spinner diameter="20" class="me-2"></mat-spinner>
-				<span i18n="@@gameEntityDialog.saving">Saving...</span>
+				<span class="d-flex align-items-center justify-content-center w-100">
+					<mat-spinner diameter="20" class="me-2"></mat-spinner>
+					<span i18n="@@saving">Saving...</span>
+				</span>
 			} @else if (isEditing) {
 				<span i18n="@@gameEntityDialog.save">Save</span>
 			} @else {

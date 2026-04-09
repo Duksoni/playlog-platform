@@ -69,7 +69,11 @@
 				@if (loginService.error()) {
 					<div class="error-message">
 						<mat-icon fontSet="material-symbols-rounded" class="me-2">error</mat-icon>
-						<span>{{ loginService.error()?.errors }}</span>
+						<div class="error-list">
+							@for (error of loginService.error()!.error; track error) {
+								<span>{{ error }}</span>
+							}
+						</div>
 					</div>
 				}
 			</form>
@@ -92,8 +96,8 @@
 		>
 			@if (loginService.submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">
-				  <mat-spinner diameter="20" class="me-2"></mat-spinner>
-				  <span i18n="@@login.signingIn">Signing In...</span>
+					<mat-spinner diameter="20" class="me-2"></mat-spinner>
+					<span i18n="@@login.signingIn">Signing In...</span>
 				</span>
 			} @else {
 				<span i18n="@@login.submit">Sign In</span>
