@@ -1,0 +1,82 @@
+@if (loading()) {
+	<div class="loading-container">
+		<mat-spinner diameter="56"></mat-spinner>
+	</div>
+} @else if (user()) {
+	<div class="profile-page">
+
+		<!-- Hero -->
+		<div class="profile-hero">
+			<div class="avatar-circle" aria-hidden="true">
+				<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
+			</div>
+
+			<div class="profile-hero-info">
+				<div class="username-row">
+					<h1 class="username">{{ user()!.username }}</h1>
+					<mat-chip-set>
+						<mat-chip highlighted>
+							{{ getRoleLabel(user()!.role) }}
+						</mat-chip>
+					</mat-chip-set>
+				</div>
+
+				@if (user()!.firstName || user()!.lastName) {
+					<p class="full-name">{{ user()!.firstName }} {{ user()!.lastName }}</p>
+				}
+
+				<p class="member-since">
+					<mat-icon fontSet="material-symbols-rounded">calendar_month</mat-icon>
+					<span i18n="@@profile.memberSince">Member since </span>
+					<span>{{ user()!.createdAt | date:'mediumDate' }}</span>
+				</p>
+
+				<div class="profile-actions">
+					@if (isOwnProfile) {
+						<a mat-stroked-button routerLink="/profile">
+							<mat-icon fontSet="material-symbols-rounded">manage_accounts</mat-icon>
+							<span i18n="@@profile.editProfile">Edit Profile</span>
+						</a>
+					}
+				</div>
+			</div>
+		</div>
+
+		<mat-divider></mat-divider>
+
+		<div class="profile-body">
+			@if (user()!.firstName || user()!.lastName ||user()!.birthdate) {
+				<!-- Details -->
+				<section class="profile-section">
+					<h2 class="section-title" i18n="@@profile.details">Details</h2>
+					<div class="details-grid">
+						@if (user()!.firstName) {
+							<div class="detail-item">
+								<span class="detail-label" i18n="@@profile.firstName">First Name</span>
+								<span class="detail-value">{{ user()!.firstName }}</span>
+							</div>
+						}
+						@if (user()!.lastName) {
+							<div class="detail-item">
+								<span class="detail-label" i18n="@@profile.firstName">First Name</span>
+								<span class="detail-value">{{ user()!.lastName }}</span>
+							</div>
+						}
+						@if (user()!.birthdate) {
+							<div class="detail-item">
+								<span class="detail-label" i18n="@@profile.birthdate">Date of birth</span>
+								<span class="detail-value">{{ user()!.birthdate | date:'mediumDate' }}</span>
+							</div>
+						}
+					</div>
+				</section>
+				<mat-divider></mat-divider>
+			}
+
+			<!-- Library Section -->
+			<section class="profile-section library-section">
+				<app-library-section [profileUserId]="user()!.id" [showHeader]="true" />
+			</section>
+		</div>
+	</div>
+}

@@ -40,23 +40,27 @@ export class Navbar {
 	private router = inject(Router);
 	private http = inject(HttpClient);
 
+	// Single-segment paths treated as top-level (no back button shown)
 	private topLevelDestinations = [
 		'home',
 		'games',
+		'library',
 		'genres',
 		'tags',
 		'platforms',
 		'publishers',
 		'developers',
+		'profile',
 	];
 
-	protected get topLevelDestination() {
-		const segments = this.location.path().split('/').filter(segment => segment);
-		return segments.length === 1 && this.topLevelDestinations.includes(segments[0]);
+	protected get topLevelDestination(): boolean {
+		const segments = this.location.path().split('/').filter(s => s);
+		if (segments.length === 1 && this.topLevelDestinations.includes(segments[0])) return true;
+		return segments.length === 2 && segments[0] === 'users';
 	}
 
-	protected get gameEntitiesActive() {
-		const segments = this.location.path().split('/').filter(segment => segment);
+	protected get gameEntitiesActive(): boolean {
+		const segments = this.location.path().split('/').filter(s => s);
 		return segments.length > 0 && ['genres', 'tags', 'platforms', 'publishers', 'developers'].includes(segments[0]);
 	}
 
@@ -84,6 +88,12 @@ export class Navbar {
 		this.dialogService.openDialog(RegisterDialog, {
 			disableClose: true,
 			autoFocus: false,
+		});
+	}
+
+	protected navigateToLibrary() {
+		this.router.navigate(['/library'], {
+			state: {userId: this.sessionService.user().userId},
 		});
 	}
 

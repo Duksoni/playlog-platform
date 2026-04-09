@@ -7,6 +7,7 @@ import {PublishersPage} from './features/game-entities/publishers-page/publisher
 import {DevelopersPage} from './features/game-entities/developers-page/developers.page';
 import {GamesListPage} from './features/games/games-list-page/games-list.page';
 import {GameDetailPage} from './features/games/game-detail-page/game-detail.page';
+import {UserProfilePage} from './features/users/user-profile-page/user-profile.page';
 import {MyProfilePage} from './features/users/my-profile-page/my-profile.page';
 import {authGuard} from './core/guards/auth.guard';
 import {Role} from './features/auth/auth.dto';
@@ -44,6 +45,10 @@ export const routes: Routes = [
 		component: LibraryPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.USER, Role.MODERATOR, Role.ADMIN]},
+	},
+	{
+		path: 'users/:username',
+		component: UserProfilePage,
 	},
 	{
 		path: 'genres',

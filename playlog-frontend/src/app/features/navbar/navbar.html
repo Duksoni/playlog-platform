@@ -6,7 +6,8 @@
 	</div>
 
 	@if (!topLevelDestination) {
-		<button mat-icon-button (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack" class="back-btn">
+		<button mat-icon-button (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack"
+		        class="back-btn">
 			<mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
 		</button>
 	}
@@ -14,7 +15,6 @@
 	<a class="navbar-brand-text px-3" routerLink="/" i18n="@@nav.brand">Playlog</a>
 
 	<div class="desktop-nav">
-		<!-- Games link — visible to everyone -->
 		<a
 			class="nav-link-item"
 			routerLink="/games"
@@ -25,7 +25,6 @@
 			<span>Games</span>
 		</a>
 
-		<!-- Admin: Game Entities management -->
 		@if (sessionService.user().role === Role.ADMIN) {
 			<button
 				class="nav-link-item nav-trigger"
@@ -34,9 +33,8 @@
 				matTooltip="Manage Game Entities"
 				i18n-matTooltip="@@nav.manageGameEntities"
 				matTooltipShowDelay="300"
-				i18n="@@nav.gameEntities"
 			>
-				<span>Game Entities</span>
+				<span i18n="@@nav.gameEntities">Game Entities</span>
 				<mat-icon fontSet="material-symbols-rounded">expand_more</mat-icon>
 			</button>
 
@@ -86,6 +84,10 @@
 		<button mat-menu-item routerLink="/profile" i18n="@@nav.myAccount">
 			<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
 			My Account
+		</button>
+		<button mat-menu-item (click)="navigateToLibrary()">
+			<mat-icon fontSet="material-symbols-rounded">videogame_asset</mat-icon>
+			<span i18n="@@nav.myLibrary">My Library</span>
 		</button>
 		<mat-divider></mat-divider>
 		<button mat-menu-item (click)="logout()" routerLink="/home" i18n="@@nav.signOut">
