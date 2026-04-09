@@ -19,7 +19,8 @@ impl AuthService {
         let user = self
             .repository
             .find_by_email_or_username(&request.identifier)
-            .await?;
+            .await?
+            .ok_or(AuthError::UserNotFound)?;
 
         if matches!(user.account_status, AccountStatus::Blocked) {
             return Err(AuthError::UserBlocked);
@@ -67,7 +68,11 @@ impl AuthService {
 
         self.revoke_token(token).await?;
 
-        let user = self.repository.find_by_id(claims.user_id).await?;
+        let user = self
+            .repository
+            .find_by_id(claims.user_id)
+            .await?
+            .ok_or(AuthError::UserNotFound)?;
 
         let tokens = self.generate_tokens(config, user).await?;
         Ok(tokens)

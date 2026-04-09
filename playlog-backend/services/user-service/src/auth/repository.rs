@@ -8,8 +8,8 @@ use uuid::Uuid;
 
 #[async_trait]
 pub trait AuthRepository: Send + Sync {
-    async fn find_by_email_or_username(&self, identifier: &str) -> Result<User>;
-    async fn find_by_id(&self, id: Uuid) -> Result<User>;
+    async fn find_by_email_or_username(&self, identifier: &str) -> Result<Option<User>>;
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>>;
     async fn email_exists(&self, email: &str) -> Result<bool>;
     async fn username_exists(&self, username: &str) -> Result<bool>;
     async fn create_user(
@@ -37,7 +37,7 @@ pub struct PostgresAuthRepository {
 
 #[async_trait]
 impl AuthRepository for PostgresAuthRepository {
-    async fn find_by_email_or_username(&self, identifier: &str) -> Result<User> {
+    async fn find_by_email_or_username(&self, identifier: &str) -> Result<Option<User>> {
         let user = query_as!(
             User,
             r#"
@@ -47,12 +47,12 @@ impl AuthRepository for PostgresAuthRepository {
             "#,
             identifier
         )
-            .fetch_one(&self.pool)
+            .fetch_optional(&self.pool)
             .await?;
         Ok(user)
     }
 
-    async fn find_by_id(&self, id: Uuid) -> Result<User> {
+    async fn find_by_id(&self, id: Uuid) -> Result<Option<User>> {
         let user = query_as!(
             User,
             r#"
@@ -62,7 +62,7 @@ impl AuthRepository for PostgresAuthRepository {
             "#,
             id
         )
-        .fetch_one(&self.pool)
+        .fetch_optional(&self.pool)
         .await?;
         Ok(user)
     }
