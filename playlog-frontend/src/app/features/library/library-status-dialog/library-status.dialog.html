@@ -1,0 +1,51 @@
+<div class="status-dialog">
+	<h2 mat-dialog-title i18n="@@libraryDialog.title">Add to Library</h2>
+
+	<mat-dialog-content>
+		<p class="game-name">{{ data.gameName }}</p>
+
+		<div class="status-grid" role="listbox" [attr.aria-label]="'Library status'" i18n-aria-label="@@libraryDialog.statusAria">
+			@for (status of statuses; track status) {
+				<button
+					class="status-option"
+					[class.selected]="selectedStatus() === status"
+					(click)="selectStatus(status)"
+					role="option"
+					[attr.aria-selected]="selectedStatus() === status"
+				>
+					<mat-icon fontSet="material-symbols-rounded" class="status-icon"
+					          [class.filled]="selectedStatus() === status">
+						{{ icons[status] }}
+					</mat-icon>
+					<span class="status-label">{{ labels[status] }}</span>
+				</button>
+			}
+		</div>
+
+		@if (error()) {
+			<div class="error-message">
+				<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+				<span>{{ error()?.errors }}</span>
+			</div>
+		}
+	</mat-dialog-content>
+
+	<mat-dialog-actions>
+		@if (data.currentStatus) {
+			<button mat-stroked-button class="delete-button" (click)="onRemove()" [disabled]="submitting()">
+				<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+				<span i18n="@@libraryDialog.remove">Remove</span>
+			</button>
+		}
+		<button mat-stroked-button mat-dialog-close [disabled]="submitting()" i18n="@@libraryDialog.cancel">Cancel</button>
+		<button mat-flat-button (click)="onSave()"
+		        [disabled]="!selectedStatus() || submitting()">
+			@if (submitting()) {
+				<mat-spinner diameter="20" class="me-2"></mat-spinner>
+				<span i18n="@@libraryDialog.saving">Saving...</span>
+			} @else {
+				<span i18n="@@libraryDialog.save">Save</span>
+			}
+		</button>
+	</mat-dialog-actions>
+</div>

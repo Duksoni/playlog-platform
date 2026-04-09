@@ -9,6 +9,7 @@ import {GamesListPage} from './features/games/games-list-page/games-list.page';
 import {GameDetailPage} from './features/games/game-detail-page/game-detail.page';
 import {authGuard} from './core/guards/auth.guard';
 import {Role} from './features/auth/auth.dto';
+import {LibraryPage} from './features/library/library-page/library.page';
 
 export const routes: Routes = [
 	{
@@ -30,6 +31,12 @@ export const routes: Routes = [
 	{
 		path: 'games/:id',
 		component: GameDetailPage,
+	},
+	{
+		path: 'library',
+		component: LibraryPage,
+		canActivate: [authGuard],
+		data: {roles: [Role.USER, Role.MODERATOR, Role.ADMIN]},
 	},
 	{
 		path: 'genres',

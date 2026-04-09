@@ -75,6 +75,10 @@ export class GameService {
 		return this.http.get<GameSimple[]>(`${this.base}/by-publisher/${publisherId}`, {params});
 	}
 
+	getGame(id: number) {
+		return this.http.get<GameSimple>(`${this.base}/${id}`);
+	}
+
 	private buildParams(filterParams: GameFilterParams): HttpParams {
 		let params = new HttpParams();
 		if (filterParams.name) params = params.set('name', filterParams.name);
