@@ -8,7 +8,7 @@ use validator::Validate;
 
 #[derive(Validate, Deserialize, ToSchema)]
 pub struct UpdatePasswordRequest {
-    #[validate(custom(function = "validate_password"))]
+    #[validate(length(min = 1, max = 64))]
     #[serde(rename = "oldPassword")]
     pub old_password: String,
     #[validate(custom(function = "validate_password"))]
