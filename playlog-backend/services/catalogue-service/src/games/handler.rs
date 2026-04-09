@@ -1,17 +1,20 @@
-use super::{CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest, PublsherGamesQuery, UpdateGameRequest};
+use super::{
+    CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest,
+    PublsherGamesQuery, UpdateGameRequest,
+};
 use crate::app::AppState;
 use api_error::ApiError;
 use axum::{
-    Json,
     extract::{Path, State},
     http::{Extensions, StatusCode},
     middleware::{from_fn, from_fn_with_state},
     response::IntoResponse,
     routing::{delete, get, post, put},
+    Json,
 };
 use axum_extra::extract::Query;
 use axum_macros::debug_handler;
-use jwt_common::{AuthClaims, JwtConfig, Role, auth, middleware::auth_optional, require_admin};
+use jwt_common::{auth, middleware::auth_optional, require_admin, AuthClaims, JwtConfig, Role};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use validator::Validate;
@@ -120,7 +123,7 @@ async fn find_by_publisher(
     summary = "Get basic game info",
     params(("id" = i32, Path, description = "Game id")),
     responses(
-        (status = 200, description = "Game detail with all relations", body = Game),
+        (status = 200, description = "Game detail with all relations", body = GameSimple),
         (status = 404, description = "Game not found"),
     ),
     tag = "games",
@@ -131,8 +134,7 @@ async fn find_by_publisher(
 async fn get_game(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-) -> Result<Json<Game>, ApiError> {
-
+) -> Result<Json<GameSimple>, ApiError> {
     let game = state.game_service.get(id).await?;
     Ok(Json(game))
 }

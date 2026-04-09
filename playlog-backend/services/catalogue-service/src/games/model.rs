@@ -23,6 +23,17 @@ pub struct GameSimple {
     pub draft: bool,
 }
 
+impl From<Game> for GameSimple {
+    fn from(game: Game) -> Self {
+        Self {
+            id: game.id,
+            name: game.name,
+            released: game.released,
+            draft: game.draft,
+        }
+    }
+}
+
 #[derive(Serialize, ToSchema)]
 pub struct GameDetails {
     #[serde(flatten)]

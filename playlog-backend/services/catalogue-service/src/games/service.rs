@@ -54,10 +54,11 @@ impl GameService {
         self.game_repository.get_all_unpublished().await
     }
 
-    pub async fn get(&self, id: i32) -> Result<Game> {
+    pub async fn get(&self, id: i32) -> Result<GameSimple> {
         self.game_repository
             .get(id, true)
             .await?
+            .map(GameSimple::from)
             .ok_or(GameError::NotFound(id))
     }
 
