@@ -23,7 +23,7 @@ use validator::Validate;
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
-    let public_routes = OpenApiRouter::new().route("/{id}", get(get_user));
+    let public_routes = OpenApiRouter::new().route("/{username}", get(get_user));
 
     let user_routes = OpenApiRouter::new()
         .route("/me", put(update_user))
@@ -54,7 +54,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 
 #[utoipa::path(
     get,
-    path = "/api/users/{id}",
+    path = "/api/users/{username}",
     summary = "Get user profile",
     responses(
         (status = 200, description = "User profile", body = UserDetails),
@@ -65,7 +65,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 #[debug_handler]
 async fn get_user(
     State(state): State<Arc<AppState>>,
-    Path(user_id): Path<Uuid>,
+    Path(user_id): Path<String>,
 ) -> Result<Json<UserDetails>, ApiError> {
     let user = state.user_service.get_user_details(user_id).await?;
     Ok(Json(user))

@@ -6,6 +6,7 @@ use uuid::Uuid;
 
 #[derive(Serialize, FromRow, ToSchema)]
 pub struct UserDetails {
+    pub id: Uuid,
     pub username: String,
     pub role: String,
     #[serde(rename = "firstName")]

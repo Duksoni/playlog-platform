@@ -14,7 +14,7 @@ pub trait UserRepository: Send + Sync {
         username: &str,
         role: Role,
     ) -> Result<Vec<SimpleUser>>;
-    async fn get_user_details(&self, user_id: Uuid) -> Result<UserDetails>;
+    async fn get_user_details(&self, username: String) -> Result<UserDetails>;
     async fn get_current_password(&self, user_id: Uuid) -> Result<String>;
     async fn get_user_role(&self, user_id: Uuid) -> Result<Role>;
     async fn get_account_status(&self, user_id: Uuid) -> Result<AccountStatus>;
@@ -59,18 +59,18 @@ impl UserRepository for PostgresUserRepository {
         Ok(users)
     }
 
-    async fn get_user_details(&self, user_id: Uuid) -> Result<UserDetails> {
+    async fn get_user_details(&self, username: String) -> Result<UserDetails> {
         let user = query_as!(
             UserDetails,
             r#"
-                SELECT username, r.name as role, first_name, last_name, birthdate, created_at
+                SELECT u.id, username, r.name as role, first_name, last_name, birthdate, created_at
                 FROM users u
                     INNER JOIN user_profiles p ON u.id = p.user_id
                     INNER JOIN user_roles ur ON ur.user_id = u.id
                     INNER JOIN roles r ON r.id = ur.role_id
-                WHERE u.id = $1 AND account_status = 'ACTIVE'
+                WHERE u.username = $1 AND account_status = 'ACTIVE'
             "#,
-            user_id
+            username
         )
         .fetch_one(&self.pool)
         .await?;

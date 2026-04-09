@@ -32,8 +32,8 @@ impl UserService {
         Ok(FindUsersResponse::new(users))
     }
 
-    pub async fn get_user_details(&self, user_id: Uuid) -> Result<UserDetails> {
-        self.repository.get_user_details(user_id).await
+    pub async fn get_user_details(&self, username: String) -> Result<UserDetails> {
+        self.repository.get_user_details(username).await
     }
 
     pub async fn update_profile(
