@@ -42,6 +42,8 @@ pub struct SimpleCommentResponse {
     pub text: String,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: DateTime<Utc>,
 }
 
 impl From<Comment> for SimpleCommentResponse {
@@ -52,6 +54,7 @@ impl From<Comment> for SimpleCommentResponse {
             username: value.username,
             text: value.text,
             created_at: value.created_at.to_chrono(),
+            updated_at: value.updated_at.to_chrono(),
         }
     }
 }
@@ -69,6 +72,8 @@ pub struct DetailedCommentResponse {
     pub text: String,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: DateTime<Utc>,
 }
 
 impl From<Comment> for DetailedCommentResponse {
@@ -81,6 +86,7 @@ impl From<Comment> for DetailedCommentResponse {
             username: value.username,
             text: value.text,
             created_at: value.created_at.to_chrono(),
+            updated_at: value.updated_at.to_chrono(),
         }
     }
 }

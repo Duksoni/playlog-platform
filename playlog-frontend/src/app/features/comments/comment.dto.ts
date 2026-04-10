@@ -19,14 +19,10 @@ export interface SimpleCommentResponse {
 	username: string;
 	text: string;
 	createdAt: string;
+	updatedAt: string;
 }
 
-export interface DetailedCommentResponse {
-	id: string;
+export interface DetailedCommentResponse extends  SimpleCommentResponse {
 	targetType: CommentTargetType;
 	targetId: string;
-	userId: string;
-	username: string;
-	text: string;
-	createdAt: string;
 }
