@@ -196,7 +196,6 @@ export class MyProfilePage {
 				this.snackbarService.createSnackbar($localize`:@@profile.passwordChanged:Password changed successfully.`);
 			},
 			error: (err) => {
-				console.log(err)
 				this.passwordSubmitting.set(false);
 				this.passwordError.set(err as ApiError);
 			},

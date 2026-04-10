@@ -166,6 +166,7 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		this.dialogService.openDialog(GameDialog, {
 			data: {existing: game},
 			width: '1000px',
+			maxWidth: '40vw',
 			disableClose: true,
 			autoFocus: false,
 		}).afterClosed().subscribe(updated => {

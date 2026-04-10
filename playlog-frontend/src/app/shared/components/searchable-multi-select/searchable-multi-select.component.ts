@@ -39,7 +39,7 @@ export class SearchableMultiSelectComponent implements OnInit {
 	entityType = input.required<GameEntityType>();
 	label = input.required<string>();
 	placeholder = computed(() => this.label() + '...');
-	initialSelectedIds = input<number[]>([]);
+	initialValue = input<GameEntitySimple[]>([]);
 	disabled = input<boolean>(false);
 
 	selectedIdsChange = output<number[]>();
@@ -66,8 +66,12 @@ export class SearchableMultiSelectComponent implements OnInit {
 	}
 
 	ngOnInit() {
-		if (this.initialSelectedIds().length > 0) {
-			this.loadInitialSelected();
+		const initial = this.initialValue();
+		if (initial.length > 0) {
+			initial.forEach(item => {
+				this.selectedMap.set(item.id, item);
+			});
+			this.selectedItems.set([...this.selectedMap.values()]);
 		}
 
 		this.fetchOptions('');
@@ -87,16 +91,6 @@ export class SearchableMultiSelectComponent implements OnInit {
 		this.emitChange();
 		this.searchControl.setValue('', {emitEvent: false});
 		this.fetchOptions('');
-	}
-
-	private loadInitialSelected() {
-		this.entityService.getAllForFilter(this.entityType()).subscribe(items => {
-			const ids = new Set(this.initialSelectedIds());
-			items.filter(i => ids.has(i.id)).forEach(i => {
-				this.selectedMap.set(i.id, i);
-			});
-			this.selectedItems.set([...this.selectedMap.values()]);
-		});
 	}
 
 	private fetchOptions(query: string | null) {

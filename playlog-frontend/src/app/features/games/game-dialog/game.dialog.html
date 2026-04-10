@@ -26,7 +26,7 @@
 				<textarea
 					matInput
 					formControlName="description"
-					rows="4" maxlength="5000"
+					rows="4" maxlength="10000"
 					cdkTextareaAutosize cdkAutosizeMinRows="3" cdkAutosizeMaxRows="6"
 					placeholder="Enter game description" i18n-placeholder="@@gameDialog.descriptionPlaceholder"
 				></textarea>
@@ -69,7 +69,7 @@
 						entityType="developers"
 						label="Developers"
 						i18n-label="@@gameDialog.developers"
-						[initialSelectedIds]="selectedDeveloperIds()"
+						[initialValue]="data.existing?.developers || []"
 						(selectedIdsChange)="onDevelopersChange($event)"
 					/>
 					@if (selectedDeveloperIds().length === 0) {
@@ -81,7 +81,7 @@
 						entityType="publishers"
 						label="Publishers"
 						i18n-label="@@gameDialog.publishers"
-						[initialSelectedIds]="selectedPublisherIds()"
+						[initialValue]="data.existing?.publishers || []"
 						(selectedIdsChange)="onPublishersChange($event)"
 					/>
 					@if (selectedPublisherIds().length === 0) {
@@ -97,7 +97,7 @@
 						entityType="genres"
 						label="Genres"
 						i18n-label="@@gameDialog.genres"
-						[initialSelectedIds]="selectedGenreIds()"
+						[initialValue]="data.existing?.genres || []"
 						(selectedIdsChange)="onGenresChange($event)"
 					/>
 					@if (selectedGenreIds().length === 0) {
@@ -109,7 +109,7 @@
 						entityType="platforms"
 						label="Platforms"
 						i18n-label="@@gameDialog.platforms"
-						[initialSelectedIds]="selectedPlatformIds()"
+						[initialValue]="data.existing?.platforms || []"
 						(selectedIdsChange)="onPlatformsChange($event)"
 					/>
 					@if (selectedPlatformIds().length === 0) {
@@ -123,7 +123,7 @@
 				entityType="tags"
 				label="Tags"
 				i18n-label="@@gameDialog.tags"
-				[initialSelectedIds]="selectedTagIds()"
+				[initialValue]="data.existing?.tags || []"
 				(selectedIdsChange)="onTagsChange($event)"
 			/>
 			@if (selectedTagIds().length === 0) {
