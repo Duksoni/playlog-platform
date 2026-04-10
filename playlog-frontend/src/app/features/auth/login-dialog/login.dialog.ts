@@ -62,7 +62,7 @@ export class LoginDialog {
 		});
 	}
 
-	togglePasswordVisibility(): void {
+	togglePasswordVisibility() {
 		this.hidePassword = !this.hidePassword;
 	}
 

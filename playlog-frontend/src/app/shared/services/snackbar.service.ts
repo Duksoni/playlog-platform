@@ -19,7 +19,7 @@ export class SnackbarService {
 		actionText?: string,
 		actionCallback?: () => void,
 		durationMs?: number,
-	): void {
+	) {
 		const snackBarRef = this._snackbar.open(
 			message,
 			actionText,

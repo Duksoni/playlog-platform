@@ -1,5 +1,3 @@
-// Copied from data-contracts.ts
-
 export enum GameLibraryStatus {
 	OWNED = 'OWNED',
 	PLAYING = 'PLAYING',
@@ -38,11 +36,11 @@ export type LibraryStats = Partial<Record<GameLibraryStatus, number>>;
 
 // Labels for display
 export const LIBRARY_STATUS_LABELS: Record<GameLibraryStatus, string> = {
-	[GameLibraryStatus.OWNED]: 'Owned',
-	[GameLibraryStatus.PLAYING]: 'Playing',
-	[GameLibraryStatus.WISHLIST]: 'Wishlist',
-	[GameLibraryStatus.COMPLETED]: 'Completed',
-	[GameLibraryStatus.DROPPED]: 'Dropped',
+	[GameLibraryStatus.OWNED]: $localize`:@@libraryOwned:Owned`,
+	[GameLibraryStatus.PLAYING]: $localize`:@@libraryPlaying:Playing`,
+	[GameLibraryStatus.WISHLIST]: $localize`:@@libraryWishlist:Wishlist`,
+	[GameLibraryStatus.COMPLETED]: $localize`:@@libraryCompleted:Completed`,
+	[GameLibraryStatus.DROPPED]: $localize`:@@libraryDropped:Dropped`,
 };
 
 export const LIBRARY_STATUS_ICONS: Record<GameLibraryStatus, string> = {
