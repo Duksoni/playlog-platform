@@ -10,9 +10,7 @@ use std::sync::Arc;
 pub fn router(state: Arc<ServiceAppState>) -> Router<Arc<ServiceAppState>> {
     let jwt_config = state.jwt_config.clone();
 
-    let public_routes = Router::new()
-        .route("/user/{id}", get(proxy_handler))
-        .route("/user/{id}/stats", get(proxy_handler));
+    let public_routes = Router::new().route("/user/{id}", get(proxy_handler));
 
     let authenticated_routes = Router::new()
         .route("/", post(proxy_handler))

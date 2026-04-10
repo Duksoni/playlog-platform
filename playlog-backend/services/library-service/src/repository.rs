@@ -4,7 +4,6 @@ use crate::{
 };
 use async_trait::async_trait;
 use sqlx::{query, query_as, PgPool};
-use std::collections::HashMap;
 use uuid::Uuid;
 
 #[async_trait]
@@ -20,7 +19,6 @@ pub trait LibraryRepository: Send + Sync {
         game_id: i32,
         status: GameLibraryStatus,
     ) -> Result<UserGame>;
-    async fn get_library_stats(&self, user_id: Uuid) -> Result<HashMap<GameLibraryStatus, i64>>;
     async fn remove_game(&self, user_id: Uuid, game_id: i32) -> Result<()>;
 }
 
@@ -79,22 +77,6 @@ impl LibraryRepository for PostgresLibraryRepository {
         .fetch_one(&self.pool)
         .await?;
         Ok(game)
-    }
-
-    async fn get_library_stats(&self, user_id: Uuid) -> Result<HashMap<GameLibraryStatus, i64>> {
-        let rows = query!(
-            r#"
-            SELECT status AS "status: GameLibraryStatus", count(*) as "count!"
-            FROM user_games
-            WHERE user_id = $1
-            GROUP BY status
-            "#,
-            user_id
-        )
-        .fetch_all(&self.pool)
-        .await?;
-
-        Ok(rows.into_iter().map(|r| (r.status, r.count)).collect())
     }
 
     async fn remove_game(&self, user_id: Uuid, game_id: i32) -> Result<()> {

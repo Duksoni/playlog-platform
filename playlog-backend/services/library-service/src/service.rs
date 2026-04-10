@@ -1,12 +1,11 @@
+use crate::model::LibraryGame;
 use crate::{
     error::{LibraryError, Result},
     model::{GameLibraryStatus, UserGame},
     repository::LibraryRepository,
 };
 use reqwest::Client;
-use std::collections::HashMap;
 use uuid::Uuid;
-use crate::model::LibraryGame;
 
 pub struct LibraryService {
     repository: Box<dyn LibraryRepository>,
@@ -67,12 +66,5 @@ impl LibraryService {
 
     pub async fn remove_from_library(&self, user_id: Uuid, game_id: i32) -> Result<()> {
         self.repository.remove_game(user_id, game_id).await
-    }
-
-    pub async fn get_library_stats(
-        &self,
-        user_id: Uuid,
-    ) -> Result<HashMap<GameLibraryStatus, i64>> {
-        self.repository.get_library_stats(user_id).await
     }
 }

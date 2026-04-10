@@ -1,7 +1,7 @@
 use crate::{
     app::AppState,
     dto::{AddUpdateGameRequest, LibraryFilterQuery},
-    model::{GameLibraryStatus, UserGame}
+    model::{LibraryGame, UserGame},
 };
 use api_error::ApiError;
 use axum::{
@@ -14,20 +14,14 @@ use axum::{
 };
 use axum_macros::debug_handler;
 use jwt_common::{auth, require_user, AuthClaims, JwtConfig};
-use std::{
-    collections::HashMap,
-    sync::Arc
-};
+use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use uuid::Uuid;
-use crate::model::LibraryGame;
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
 
-    let public_routes = OpenApiRouter::new()
-        .route("/user/{user_id}", get(get_user_library))
-        .route("/user/{user_id}/stats", get(get_library_stats));
+    let public_routes = OpenApiRouter::new().route("/user/{user_id}", get(get_user_library));
 
     let auth_routes = OpenApiRouter::new()
         .route("/", post(add_or_update_game))
@@ -64,27 +58,6 @@ pub async fn get_user_library(
         .get_user_library(user_id, filter.status)
         .await?;
     Ok(Json(games))
-}
-
-#[utoipa::path(
-    get,
-    path = "/api/library/user/{user_id}/stats",
-    summary = "Get user's library statistics",
-    params(("user_id" = Uuid, Path, description = "User UUID")),
-    responses(
-        (status = 200, description = "Library statistics", body = HashMap<GameLibraryStatus, i64>),
-        (status = 400, description = "Invalid UUID"),
-    ),
-    tag = "library",
-    operation_id = "get_library_stats"
-)]
-#[debug_handler]
-pub async fn get_library_stats(
-    State(state): State<Arc<AppState>>,
-    Path(user_id): Path<Uuid>,
-) -> Result<Json<HashMap<GameLibraryStatus, i64>>, ApiError> {
-    let stats = state.library_service.get_library_stats(user_id).await?;
-    Ok(Json(stats))
 }
 
 #[utoipa::path(
