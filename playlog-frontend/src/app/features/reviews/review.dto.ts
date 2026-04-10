@@ -30,6 +30,7 @@ export interface ReviewSimpleResponse {
 	username: string;
 	rating: Rating;
 	text?: string | null;
+	createdAt: string;
 	updatedAt: string;
 }
 
@@ -39,6 +40,7 @@ export interface GameReviewResponse {
 	username: string;
 	rating: Rating;
 	text?: string | null;
+	createdAt: string;
 	updatedAt: string;
 }
 

@@ -4,7 +4,7 @@ import {MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {Location} from '@angular/common';
 import {MatTooltip} from '@angular/material/tooltip';
-import {Router, RouterLink, RouterLinkActive} from '@angular/router';
+import {Router, RouterLink} from '@angular/router';
 import {MatDivider} from '@angular/material/list';
 import {MatMenu, MatMenuItem, MatMenuTrigger} from '@angular/material/menu';
 import {SessionService} from '../../core/services/session.service';
@@ -27,7 +27,6 @@ import {RegisterDialog} from '../auth/register-dialog/register.dialog';
 		MatMenuTrigger,
 		MatMenu,
 		MatMenuItem,
-		RouterLinkActive,
 	],
 	templateUrl: './navbar.html',
 	styleUrl: './navbar.css',
@@ -59,9 +58,20 @@ export class Navbar {
 		return segments.length === 2 && segments[0] === 'users';
 	}
 
+	protected get gamesActive(): boolean {
+		const segments = this.location.path().split('/').filter(s => s);
+		if (segments.length === 0) return false;
+		if (segments[0] === 'games') return true;
+		// Matches /developers/:id/games and /publishers/:id/games
+		return segments[segments.length - 1] === 'games';
+	}
+
 	protected get gameEntitiesActive(): boolean {
 		const segments = this.location.path().split('/').filter(s => s);
-		return segments.length > 0 && ['genres', 'tags', 'platforms', 'publishers', 'developers'].includes(segments[0]);
+		if (segments.length === 0) return false;
+		const isEntityBase = ['genres', 'tags', 'platforms', 'publishers', 'developers'].includes(segments[0]);
+		// Should not be highlighted if we are viewing games of that entity
+		return isEntityBase && segments[segments.length - 1] !== 'games';
 	}
 
 	protected logout() {

@@ -32,8 +32,6 @@ export interface AddUpdateGameRequest {
 	status: GameLibraryStatus;
 }
 
-export type LibraryStats = Partial<Record<GameLibraryStatus, number>>;
-
 // Labels for display
 export const LIBRARY_STATUS_LABELS: Record<GameLibraryStatus, string> = {
 	[GameLibraryStatus.OWNED]: $localize`:@@libraryOwned:Owned`,

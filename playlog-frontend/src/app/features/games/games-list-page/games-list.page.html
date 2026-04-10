@@ -16,7 +16,7 @@
 				</button>
 			}
 
-			@if (sessionService.user().role === Role.ADMIN) {
+			@if (isStandaloneList() && sessionService.user().role === Role.ADMIN) {
 				<button mat-flat-button (click)="openCreateDialog()">
 					<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
 					<span i18n="@@games.addGame">Add Game</span>

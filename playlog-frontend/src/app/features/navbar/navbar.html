@@ -18,7 +18,8 @@
 		<a
 			class="nav-link-item"
 			routerLink="/games"
-			routerLinkActive="active-link"
+			[class.active-link]="gamesActive"
+			[attr.aria-current]="gamesActive ? 'page' : null"
 			i18n="@@nav.games"
 		>
 			<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
@@ -109,7 +110,12 @@
 
 	<!-- Mobile Menu -->
 	<mat-menu #mobileMenu="matMenu">
-		<button mat-menu-item routerLink="/games">
+		<button
+			mat-menu-item
+			routerLink="/games"
+			[class.active-link]="gamesActive"
+			[attr.aria-current]="gamesActive ? 'page' : null"
+		>
 			<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
 			<span i18n="@@nav.games">Games</span>
 		</button>

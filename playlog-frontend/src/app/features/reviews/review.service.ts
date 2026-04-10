@@ -24,7 +24,7 @@ export class ReviewService {
 	}
 
 	getRatingStatsForGame(gameId: number) {
-		return this.http.get<GameRatingStatsResponse[]>(`${this.base}/game/${gameId}/stats`);
+		return this.http.get<GameRatingStatsResponse>(`${this.base}/game/${gameId}/stats`);
 	}
 
 	getReviewForUserAndGame(userId: string, gameId: number) {
