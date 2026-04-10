@@ -1,6 +1,6 @@
 use super::{Comment, CommentError, Result, SimpleCommentResponse};
 use async_trait::async_trait;
-use bson::DateTime;
+use bson::{Binary, DateTime};
 use futures::StreamExt;
 use mongodb::{
     bson::{doc, oid::ObjectId},
@@ -64,10 +64,14 @@ impl CommentRepository for MongoCommentRepository {
     }
 
     async fn find_one_by_user_id(&self, id: ObjectId, user_id: Uuid) -> Result<Option<Comment>> {
-        let user_id_bson = bson::Uuid::from_bytes(user_id.as_bytes().to_owned());
+        let uuid_bytes = user_id.as_bytes().to_vec();
+        let binary = Binary {
+            subtype: bson::spec::BinarySubtype::Generic,
+            bytes: uuid_bytes,
+        };
         let filter = doc! {
             "_id": id,
-            "user_id": user_id_bson,
+            "user_id": binary,
             "deleted": false,
         };
         Ok(self.comments.find_one(filter).await?)

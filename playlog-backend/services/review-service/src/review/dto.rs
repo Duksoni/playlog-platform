@@ -37,7 +37,7 @@ impl From<Review> for GameReviewResponse {
     fn from(value: Review) -> Self {
         Self {
             id: value.id.unwrap().to_string(),
-            user_id: value.user_id,
+            user_id: value.user_id.into(),
             username: value.username,
             rating: value.rating,
             text: value.text,
@@ -65,7 +65,7 @@ impl From<Review> for ReviewSimpleResponse {
         Self {
             id: value.id.unwrap().to_string(),
             game_id: value.game_id,
-            user_id: value.user_id,
+            user_id: value.user_id.into(),
             username: value.username,
             rating: value.rating,
             text: value.text,
@@ -96,7 +96,7 @@ impl From<Review> for ReviewDetailedResponse {
         Self {
             id: value.id.unwrap().to_string(),
             game_id: value.game_id,
-            user_id: value.user_id,
+            user_id: value.user_id.into(),
             username: value.username,
             rating: value.rating,
             text: value.text,

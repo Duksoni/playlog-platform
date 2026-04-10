@@ -1,7 +1,7 @@
 use super::{GameReviewResponse, Rating, Result, Review, ReviewError};
 use anyhow::anyhow;
 use async_trait::async_trait;
-use bson::{serialize_to_bson, DateTime};
+use bson::{serialize_to_bson, Binary, DateTime};
 use futures::StreamExt;
 use mongodb::{
     bson, bson::{doc, oid::ObjectId},
@@ -79,9 +79,13 @@ impl ReviewRepository for MongoReviewRepository {
     }
 
     async fn find_by_user_and_game(&self, user_id: Uuid, game_id: i32) -> Result<Option<Review>> {
-        let user_id_bson = bson::Uuid::from_bytes(user_id.as_bytes().to_owned());
+        let uuid_bytes = user_id.as_bytes().to_vec();
+        let binary = Binary {
+            subtype: bson::spec::BinarySubtype::Generic,
+            bytes: uuid_bytes,
+        };
         let filter = doc! {
-            "user_id": user_id_bson,
+            "user_id": binary,
             "game_id": game_id,
             "deleted": false,
         };

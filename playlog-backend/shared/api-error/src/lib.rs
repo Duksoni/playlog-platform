@@ -22,7 +22,7 @@ impl ApiError {
     pub fn internal_error() -> Self {
         Self {
             code: StatusCode::INTERNAL_SERVER_ERROR,
-            errors: vec![],
+            errors: vec![String::from("Internal server error")],
         }
     }
 
