@@ -1,6 +1,6 @@
 use super::{
-    CreateUpdateReviewRequest, GameReviewResponse, ReviewDetailedResponse, ReviewQuery,
-    ReviewSimpleResponse,
+    CreateUpdateReviewRequest, GameReviewResponse, GameRatingStatsResponse, ReviewDetailedResponse,
+    ReviewQuery, ReviewSimpleResponse,
 };
 use crate::app::AppState;
 use api_error::ApiError;
@@ -26,6 +26,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let public_routes = OpenApiRouter::new()
         .route("/{id}", get(get_review))
         .route("/game/{game_id}", get(get_reviews_for_game))
+        .route("/game/{game_id}/stats", get(get_rating_stats_for_game))
         .route(
             "/user/{user_id}/game/{game_id}",
             get(get_review_for_user_and_game),
@@ -89,6 +90,26 @@ async fn get_reviews_for_game(
         .get_for_game(game_id, query.rating, query.page)
         .await?;
     Ok(Json(reviews))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/reviews/game/{game_id}/stats",
+    summary = "Get total rating count per rating type for a game",
+    params(("game_id" = i32, Path, description = "Game ID")),
+    responses(
+        (status = 200, description = "Stats for the game", body = GameRatingStatsResponse),
+    ),
+    tag = "reviews",
+    operation_id = "get_rating_stats_for_game"
+)]
+#[debug_handler]
+async fn get_rating_stats_for_game(
+    State(state): State<Arc<AppState>>,
+    Path(game_id): Path<i32>,
+) -> Result<Json<GameRatingStatsResponse>, ApiError> {
+    let stats = state.review_service.get_rating_stats_for_game(game_id).await?;
+    Ok(Json(stats))
 }
 
 #[utoipa::path(

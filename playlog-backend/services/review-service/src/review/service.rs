@@ -1,6 +1,6 @@
 use super::{
-    CreateUpdateReviewRequest, GameReviewResponse, Rating, Result, Review, ReviewDetailedResponse,
-    ReviewError, ReviewRepository, ReviewSimpleResponse,
+    CreateUpdateReviewRequest, GameRatingStatsResponse, GameReviewResponse, Rating, Result, Review,
+    ReviewDetailedResponse, ReviewError, ReviewRepository, ReviewSimpleResponse,
 };
 use crate::shared::ensure_game_exists;
 use bson::DateTime;
@@ -42,6 +42,13 @@ impl ReviewService {
         page: u64,
     ) -> Result<Vec<GameReviewResponse>> {
         self.repository.find_by_game(game_id, rating, page).await
+    }
+
+    pub async fn get_rating_stats_for_game(&self, game_id: i32) -> Result<GameRatingStatsResponse> {
+        self.repository
+            .find_stats_for_game(game_id)
+            .await?
+            .ok_or(ReviewError::NotFound)
     }
 
     pub async fn get_for_user_and_game(

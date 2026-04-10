@@ -9,6 +9,7 @@ use utoipa::OpenApi;
         crate::app::health_check,
         crate::review::handler::get_review,
         crate::review::handler::get_reviews_for_game,
+        crate::review::handler::get_rating_stats_for_game,
         crate::review::handler::get_review_for_user_and_game,
         crate::review::handler::upsert_review,
         crate::review::handler::delete_review,

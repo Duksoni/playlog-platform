@@ -1,4 +1,4 @@
-use super::{GameReviewResponse, Rating, Result, Review, ReviewError};
+use super::{GameRatingStatsResponse, GameReviewResponse, Rating, Result, Review, ReviewError};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use bson::{serialize_to_bson, Binary, DateTime};
@@ -7,6 +7,7 @@ use mongodb::{
     bson, bson::{doc, oid::ObjectId},
     Collection,
 };
+use std::str::FromStr;
 use uuid::Uuid;
 
 const PAGE_SIZE: i64 = 10;
@@ -19,6 +20,7 @@ pub trait ReviewRepository: Send + Sync {
         rating: Option<Rating>,
         page: u64,
     ) -> Result<Vec<GameReviewResponse>>;
+    async fn find_stats_for_game(&self, game_id: i32) -> Result<Option<GameRatingStatsResponse>>;
     async fn find_by_id(&self, id: ObjectId) -> Result<Option<Review>>;
     async fn find_by_user_and_game(&self, user_id: Uuid, game_id: i32) -> Result<Option<Review>>;
     async fn upsert(&self, review: Review) -> Result<Review>;
@@ -68,6 +70,51 @@ impl ReviewRepository for MongoReviewRepository {
             reviews.push(review?.into());
         }
         Ok(reviews)
+    }
+
+    async fn find_stats_for_game(&self, game_id: i32) -> Result<Option<GameRatingStatsResponse>> {
+        let pipeline = vec![
+            doc! {
+                "$match": {
+                    "game_id": game_id,
+                    "deleted": false,
+                }
+            },
+            doc! {
+                "$group": {
+                    "_id": "$rating",
+                    "count": { "$sum": 1 }
+                }
+            },
+        ];
+
+        let mut cursor = self.reviews.aggregate(pipeline).await?;
+
+        let mut highly_recommended_count = 0_i64;
+        let mut good_count = 0_i64;
+        let mut okay_count = 0_i64;
+        let mut not_recommended_count = 0_i64;
+
+        while let Some(result) = cursor.next().await {
+            let doc = result?;
+            let rating = doc.get_str("_id").map_err(|e| anyhow!(e))?;
+            let rating = Rating::from_str(rating).map_err(|e| anyhow!(e))?;
+            let count = doc.get_i32("count").map_err(|e| anyhow!(e))? as i64;
+
+            match rating {
+                Rating::HighlyRecommended => highly_recommended_count = count,
+                Rating::Good => good_count = count,
+                Rating::Okay => okay_count = count,
+                Rating::NotRecommended => not_recommended_count = count,
+            }
+        }
+
+        Ok(Some(GameRatingStatsResponse::new(
+            highly_recommended_count,
+            good_count,
+            okay_count,
+            not_recommended_count,
+        )))
     }
 
     async fn find_by_id(&self, id: ObjectId) -> Result<Option<Review>> {

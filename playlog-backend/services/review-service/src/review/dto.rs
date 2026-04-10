@@ -37,11 +37,39 @@ impl From<Review> for GameReviewResponse {
     fn from(value: Review) -> Self {
         Self {
             id: value.id.unwrap().to_string(),
-            user_id: value.user_id.into(),
+            user_id: value.user_id,
             username: value.username,
             rating: value.rating,
             text: value.text,
             updated_at: value.updated_at.to_chrono(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct GameRatingStatsResponse {
+    #[serde(rename = "highlyRecommendedCount")]
+    pub highly_recommended_count: i64,
+    #[serde(rename = "goodCount")]
+    pub good_count: i64,
+    #[serde(rename = "okayCount")]
+    pub okay_count: i64,
+    #[serde(rename = "notRecommendedCount")]
+    pub not_recommended_count: i64,
+}
+
+impl GameRatingStatsResponse {
+    pub fn new(
+        highly_recommended_count: i64,
+        good_count: i64,
+        okay_count: i64,
+        not_recommended_count: i64,
+    ) -> Self {
+        Self {
+            highly_recommended_count,
+            good_count,
+            okay_count,
+            not_recommended_count,
         }
     }
 }
@@ -65,7 +93,7 @@ impl From<Review> for ReviewSimpleResponse {
         Self {
             id: value.id.unwrap().to_string(),
             game_id: value.game_id,
-            user_id: value.user_id.into(),
+            user_id: value.user_id,
             username: value.username,
             rating: value.rating,
             text: value.text,
@@ -96,7 +124,7 @@ impl From<Review> for ReviewDetailedResponse {
         Self {
             id: value.id.unwrap().to_string(),
             game_id: value.game_id,
-            user_id: value.user_id.into(),
+            user_id: value.user_id,
             username: value.username,
             rating: value.rating,
             text: value.text,

@@ -42,6 +42,13 @@ export interface GameReviewResponse {
 	updatedAt: string;
 }
 
+export interface GameRatingStatsResponse {
+	highlyRecommendedCount: number;
+	goodCount: number;
+	okayCount: number;
+	notRecommendedCount: number;
+}
+
 // Display helpers
 
 export const RATING_LABELS: Record<Rating, string> = {

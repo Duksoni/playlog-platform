@@ -3,7 +3,7 @@ import {HttpClient, HttpParams} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
 import {
 	CreateUpdateReviewRequest,
-	GameReviewResponse,
+	GameReviewResponse, GameRatingStatsResponse,
 	Rating,
 	ReviewDetailedResponse,
 	ReviewSimpleResponse,
@@ -21,6 +21,10 @@ export class ReviewService {
 		if (page !== undefined) params = params.set('page', (page + 1).toString());
 		if (rating) params = params.set('rating', rating);
 		return this.http.get<GameReviewResponse[]>(`${this.base}/game/${gameId}`, {params});
+	}
+
+	getRatingStatsForGame(gameId: number) {
+		return this.http.get<GameRatingStatsResponse[]>(`${this.base}/game/${gameId}/stats`);
 	}
 
 	getReviewForUserAndGame(userId: string, gameId: number) {

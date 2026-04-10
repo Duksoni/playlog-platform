@@ -1,5 +1,7 @@
 use mongodb::bson::{oid::ObjectId, DateTime};
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
+use thiserror::Error;
 use utoipa::ToSchema;
 use uuid::Uuid;
 
@@ -10,6 +12,24 @@ pub enum Rating {
     Okay,
     Good,
     HighlyRecommended,
+}
+
+#[derive(Error, Debug)]
+#[error("invalid rating: {0}")]
+pub struct RatingParseError(String);
+
+impl FromStr for Rating {
+    type Err = RatingParseError;
+
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s {
+            "NOT_RECOMMENDED" => Ok(Rating::NotRecommended),
+            "OKAY" => Ok(Rating::Okay),
+            "GOOD" => Ok(Rating::Good),
+            "HIGHLY_RECOMMENDED" => Ok(Rating::HighlyRecommended),
+            other => Err(RatingParseError(String::from(other))),
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone)]
