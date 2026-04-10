@@ -4,7 +4,7 @@ import {Role, TokenPayload, TokenResponse, UserClaims} from '../../features/auth
 import {HttpBackend, HttpClient} from '@angular/common/http';
 import {SnackbarService} from '../../shared/services/snackbar.service';
 import {Router} from '@angular/router';
-import {catchError, map, Observable, of, tap, throwError} from 'rxjs';
+import {catchError, finalize, map, Observable, of, shareReplay, tap, throwError} from 'rxjs';
 import {environment} from '../../../environments/environment';
 
 @Injectable({
@@ -18,6 +18,8 @@ export class SessionService {
 	private snackbarService = inject(SnackbarService);
 	private router = inject(Router);
 	private rawHttp = new HttpClient(inject(HttpBackend));
+
+	private refreshInProgress$: Observable<string | null> | null = null;
 
 	readonly accessToken = signal<string | null>(localStorage.getItem(this.ACCESS_TOKEN_KEY));
 	readonly theme = signal<'light' | 'dark'>(localStorage.getItem('theme') as 'light' | 'dark' || 'light');
@@ -78,10 +80,14 @@ export class SessionService {
 	}
 
 	refreshToken(): Observable<string | null> {
+		if (this.refreshInProgress$) {
+			return this.refreshInProgress$;
+		}
+
 		const token = this.accessToken();
 		if (!token) return of(null);
 
-		return this.rawHttp
+		this.refreshInProgress$ = this.rawHttp
 			.post<TokenResponse>(`${environment.apiUrl}/auth/refresh`, {}, {withCredentials: true})
 			.pipe(
 				tap((response) => {
@@ -103,8 +109,14 @@ export class SessionService {
 							});
 					}
 					return throwError(() => err);
+				}),
+				shareReplay(1),
+				finalize(() => {
+					this.refreshInProgress$ = null;
 				})
 			);
+
+		return this.refreshInProgress$;
 	}
 
 	isTokenExpired(): boolean {
