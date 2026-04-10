@@ -44,8 +44,8 @@ impl GameEntityRepository for PostgresGameEntityRepository {
     }
 
     async fn get_all_paged(&self, page: u64) -> Result<Vec<GameEntitySimple>> {
-        let limit = 10i64;
-        let offset = ((page.max(1) - 1) * 10) as i64;
+        let limit = 30i64;
+        let offset = ((page.max(1) - 1) * 30) as i64;
 
         let query = format!(
             "SELECT id, name FROM {} ORDER BY name LIMIT $1 OFFSET $2",
@@ -62,7 +62,7 @@ impl GameEntityRepository for PostgresGameEntityRepository {
     async fn find_by_name(&self, name: &str) -> Result<Vec<GameEntitySimple>> {
         let query_pattern = format!("%{}%", name);
         let query = format!(
-            "SELECT id, name FROM {} WHERE name ILIKE $1 ORDER BY name LIMIT 20",
+            "SELECT id, name FROM {} WHERE name ILIKE $1 ORDER BY name LIMIT 30",
             self.table.table_name()
         );
         let result = query_as::<_, GameEntitySimple>(&query)
