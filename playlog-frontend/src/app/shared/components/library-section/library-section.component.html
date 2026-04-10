@@ -11,7 +11,11 @@
 				<div class="section-header-title">
 					<mat-icon fontSet="material-symbols-rounded">collections_bookmark</mat-icon>
 					<h2 i18n="@@library.title">
-						@if (isOwnLibrary) { My Library } @else { Library }
+						@if (isOwnLibrary) {
+							My Library
+						} @else {
+							Library
+						}
 					</h2>
 				</div>
 			</div>
@@ -66,7 +70,7 @@
 							<!-- 16:9 cover -->
 							<div class="game-card-cover">
 								@if (card.cover) {
-									<img [src]="card.cover" [alt]="card.name" />
+									<img [src]="card.cover" [alt]="card.name"/>
 								} @else {
 									<div class="cover-placeholder">
 										<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
@@ -86,11 +90,24 @@
 								</p>
 							</mat-card-content>
 
-							<!-- Own library: edit status button -->
+							<!-- Own library: action buttons -->
 							@if (isOwnLibrary) {
+								@if (canReviewStatus(card.status)) {
+									<button
+										mat-icon-button
+										class="action-btn rate-btn"
+										(click)="$event.stopPropagation(); openReviewDialog(card)"
+										[matTooltip]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
+										[attr.aria-label]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
+										i18n-matTooltip="@@library.writeReview"
+										i18n-aria-label="@@library.writeReviewAria"
+									>
+										<mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
+									</button>
+								}
 								<button
 									mat-icon-button
-									class="edit-status-btn"
+									class="action-btn edit-btn"
 									(click)="$event.stopPropagation(); openStatusDialog(card)"
 									matTooltip="Change status"
 									i18n-matTooltip="@@library.changeStatus"

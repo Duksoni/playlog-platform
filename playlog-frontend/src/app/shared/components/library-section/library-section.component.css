@@ -224,15 +224,19 @@
 	height: 13px;
 }
 
-.edit-status-btn {
+.action-btn {
 	flex-shrink: 0;
 	margin-right: 2px;
 	opacity: 0;
 	transition: opacity 0.15s;
 }
 
-.game-card:hover .edit-status-btn,
-.game-card:focus-within .edit-status-btn {
+.rate-btn {
+	color: var(--mat-sys-primary);
+}
+
+.game-card:hover .action-btn,
+.game-card:focus-within .action-btn {
 	opacity: 1;
 }
 

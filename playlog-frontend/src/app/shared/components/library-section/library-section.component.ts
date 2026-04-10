@@ -16,9 +16,12 @@ import {
 	LibraryGame,
 	LibraryGameCard
 } from '../../../features/library/library.dto';
-import {forkJoin, map, of, switchMap} from 'rxjs';
+import {forkJoin, map, of, switchMap, catchError} from 'rxjs';
 import {LibraryStatusDialog} from '../../../features/library/library-status-dialog/library-status.dialog';
 import {DialogService} from '../../services/dialog.service';
+import {ReviewDialog} from '../../../features/reviews/review-dialog/review.dialog';
+import {ReviewService} from '../../../features/reviews/review.service';
+import {ReviewSimpleResponse} from '../../../features/reviews/review.dto';
 
 @Component({
 	selector: 'app-library-section',
@@ -43,6 +46,7 @@ export class LibrarySectionComponent implements OnInit {
 	private gameService = inject(GameService);
 	protected sessionService = inject(SessionService);
 	private dialogService = inject(DialogService);
+	private reviewService = inject(ReviewService);
 
 	profileUserId = input.required<string>();
 	showHeader = input<boolean>(true);
@@ -54,6 +58,7 @@ export class LibrarySectionComponent implements OnInit {
 	protected loading = signal(true);
 	protected activeStatus = signal<GameLibraryStatus>(GameLibraryStatus.PLAYING);
 	protected gamesByStatus = signal<Partial<Record<GameLibraryStatus, LibraryGameCard[]>>>({});
+	protected existingReviews = signal<Map<number, ReviewSimpleResponse>>(new Map());
 
 	protected get isOwnLibrary(): boolean {
 		return this.profileUserId() === this.sessionService.user().userId;
@@ -72,6 +77,7 @@ export class LibrarySectionComponent implements OnInit {
 
 	private loadLibrary() {
 		this.loading.set(true);
+		this.existingReviews.set(new Map());
 
 		this.libraryService.getUserLibrary(this.profileUserId()).pipe(
 			switchMap((entries: LibraryGame[]) => {
@@ -96,6 +102,33 @@ export class LibrarySectionComponent implements OnInit {
 						}));
 					})
 				);
+			}),
+			switchMap((cards) => {
+				// If viewing own library, load existing reviews for all games
+				if (this.isOwnLibrary && cards.length > 0) {
+					const userId = this.sessionService.user().userId;
+					const reviewRequests = cards.map(card =>
+						this.reviewService.getReviewForUserAndGame(userId, card.gameId).pipe(
+							map(review => ({gameId: card.gameId, review})),
+							// Handle 404 (no review) gracefully
+							catchError(() => of({gameId: card.gameId, review: null}))
+						)
+					);
+					return forkJoin(reviewRequests).pipe(
+						map(results => {
+							const reviewMap = new Map<number, ReviewSimpleResponse>();
+							for (const {gameId, review} of results) {
+								if (review) {
+									reviewMap.set(gameId, review);
+								}
+							}
+							this.existingReviews.set(reviewMap);
+							return cards;
+						})
+					);
+				} else {
+					return of(cards);
+				}
 			})
 		).subscribe({
 			next: (cards) => {
@@ -130,6 +163,36 @@ export class LibrarySectionComponent implements OnInit {
 			autoFocus: false,
 		}).afterClosed().subscribe(result => {
 			if (result) this.loadLibrary();
+		});
+	}
+
+	protected canReviewStatus(status: GameLibraryStatus): boolean {
+		return status === GameLibraryStatus.COMPLETED || status === GameLibraryStatus.DROPPED;
+	}
+
+	protected hasExistingReview(gameId: number): boolean {
+		return this.existingReviews().has(gameId);
+	}
+
+	protected getExistingReview(gameId: number): ReviewSimpleResponse | undefined {
+		return this.existingReviews().get(gameId);
+	}
+
+	protected openReviewDialog(card: LibraryGameCard) {
+		this.dialogService.openDialog(ReviewDialog, {
+			data: {
+				gameId: card.gameId,
+				gameName: card.name,
+				existing: this.getExistingReview(card.gameId) ?? null,
+			},
+			width: '560px',
+			disableClose: true,
+			autoFocus: false,
+		}).afterClosed().subscribe(result => {
+			// Dialog handles its own completion
+			if (result && result !== 'deleted') {
+				this.loadLibrary(); // Reload to refresh review status if needed
+			}
 		});
 	}
 }
