@@ -1,0 +1,93 @@
+.review-dialog {
+	min-width: 480px;
+	padding: 20px;
+}
+
+.game-name {
+	margin: 0 0 20px;
+	font-size: 15px;
+	font-weight: 500;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+/*  Rating grid  */
+.rating-label {
+	margin: 0 0 10px;
+	font-size: 13px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+.rating-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 8px;
+	margin-bottom: 20px;
+}
+
+.rating-option {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 6px;
+	padding: 12px 6px;
+	border: 2px solid transparent;
+	border-radius: 10px;
+	background: var(--mat-sys-surface-container);
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 11px;
+	color: var(--mat-sys-on-surface-variant);
+	transition: border-color 0.15s, background-color 0.15s;
+	text-align: center;
+}
+
+.rating-option:hover {
+	background: var(--mat-sys-surface-container-high);
+}
+
+.rating-option.selected {
+	border-color: var(--mat-sys-primary);
+	background: var(--mat-sys-primary-container);
+	color: var(--mat-sys-on-primary-container);
+}
+
+.rating-icon {
+	font-size: 28px;
+	width: 28px;
+	height: 28px;
+}
+
+.rating-text {
+	font-weight: 500;
+	line-height: 1.2;
+}
+
+/*  Review text field  */
+.review-field {
+	margin-bottom: 4px;
+}
+
+.delete-button {
+	margin-right: auto;
+}
+
+mat-dialog-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+@media (max-width: 560px) {
+	.review-dialog {
+		min-width: unset;
+		width: 100%;
+		padding: 12px;
+	}
+
+	.rating-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
