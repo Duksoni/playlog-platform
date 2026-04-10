@@ -1,0 +1,239 @@
+<div class="reviews-section">
+
+	<!-- Rating stats -->
+	@if (ratingStats()) {
+		@let total = (ratingStats()!.highlyRecommendedCount + ratingStats()!.goodCount + ratingStats()!.okayCount + ratingStats()!.notRecommendedCount);
+
+		<div class="rating-distribution">
+			<div class="distribution-title-row">
+				<div class="distribution-title" i18n="@@reviews.ratings">Ratings</div>
+				<div class="total-reviews-badge">
+					<span class="total-count">{{ total }}</span>
+					<span class="total-label" i18n="@@reviews.reviewsTotal">Reviews</span>
+				</div>
+			</div>
+
+			<!-- Visible counts and icons for all users -->
+			<div class="distribution-header">
+				@for (rating of ratingOrder; track rating) {
+					@let count = (rating === 'HIGHLY_RECOMMENDED' ? ratingStats()!.highlyRecommendedCount :
+						rating === 'GOOD' ? ratingStats()!.goodCount :
+							rating === 'OKAY' ? ratingStats()!.okayCount :
+								rating === 'NOT_RECOMMENDED' ? ratingStats()!.notRecommendedCount : 0);
+
+					<div class="distribution-slot" [matTooltip]="ratingLabels[rating]">
+						<div class="slot-label" [class]="getRatingColorClass(rating)">
+							<mat-icon fontSet="material-symbols-rounded" class="filled slot-icon">
+								{{ ratingIcons[rating] }}
+							</mat-icon>
+							<span class="slot-count">{{ count }}</span>
+						</div>
+					</div>
+				}
+			</div>
+
+			<!-- Single horizontal distribution bar -->
+			<div class="distribution-bar-combined">
+				@let barTotal = total || 1;
+
+				<div class="bar-segment highly"
+				     [style.width.%]="(ratingStats()!.highlyRecommendedCount / barTotal) * 100"></div>
+				<div class="bar-segment good"
+				     [style.width.%]="(ratingStats()!.goodCount / barTotal) * 100"></div>
+				<div class="bar-segment okay"
+				     [style.width.%]="(ratingStats()!.okayCount / barTotal) * 100"></div>
+				<div class="bar-segment not"
+				     [style.width.%]="(ratingStats()!.notRecommendedCount / barTotal) * 100"></div>
+			</div>
+		</div>
+	}
+
+	<!-- Own review / write button -->
+	@if (sessionService.user().role !== Role.GUEST) {
+		<div class="own-review-area">
+			@if (ownReview()) {
+				<div class="own-review-card" [class]="getRatingColorClass(ownReview()!.rating)">
+					<div class="own-review-header">
+						<div class="own-review-label">
+							<mat-icon fontSet="material-symbols-rounded" class="filled">rate_review</mat-icon>
+							<span i18n="@@reviews.yourReview">Your Review</span>
+						</div>
+						<button mat-icon-button (click)="openReviewDialog()"
+						        matTooltip="Edit review" i18n-matTooltip="@@reviews.editTooltip"
+						        aria-label="Edit review" i18n-aria-label="@@reviews.editAria">
+							<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+						</button>
+					</div>
+					<div class="review-rating-row">
+						<mat-icon fontSet="material-symbols-rounded" class="filled rating-icon-display">
+							{{ ratingIcons[ownReview()!.rating] }}
+						</mat-icon>
+						<span class="rating-label-display">{{ ratingLabels[ownReview()!.rating] }}</span>
+					</div>
+					@if (ownReview()!.text) {
+						<p class="review-text">{{ ownReview()!.text }}</p>
+					}
+					<span class="review-date">
+						{{ ownReview()!.updatedAt | date:'mediumDate' }}
+						@if (ownReview()!.createdAt != ownReview()!.updatedAt) {
+							<span class="review-edited" i18n="@@reviews.edited">(Edited)</span>
+						}
+					</span>
+				</div>
+			} @else if (canReview()) {
+				<div class="write-review-prompt">
+					<mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
+					<div class="write-review-text">
+						<span i18n="@@reviews.writePrompt">You've played this game. Share your thoughts!</span>
+					</div>
+					<button mat-raised-button (click)="openReviewDialog()">
+						<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+						<span i18n="@@reviews.writeBtn">Write a Review</span>
+					</button>
+				</div>
+			} @else {
+				<p class="eligibility-hint" i18n="@@reviews.eligibilityHint">
+					Mark this game as <strong>Completed</strong> or <strong>Dropped</strong> in your library to write a
+					review.
+				</p>
+			}
+		</div>
+
+		<mat-divider></mat-divider>
+	}
+
+	<!-- Filter by rating -->
+	<div class="filter-row">
+		<span class="filter-label" i18n="@@reviews.filterLabel">Filter:</span>
+		<div class="rating-filter-chips">
+			<button
+				class="filter-chip"
+				[class.active]="selectedRatingFilter() === null"
+				[disabled]="!totalReviewsExist()"
+				(click)="setRatingFilter(null)"
+				i18n="@@reviews.filterAll"
+			>All
+			</button>
+			@for (rating of ratingOrder; track rating) {
+				<button
+					class="filter-chip"
+					[class.active]="selectedRatingFilter() === rating"
+					[class]="selectedRatingFilter() === rating ? 'filter-chip active ' + getRatingColorClass(rating) : 'filter-chip'"
+					[disabled]="!totalReviewsExist()"
+					(click)="setRatingFilter(rating)"
+				>
+					<mat-icon fontSet="material-symbols-rounded" class="chip-icon">{{ ratingIcons[rating] }}</mat-icon>
+					{{ ratingLabels[rating] }}
+				</button>
+			}
+		</div>
+	</div>
+
+	<!-- Reviews list -->
+	@if (loading() && reviews().length === 0) {
+		<div class="loading-container">
+			<mat-spinner diameter="40"></mat-spinner>
+		</div>
+	} @else if (!loading() && reviews().length === 0) {
+		<div class="empty-state">
+			<mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
+			<p i18n="@@reviews.empty">No reviews yet. Be the first to share your thoughts!</p>
+		</div>
+	} @else {
+		<div class="reviews-list">
+			@for (review of reviews(); track review.id) {
+				<div class="review-card" [class.own-highlight]="isOwnReviewCard(review)">
+					<!-- Avatar -->
+					<div class="review-avatar" aria-hidden="true">
+						<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
+					</div>
+
+					<div class="review-body">
+						<!-- Review header -->
+						<div class="review-card-header">
+							<button
+								class="reviewer-name hover-pointer"
+								(click)="navigateToUser(review.username)"
+								[attr.aria-label]="review.username"
+							>{{ review.username }}
+							</button>
+							<div class="review-rating-badge" [class]="getRatingColorClass(review.rating)">
+								<mat-icon fontSet="material-symbols-rounded" class="filled badge-icon">
+									{{ ratingIcons[review.rating] }}
+								</mat-icon>
+								<span>{{ ratingLabels[review.rating] }}</span>
+							</div>
+							<span class="review-date">
+								{{ review.createdAt | date:'mediumDate' }}
+								@if (review.createdAt != review.updatedAt) {
+									<span class="review-edited" i18n="@@reviews.edited">(Edited)</span>
+								}
+							</span>
+						</div>
+
+						<!-- Review text with expand/collapse -->
+						@if (review.text) {
+							<p
+								class="review-text"
+								[id]="'review-text-' + review.id"
+								[class.should-collapse]="isReviewExpandable(review.id) && !isReviewExpanded(review.id)"
+							>{{ review.text }}</p>
+
+							@if (isReviewExpandable(review.id)) {
+								<button
+									class="expand-toggle"
+									(click)="toggleReviewText(review.id)"
+									[attr.aria-expanded]="isReviewExpanded(review.id)"
+								>
+									@if (isReviewExpanded(review.id)) {
+										<span i18n="@@common.showLess">Show less</span>
+										<mat-icon fontSet="material-symbols-rounded">expand_less</mat-icon>
+									} @else {
+										<span i18n="@@common.showMore">Show more</span>
+										<mat-icon fontSet="material-symbols-rounded">expand_more</mat-icon>
+									}
+								</button>
+							}
+						}
+						<!-- Comments toggle -->
+						<div class="review-footer">
+							<button
+								class="comments-toggle"
+								(click)="toggleComments(review.id)"
+								[attr.aria-expanded]="expandedCommentReviewId() === review.id"
+							>
+								<mat-icon fontSet="material-symbols-rounded">
+									{{ expandedCommentReviewId() === review.id ? 'chat_bubble' : 'chat_bubble_outline' }}
+								</mat-icon>
+								@if (expandedCommentReviewId() === review.id) {
+									<span i18n="@@reviews.hideComments">Hide comments</span>
+								} @else {
+									<span i18n="@@reviews.showComments">Comments</span>
+								}
+							</button>
+						</div>
+
+						<!-- Inline comments thread — lazy mounted -->
+						@if (expandedCommentReviewId() === review.id) {
+							<div class="review-comments">
+								<app-comments-section
+									[targetType]="CommentTargetType.REVIEW"
+									[targetId]="review.id"
+								/>
+							</div>
+						}
+					</div>
+				</div>
+			}
+		</div>
+
+		<!-- Infinite scroll sentinel -->
+		<div class="scroll-sentinel-area">
+			@if (loading()) {
+				<mat-spinner diameter="32"></mat-spinner>
+			} @else {
+				<div #scrollSentinel class="scroll-sentinel"></div>
+			}
+		</div>
+	}
+</div>
