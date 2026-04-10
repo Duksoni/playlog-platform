@@ -29,6 +29,8 @@ pub struct GameReviewResponse {
     pub username: String,
     pub rating: Rating,
     pub text: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
     #[serde(rename = "updatedAt")]
     pub updated_at: DateTime<Utc>,
 }
@@ -41,6 +43,7 @@ impl From<Review> for GameReviewResponse {
             username: value.username,
             rating: value.rating,
             text: value.text,
+            created_at: value.created_at.to_chrono(),
             updated_at: value.updated_at.to_chrono(),
         }
     }
@@ -84,6 +87,8 @@ pub struct ReviewSimpleResponse {
     pub username: String,
     pub rating: Rating,
     pub text: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
     #[serde(rename = "updatedAt")]
     pub updated_at: DateTime<Utc>,
 }
@@ -97,6 +102,7 @@ impl From<Review> for ReviewSimpleResponse {
             username: value.username,
             rating: value.rating,
             text: value.text,
+            created_at: value.created_at.to_chrono(),
             updated_at: value.updated_at.to_chrono(),
         }
     }
