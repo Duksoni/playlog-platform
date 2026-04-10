@@ -30,6 +30,9 @@ import {GameMediaDialog} from '../game-media-dialog/game-media.dialog';
 import {LibraryService} from '../../library/library.service';
 import {GameLibraryStatus, LIBRARY_STATUS_ICONS, LIBRARY_STATUS_LABELS} from '../../library/library.dto';
 import {LibraryStatusDialog} from '../../library/library-status-dialog/library-status.dialog';
+import {ReviewsSectionComponent} from '../../../shared/components/reviews-section/reviews-section.component';
+import {CommentsSectionComponent} from '../../../shared/components/comments-section/comments-section.component';
+import {CommentTargetType} from '../../comments/comment.dto';
 
 @Component({
 	selector: 'app-game-detail-page',
@@ -43,6 +46,8 @@ import {LibraryStatusDialog} from '../../library/library-status-dialog/library-s
 		MatDividerModule,
 		MatTabsModule,
 		MatCardModule,
+		ReviewsSectionComponent,
+		CommentsSectionComponent,
 	],
 	templateUrl: './game-detail.page.html',
 	styleUrl: './game-detail.page.css',
@@ -58,6 +63,7 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 	private libraryService = inject(LibraryService);
 
 	protected readonly Role = Role;
+	protected readonly CommentTargetType = CommentTargetType;
 	protected readonly statusLabels = LIBRARY_STATUS_LABELS;
 	protected readonly statusIcons = LIBRARY_STATUS_ICONS;
 
@@ -66,8 +72,6 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 	protected loading = signal(true);
 	protected mediaLoading = signal(true);
 	protected selectedScreenshot = signal<string | null>(null);
-
-	// Library status for the current logged-in user
 	protected libraryStatus = signal<GameLibraryStatus | null>(null);
 
 	@ViewChild('descriptionText') descriptionText?: ElementRef<HTMLParagraphElement>;
@@ -96,20 +100,15 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		this.gameService.getGameMedia(id).subscribe({
 			next: (media) => {
 				this.media.set(media);
-				if (media.screenshots.length > 0) {
-					this.selectedScreenshot.set(media.screenshots[0].url);
-				}
+				if (media.screenshots.length > 0) this.selectedScreenshot.set(media.screenshots[0].url);
 				this.mediaLoading.set(false);
 			},
 			error: (err) => {
 				this.mediaLoading.set(false);
-				if (err.status === 404) {
-					this.media.set({gameId: id, screenshots: [], version: 0});
-				}
+				if (err.status === 404) this.media.set({gameId: id, screenshots: [], version: 0});
 			},
 		});
 
-		// Load library status for logged-in user
 		const userId = this.sessionService.user().userId;
 		if (userId) {
 			this.libraryService.getUserLibrary(userId).subscribe({
@@ -128,8 +127,8 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 
 	private checkDescriptionOverflow() {
 		if (this.descriptionText) {
-			const element = this.descriptionText.nativeElement;
-			this.isDescriptionExpandable.set(element.scrollHeight > 300);
+			const el = this.descriptionText.nativeElement;
+			this.isDescriptionExpandable.set(el.scrollHeight > 300);
 		}
 	}
 
@@ -142,20 +141,11 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		if (!game) return;
 
 		this.dialogService.openDialog(LibraryStatusDialog, {
-			data: {
-				gameId: game.id,
-				gameName: game.name,
-				currentStatus: this.libraryStatus(),
-			},
-			width: '440px',
-			disableClose: false,
-			autoFocus: false,
+			data: {gameId: game.id, gameName: game.name, currentStatus: this.libraryStatus()},
+			width: '440px', disableClose: false, autoFocus: false,
 		}).afterClosed().subscribe(result => {
-			if (result === 'removed') {
-				this.libraryStatus.set(null);
-			} else if (result?.status) {
-				this.libraryStatus.set(result.status);
-			}
+			if (result === 'removed') this.libraryStatus.set(null);
+			else if (result?.status) this.libraryStatus.set(result.status);
 		});
 	}
 
@@ -184,19 +174,11 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		if (!game || !media) return;
 
 		this.dialogService.openDialog(GameMediaDialog, {
-			data: media,
-			width: '600px',
-			maxWidth: '50vw',
-			disableClose: true,
-			autoFocus: false,
+			data: media, width: '600px', maxWidth: '50vw', disableClose: true, autoFocus: false,
 		}).afterClosed().subscribe(updatedMedia => {
 			if (updatedMedia) {
 				this.media.set(updatedMedia);
-				if (updatedMedia.screenshots.length > 0) {
-					this.selectedScreenshot.set(updatedMedia.screenshots[0].url);
-				} else {
-					this.selectedScreenshot.set(null);
-				}
+				this.selectedScreenshot.set(updatedMedia.screenshots[0]?.url ?? null);
 			}
 		});
 	}
@@ -219,9 +201,7 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		});
 
 		dialogRef.componentInstance.setPositiveButton(
-			isPublishing
-				? $localize`:@@gameDetail.publish:Publish`
-				: $localize`:@@gameDetail.unpublish:Unpublish`,
+			isPublishing ? $localize`:@@gameDetail.publish:Publish` : $localize`:@@gameDetail.unpublish:Unpublish`,
 			() => {
 				const action = isPublishing
 					? this.gameService.publishGame(game.id, {version: game.version})
@@ -230,16 +210,13 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 				action.subscribe({
 					next: (updated) => {
 						this.game.update(g => g ? {...g, draft: updated.draft, version: updated.version} : g);
-						const msg = updated.draft
+						this.snackbarService.createSnackbar(updated.draft
 							? $localize`:@@games.unpublished:Game moved back to draft.`
-							: $localize`:@@games.published:Game published successfully.`;
-						this.snackbarService.createSnackbar(msg);
+							: $localize`:@@games.published:Game published successfully.`);
 						dialogRef.close();
 					},
 					error: (err) => {
-						if (err.status === 409) {
-							this.snackbarService.createSnackbar($localize`:@@games.versionConflict:This game was modified by someone else. Please refresh.`);
-						}
+						if (err.status === 409) this.snackbarService.createSnackbar($localize`:@@games.versionConflict:This game was modified by someone else. Please refresh.`);
 						dialogRef.close();
 					},
 				});
@@ -260,24 +237,21 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 			},
 		});
 
-		dialogRef.componentInstance.setPositiveButton(
-			$localize`:@@common.delete:Delete`,
-			() => {
-				this.gameService.deleteGameMedia(game.id).pipe(
-					concatMap(() => this.gameService.deleteGame(game.id))
-				).subscribe({
-					next: () => {
-						this.snackbarService.createSnackbar($localize`:@@games.deleted:Game deleted successfully.`);
-						this.router.navigate(['/games']);
-						dialogRef.close();
-					},
-					error: () => {
-						this.snackbarService.createSnackbar($localize`:@@games.deleteFailed:Failed to delete game.`);
-						dialogRef.close();
-					},
-				});
-			},
-		);
+		dialogRef.componentInstance.setPositiveButton($localize`:@@common.delete:Delete`, () => {
+			this.gameService.deleteGameMedia(game.id).pipe(
+				concatMap(() => this.gameService.deleteGame(game.id))
+			).subscribe({
+				next: () => {
+					this.snackbarService.createSnackbar($localize`:@@games.deleted:Game deleted successfully.`);
+					this.router.navigate(['/games']);
+					dialogRef.close();
+				},
+				error: () => {
+					this.snackbarService.createSnackbar($localize`:@@games.deleteFailed:Failed to delete game.`);
+					dialogRef.close();
+				},
+			});
+		});
 		dialogRef.componentInstance.setNegativeButton($localize`:@@common.cancel:Cancel`);
 	}
 
