@@ -16,7 +16,9 @@ SQL_ROOT = Path("sql_seed")
 
 def main():
     if not all([DB_NAME, DB_USER, DB_PASSWORD]):
-        raise ValueError("CATALOGUE_DB_NAME, DB_USER, and DB_PASSWORD must be set in your .env file.")
+        raise ValueError(
+            "CATALOGUE_DB_NAME, DB_USER, and DB_PASSWORD must be set in your .env file."
+        )
 
     sql_files = sorted(SQL_ROOT.glob("*.sql"))
 

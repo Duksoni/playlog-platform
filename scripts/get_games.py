@@ -105,7 +105,6 @@ def write_sql(filename, lines):
     print(f"  -> Written {path} ({len(lines)} statements)")
 
 
-
 def fetch_top_games():
     games = []
 
@@ -123,7 +122,6 @@ def fetch_top_games():
         games.extend(data["results"])
 
     return games
-
 
 
 def main():
@@ -232,7 +230,9 @@ def main():
         # Game SQL row with explicit id
         released = details.get("released")
         released_sql = f"'{released}'" if released else "NULL"
-        description = clean_description(details.get("description") or details.get("description_raw"))
+        description = clean_description(
+            details.get("description") or details.get("description_raw")
+        )
 
         games_sql.append(
             f"INSERT INTO games (id, rawg_id, name, description, released, website, draft)\n"

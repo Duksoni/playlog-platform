@@ -16,7 +16,7 @@ MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY")
 MINIO_BUCKET = "playlog-media"
 
-MONGO_URL = os.getenv("MONGODB_URI")
+MONGO_URL = os.getenv("MEDIA_MONGODB_URI")
 MONGO_DB = "multimedia_db"
 MONGO_COLLECTION = "game_media"
 
@@ -61,9 +61,12 @@ def get_video_duration_seconds(path: Path) -> float | None:
         result = subprocess.run(
             [
                 "ffprobe",
-                "-v", "error",
-                "-show_entries", "format=duration",
-                "-of", "json",
+                "-v",
+                "error",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "json",
                 str(path),
             ],
             stdout=subprocess.PIPE,
@@ -79,6 +82,7 @@ def get_video_duration_seconds(path: Path) -> float | None:
     except Exception as e:
         print(f"  -> Could not read video duration for {path.name}: {e}")
         return None
+
 
 def make_video_file(local_path: Path, object_key: str) -> dict:
     doc = make_media_file(local_path, object_key)
@@ -158,7 +162,7 @@ def main():
             "cover": cover,
             "screenshots": screenshots,
             "trailer": trailer,
-            "version": 0
+            "version": 0,
         }
 
         try:

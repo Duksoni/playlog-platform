@@ -3,7 +3,7 @@ import random
 import psycopg2
 from argon2 import PasswordHasher
 from dotenv import load_dotenv
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 load_dotenv()
 
@@ -39,6 +39,12 @@ def generate_random_birthdate():
     days_between = (end_date - start_date).days
     random_days = random.randrange(days_between)
     return start_date + timedelta(days=random_days)
+
+def generate_account_creation_date():
+    now = datetime.now(timezone.utc)
+    random_days = random.randint(210, 365)
+    random_seconds = random.randint(0, 86400)
+    return now - timedelta(days=random_days, seconds=random_seconds)
 
 def main():
     if not DB_PASSWORD:
@@ -98,11 +104,12 @@ def main():
             )
             user_id = cur.fetchone()[0]
 
-            # Insert Profile
+            # Insert Profile with realistic created_at date
             birthdate = generate_random_birthdate()
+            created_at = generate_account_creation_date()
             cur.execute(
-                "INSERT INTO user_profiles (user_id, first_name, last_name, birthdate) VALUES (%s, %s, %s, %s);",
-                (user_id, first, last, birthdate)
+                "INSERT INTO user_profiles (user_id, first_name, last_name, birthdate, created_at) VALUES (%s, %s, %s, %s, %s);",
+                (user_id, first, last, birthdate, created_at)
             )
 
             # Assign Role (95% USER, 4% MODERATOR, 1% ADMIN)
