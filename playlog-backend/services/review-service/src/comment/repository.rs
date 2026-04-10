@@ -1,4 +1,4 @@
-use super::{Comment, CommentError, Result, SimpleCommentResponse};
+use super::{Comment, CommentError, CommentTargetType, Result, SimpleCommentResponse};
 use async_trait::async_trait;
 use bson::{Binary, DateTime};
 use futures::StreamExt;
@@ -14,7 +14,7 @@ const PAGE_SIZE: i64 = 10;
 pub trait CommentRepository: Send + Sync {
     async fn find_comments_by_target(
         &self,
-        target_type: &str,
+        target_type: CommentTargetType,
         target_id: &str,
         page: u64,
     ) -> Result<Vec<SimpleCommentResponse>>;
@@ -39,14 +39,19 @@ impl MongoCommentRepository {
 impl CommentRepository for MongoCommentRepository {
     async fn find_comments_by_target(
         &self,
-        target_type: &str,
+        target_type: CommentTargetType,
         target_id: &str,
         page: u64,
     ) -> Result<Vec<SimpleCommentResponse>> {
         let skip = (page.max(1) - 1) * PAGE_SIZE as u64;
+        let filter = doc! {
+            "target_type": target_type.as_db_value(),
+            "target_id": target_id,
+            "deleted": false
+        };
         let mut cursor = self
             .comments
-            .find(doc! { "target_type": target_type, "target_id": target_id, "deleted": false })
+            .find(filter)
             .sort(doc! { "created_at": -1 })
             .limit(PAGE_SIZE)
             .skip(skip)

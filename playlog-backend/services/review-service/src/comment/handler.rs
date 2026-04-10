@@ -54,10 +54,9 @@ async fn get_comments(
     Query(query): Query<CommentQuery>,
 ) -> Result<Json<Vec<SimpleCommentResponse>>, ApiError> {
     query.validate().map_err(ApiError::from)?;
-    let target_type_str = query.target_type.as_string();
     let comments = state
         .comment_service
-        .get_for_target(&target_type_str, &query.target_id, query.page)
+        .get_for_target(query.target_type, &query.target_id, query.page)
         .await?;
     Ok(Json(comments))
 }

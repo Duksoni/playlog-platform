@@ -11,8 +11,8 @@ pub enum CommentTargetType {
 }
 
 impl CommentTargetType {
-    pub fn as_string(&self) -> String {
-        format!("{:?}", self)
+    pub fn as_db_value(&self) -> String {
+        format!("{:?}", self).to_uppercase()
     }
 }
 

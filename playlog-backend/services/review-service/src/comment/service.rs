@@ -40,7 +40,7 @@ impl CommentService {
 
     pub async fn get_for_target(
         &self,
-        target_type: &str,
+        target_type: CommentTargetType,
         target_id: &str,
         page: u64,
     ) -> Result<Vec<SimpleCommentResponse>> {
