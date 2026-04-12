@@ -10,6 +10,12 @@ pub enum ReportTargetType {
     Comment,
 }
 
+impl ReportTargetType {
+    pub fn as_db_value(&self) -> String {
+        format!("{:?}", self).to_uppercase()
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize, ToSchema, Clone, Copy, PartialEq, Eq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum ReportStatus {
@@ -19,8 +25,8 @@ pub enum ReportStatus {
 }
 
 impl ReportStatus {
-    pub fn as_string(&self) -> String {
-        format!("{:?}", self)
+    pub fn as_db_value(&self) -> String {
+        format!("{:?}", self).to_uppercase()
     }
 }
 

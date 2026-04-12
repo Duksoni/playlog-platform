@@ -140,12 +140,13 @@ async fn get_report(
 async fn resolve_report(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
+    Extension(claims): Extension<AuthClaims>,
     Json(request): Json<UpdateReportStatusRequest>,
 ) -> Result<impl IntoResponse, ApiError> {
     let object_id = parse_object_id(&id, "Invalid Report ID")?;
     state
         .report_service
-        .resolve_report(object_id, request.status, request.version)
+        .resolve_report(object_id, claims.user_id, request.status, request.version)
         .await?;
     Ok(StatusCode::NO_CONTENT)
 }

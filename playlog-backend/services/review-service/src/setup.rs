@@ -36,7 +36,19 @@ pub async fn create_indexes(
         .await?;
 
     let report_status_index = IndexModel::builder().keys(doc! { "status": 1 }).build();
-    reports_collection.create_index(report_status_index).await?;
+    let report_unique_pending = IndexModel::builder()
+        .keys(doc! { "reporter_id": 1, "target_id": 1, "target_type": 1 })
+        .options(
+            IndexOptions::builder()
+                .unique(true)
+                .partial_filter_expression(doc! { "status": "PENDING" })
+                .build(),
+        )
+        .build();
+
+    reports_collection
+        .create_indexes(vec![report_status_index, report_unique_pending])
+        .await?;
 
     Ok(())
 }

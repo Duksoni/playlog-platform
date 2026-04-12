@@ -48,10 +48,7 @@ async fn main() -> anyhow::Result<()> {
     let review_repository = MongoReviewRepository::new(reviews_collection.clone());
     let comment_repository = MongoCommentRepository::new(comments_collection.clone());
     let report_repository = Box::new(MongoReportRepository::new(
-        mongodb_client,
         reports_collection,
-        reviews_collection,
-        comments_collection,
     ));
 
     let comment_service = CommentService::new(
@@ -61,7 +58,11 @@ async fn main() -> anyhow::Result<()> {
         env.app_config.catalogue_service_url.clone(),
     );
 
-    let report_service = ReportService::new(report_repository);
+    let report_service = ReportService::new(
+        report_repository,
+        Box::new(review_repository.clone()),
+        Box::new(comment_repository.clone()),
+    );
 
     let review_service = ReviewService::new(
         Box::new(review_repository.clone()),
