@@ -5,7 +5,6 @@ from datetime import datetime, timedelta, timezone
 
 import psycopg2
 from bson.binary import Binary
-from bson.objectid import ObjectId
 from dotenv import load_dotenv
 from pymongo import MongoClient
 
