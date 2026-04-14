@@ -13,7 +13,7 @@ import {Role} from '../../auth/auth.dto';
 import {LibrarySectionComponent} from '../../../shared/components/library-section/library-section.component';
 
 @Component({
-	selector: 'app-user-profile.page',
+	selector: 'app-user-profile-page',
 	imports: [
 		DatePipe,
 		MatButton,
@@ -69,7 +69,7 @@ export class UserProfilePage {
 			case 'MODERATOR':
 				return $localize`:@@role.moderator:Moderator`;
 			default:
-				return $localize`:@@role.user:Member`;
+				return $localize`:@@role.user:User`;
 		}
 	}
 }

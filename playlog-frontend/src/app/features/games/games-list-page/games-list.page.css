@@ -71,11 +71,6 @@
 	font-weight: 600;
 }
 
-.clear-btn {
-	font-size: 12px;
-	min-width: unset;
-}
-
 .filter-form {
 	display: flex;
 	flex-direction: column;

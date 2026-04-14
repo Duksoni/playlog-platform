@@ -136,11 +136,6 @@
 	color: var(--mat-sys-on-surface-variant);
 }
 
-.credit-value {
-	font-size: 14px;
-	color: var(--mat-sys-on-surface);
-}
-
 .library-section {
 	display: flex;
 	align-items: center;

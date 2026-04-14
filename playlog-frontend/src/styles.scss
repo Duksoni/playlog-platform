@@ -97,3 +97,92 @@ mat-icon.filled {
 .no-pointer-events {
 	pointer-events: none;
 }
+
+.rating-highly {
+	border-left-color: #2e7d32 !important;
+}
+
+.rating-highly .rating-icon-display,
+.rating-highly .rating-label-display,
+.rating-highly .badge-icon,
+.rating-highly.review-rating-badge {
+	color: #2e7d32;
+}
+
+.rating-good {
+	border-left-color: #558b2f !important;
+}
+
+.rating-good .rating-icon-display,
+.rating-good .rating-label-display,
+.rating-good .badge-icon,
+.rating-good.review-rating-badge {
+	color: #558b2f;
+}
+
+.rating-okay {
+	border-left-color: #ef6c00 !important;
+}
+
+.rating-okay .rating-icon-display,
+.rating-okay .rating-label-display,
+.rating-okay .badge-icon,
+.rating-okay.review-rating-badge {
+	color: #ef6c00;
+}
+
+.rating-not {
+	border-left-color: #c62828 !important;
+}
+
+.rating-not .rating-icon-display,
+.rating-not .rating-label-display,
+.rating-not .badge-icon,
+.rating-not.review-rating-badge {
+	color: #c62828;
+}
+
+html.dark-mode .rating-highly {
+	border-left-color: #66bb6a !important;
+}
+
+html.dark-mode .rating-highly .rating-icon-display,
+html.dark-mode .rating-highly .rating-label-display,
+html.dark-mode .rating-highly .badge-icon,
+html.dark-mode .rating-highly.review-rating-badge {
+	color: #66bb6a;
+}
+
+html.dark-mode .rating-good {
+	border-left-color: #9ccc65 !important;
+}
+
+html.dark-mode .rating-good .rating-icon-display,
+html.dark-mode .rating-good .rating-label-display,
+html.dark-mode .rating-good .badge-icon,
+html.dark-mode .rating-good.review-rating-badge {
+	color: #9ccc65;
+}
+
+html.dark-mode .rating-okay {
+	border-left-color: #ffa726 !important;
+}
+
+html.dark-mode .rating-okay .rating-icon-display,
+html.dark-mode .rating-okay .rating-label-display,
+html.dark-mode .rating-okay .badge-icon,
+html.dark-mode .rating-okay.review-rating-badge {
+	color: #ffa726;
+}
+
+html.dark-mode .rating-not {
+	border-left-color: #ef5350 !important;
+}
+
+html.dark-mode .rating-not .rating-icon-display,
+html.dark-mode .rating-not .rating-label-display,
+html.dark-mode .rating-not .badge-icon,
+html.dark-mode .rating-not.review-rating-badge {
+	color: #ef5350;
+}
+

@@ -205,6 +205,8 @@ export class MyProfilePage {
 	protected confirmDeactivate() {
 		const dialogRef = this.dialogService.openSimpleDialog({
 			width: '440px',
+			disableClose: true,
+			autoFocus: false,
 			data: {
 				title: $localize`:@@profile.deactivateTitle:Deactivate Account`,
 				content: $localize`:@@profile.deactivateContent:Are you sure you want to deactivate your account? You will be logged out and your profile will no longer be accessible.`,

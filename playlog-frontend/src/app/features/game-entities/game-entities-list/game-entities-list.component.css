@@ -48,21 +48,6 @@ table {
 	width: 100%;
 }
 
-.mat-column-id {
-	width: 80px;
-}
-
-.mat-column-actions {
-	width: 100px;
-	text-align: end;
-}
-
 .mat-row:hover {
 	background-color: var(--mat-sys-surface-container-high);
-}
-
-.no-data {
-	padding: 32px;
-	text-align: center;
-	color: var(--mat-sys-on-surface-variant);
 }

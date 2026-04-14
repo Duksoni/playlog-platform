@@ -17,7 +17,7 @@ import {ApiError} from '../../../core/api-error';
 import {GameLibraryStatus, LIBRARY_STATUS_ICONS, LIBRARY_STATUS_LABELS, UserGame} from '../library.dto';
 
 @Component({
-	selector: 'app-library-status.dialog',
+	selector: 'app-library-status-dialog',
 	imports: [
 		MatButton,
 		MatDialogActions,

@@ -22,11 +22,6 @@
 	padding: 8px 12px 12px;
 }
 
-/* Override material density/padding for cleaner look inside container */
-:host ::ng-deep .mat-mdc-form-field-subscript-wrapper {
-	display: none;
-}
-
 .option-loading {
 	display: flex;
 	align-items: center;

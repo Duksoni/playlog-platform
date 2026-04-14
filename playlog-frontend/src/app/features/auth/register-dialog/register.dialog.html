@@ -148,7 +148,7 @@
 
 	<mat-dialog-actions class="d-flex justify-content-end">
 		<button mat-button mat-dialog-close [disabled]="registerService.submitting()" i18n="@@register.cancel">Cancel</button>
-		<button mat-raised-button
+		<button mat-flat-button
 				(click)="onRegister()"
 				[disabled]="registerForm.invalid || registerService.submitting()">
 			@if (registerService.submitting()) {

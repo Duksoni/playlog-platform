@@ -142,7 +142,7 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 
 		this.dialogService.openDialog(LibraryStatusDialog, {
 			data: {gameId: game.id, gameName: game.name, currentStatus: this.libraryStatus()},
-			width: '440px', disableClose: false, autoFocus: false,
+			width: '440px', disableClose: true, autoFocus: false,
 		}).afterClosed().subscribe(result => {
 			if (result === 'removed') this.libraryStatus.set(null);
 			else if (result?.status) this.libraryStatus.set(result.status);
@@ -190,6 +190,8 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		const isPublishing = game.draft;
 		const dialogRef = this.dialogService.openSimpleDialog({
 			width: '420px',
+			disableClose: true,
+			autoFocus: false,
 			data: {
 				title: isPublishing
 					? $localize`:@@gameDetail.publishTitle:Publish Game`
@@ -231,6 +233,8 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 
 		const dialogRef = this.dialogService.openSimpleDialog({
 			width: '420px',
+			disableClose: true,
+			autoFocus: false,
 			data: {
 				title: $localize`:@@gameDetail.deleteTitle:Delete Game`,
 				content: $localize`:@@gameDetail.deleteContent:Are you sure you want to delete "${game.name}"? This cannot be undone.`,

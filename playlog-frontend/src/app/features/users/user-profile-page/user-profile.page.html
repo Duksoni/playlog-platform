@@ -21,10 +21,6 @@
 					</mat-chip-set>
 				</div>
 
-				@if (user()!.firstName || user()!.lastName) {
-					<p class="full-name">{{ user()!.firstName }} {{ user()!.lastName }}</p>
-				}
-
 				<p class="member-since">
 					<mat-icon fontSet="material-symbols-rounded">calendar_month</mat-icon>
 					<span i18n="@@profile.memberSince">Member since </span>
@@ -58,7 +54,7 @@
 						}
 						@if (user()!.lastName) {
 							<div class="detail-item">
-								<span class="detail-label" i18n="@@profile.firstName">First Name</span>
+								<span class="detail-label" i18n="@@profile.lastName">Last Name</span>
 								<span class="detail-value">{{ user()!.lastName }}</span>
 							</div>
 						}

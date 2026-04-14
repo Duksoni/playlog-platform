@@ -159,7 +159,7 @@ export class LibrarySectionComponent implements OnInit {
 				currentStatus: card.status,
 			},
 			width: '440px',
-			disableClose: false,
+			disableClose: true,
 			autoFocus: false,
 		}).afterClosed().subscribe(result => {
 			if (result) this.loadLibrary();

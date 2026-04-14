@@ -9,9 +9,9 @@ import {GamesListPage} from './features/games/games-list-page/games-list.page';
 import {GameDetailPage} from './features/games/game-detail-page/game-detail.page';
 import {UserProfilePage} from './features/users/user-profile-page/user-profile.page';
 import {MyProfilePage} from './features/users/my-profile-page/my-profile.page';
+import {LibraryPage} from './features/library/library-page/library.page';
 import {authGuard} from './core/guards/auth.guard';
 import {Role} from './features/auth/auth.dto';
-import {LibraryPage} from './features/library/library-page/library.page';
 
 export const routes: Routes = [
 	{

@@ -54,7 +54,7 @@ export class ReviewDialog {
 	protected readonly ratingIcons = RATING_ICONS;
 
 	protected form = this.fb.group({
-		text: [this.data.existing?.text ?? '', Validators.maxLength(10), Validators.maxLength(5000)],
+		text: [this.data.existing?.text ?? '', [Validators.minLength(10), Validators.maxLength(5000)]],
 	});
 
 	protected get isEditing(): boolean {

@@ -95,87 +95,6 @@
 	font-weight: 600;
 }
 
-/*  Rating colour accents  */
-.rating-highly {
-	border-left-color: #2e7d32 !important;
-}
-
-.rating-highly .rating-icon-display,
-.rating-highly .rating-label-display,
-.rating-highly .badge-icon {
-	color: #2e7d32;
-}
-
-.rating-good {
-	border-left-color: #558b2f !important;
-}
-
-.rating-good .rating-icon-display,
-.rating-good .rating-label-display,
-.rating-good .badge-icon {
-	color: #558b2f;
-}
-
-.rating-okay {
-	border-left-color: #ef6c00 !important;
-}
-
-.rating-okay .rating-icon-display,
-.rating-okay .rating-label-display,
-.rating-okay .badge-icon {
-	color: #ef6c00;
-}
-
-.rating-not {
-	border-left-color: #c62828 !important;
-}
-
-.rating-not .rating-icon-display,
-.rating-not .rating-label-display,
-.rating-not .badge-icon {
-	color: #c62828;
-}
-
-html.dark-mode .rating-highly {
-	border-left-color: #66bb6a !important;
-}
-
-html.dark-mode .rating-highly .rating-icon-display,
-html.dark-mode .rating-highly .rating-label-display,
-html.dark-mode .rating-highly .badge-icon {
-	color: #66bb6a;
-}
-
-html.dark-mode .rating-good {
-	border-left-color: #9ccc65 !important;
-}
-
-html.dark-mode .rating-good .rating-icon-display,
-html.dark-mode .rating-good .rating-label-display,
-html.dark-mode .rating-good .badge-icon {
-	color: #9ccc65;
-}
-
-html.dark-mode .rating-okay {
-	border-left-color: #ffa726 !important;
-}
-
-html.dark-mode .rating-okay .rating-icon-display,
-html.dark-mode .rating-okay .rating-label-display,
-html.dark-mode .rating-okay .badge-icon {
-	color: #ffa726;
-}
-
-html.dark-mode .rating-not {
-	border-left-color: #ef5350 !important;
-}
-
-html.dark-mode .rating-not .rating-icon-display,
-html.dark-mode .rating-not .rating-label-display,
-html.dark-mode .rating-not .badge-icon {
-	color: #ef5350;
-}
-
 /*  Filter row  */
 .filter-row {
 	display: flex;
@@ -333,15 +252,21 @@ html.dark-mode .rating-not .badge-icon {
 	transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-.bar-segment.highly { background: #2e7d32; }
-.bar-segment.good   { background: #558b2f; }
-.bar-segment.okay   { background: #ef6c00; }
-.bar-segment.not    { background: #c62828; }
+.bar-segment.highly {
+	background: #2e7d32;
+}
 
-html.dark-mode .bar-segment.highly { background: #66bb6a; }
-html.dark-mode .bar-segment.good   { background: #9ccc65; }
-html.dark-mode .bar-segment.okay   { background: #ffa726; }
-html.dark-mode .bar-segment.not    { background: #ef5350; }
+.bar-segment.good {
+	background: #558b2f;
+}
+
+.bar-segment.okay {
+	background: #ef6c00;
+}
+
+.bar-segment.not {
+	background: #c62828;
+}
 
 /*  Loading / empty  */
 .loading-container {
@@ -563,7 +488,6 @@ html.dark-mode .bar-segment.not    { background: #ef5350; }
 	border-top: 1px solid var(--mat-sys-outline-variant);
 }
 
-/* Comments inside reviews get a distinct background */
 .review-comments app-comments-section ::ng-deep .comment-card {
 	background: var(--mat-sys-surface-container-high);
 	border-left: 4px solid var(--mat-sys-outline-variant);

@@ -171,13 +171,6 @@
 	display: flex;
 	gap: 0;
 	margin-left: auto;
-	opacity: 0;
-	transition: opacity 0.15s;
-}
-
-.comment-card:hover .comment-actions,
-.comment-card:focus-within .comment-actions {
-	opacity: 1;
 }
 
 .action-btn {
