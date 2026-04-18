@@ -39,11 +39,11 @@ export class Navbar {
 	private router = inject(Router);
 	private http = inject(HttpClient);
 
-	// Single-segment paths treated as top-level (no back button shown)
 	private topLevelDestinations = [
 		'home',
 		'games',
 		'library',
+		'reports',
 		'genres',
 		'tags',
 		'platforms',
@@ -54,24 +54,28 @@ export class Navbar {
 
 	protected get topLevelDestination(): boolean {
 		const segments = this.location.path().split('/').filter(s => s);
+		// Single-segment top-level paths
 		if (segments.length === 1 && this.topLevelDestinations.includes(segments[0])) return true;
-		return segments.length === 2 && segments[0] === 'users';
+		// /users/:username — leaf pages
+		if (segments.length === 2 && segments[0] === 'users') return true;
+		// /admin/users — treat as top-level
+		return segments.length === 2 && segments[0] === 'admin';
+
 	}
 
 	protected get gamesActive(): boolean {
 		const segments = this.location.path().split('/').filter(s => s);
 		if (segments.length === 0) return false;
 		if (segments[0] === 'games') return true;
-		// Matches /developers/:id/games and /publishers/:id/games
 		return segments[segments.length - 1] === 'games';
 	}
 
 	protected get gameEntitiesActive(): boolean {
 		const segments = this.location.path().split('/').filter(s => s);
 		if (segments.length === 0) return false;
-		const isEntityBase = ['genres', 'tags', 'platforms', 'publishers', 'developers'].includes(segments[0]);
-		// Should not be highlighted if we are viewing games of that entity
-		return isEntityBase && segments[segments.length - 1] !== 'games';
+		const entityBases = ['genres', 'tags', 'platforms', 'publishers', 'developers'];
+		const isEntity = entityBases.includes(segments[0]);
+		return isEntity && segments[segments.length - 1] !== 'games';
 	}
 
 	protected logout() {
@@ -88,17 +92,11 @@ export class Navbar {
 	}
 
 	protected openLoginDialog() {
-		this.dialogService.openDialog(LoginDialog, {
-			disableClose: true,
-			autoFocus: false,
-		});
+		this.dialogService.openDialog(LoginDialog, {disableClose: true, autoFocus: false});
 	}
 
 	protected openRegisterDialog() {
-		this.dialogService.openDialog(RegisterDialog, {
-			disableClose: true,
-			autoFocus: false,
-		});
+		this.dialogService.openDialog(RegisterDialog, {disableClose: true, autoFocus: false});
 	}
 
 	protected navigateToLibrary() {

@@ -9,34 +9,33 @@ mat-icon {
 	color: var(--mat-sys-on-primary-container);
 }
 
-a,
-button.nav-link-item {
+.nav-link-item,
+.navbar-brand-text {
 	display: inline-flex;
 	align-items: center;
+	color: var(--mat-sys-on-primary-container);
+	text-decoration: none;
+}
+
+.nav-link-item {
 	gap: 0.4rem;
 	cursor: pointer;
 	font-size: 1.05rem;
 	padding: 0 0.6rem;
-	color: var(--mat-sys-on-primary-container);
-	text-decoration: none;
 	background: transparent;
 	border: 0;
 	outline: none;
-}
-
-.nav-link-item {
 	position: relative;
 }
 
-a:hover,
-button.nav-link-item:hover {
+.nav-link-item:hover,
+.navbar-brand-text:hover {
 	opacity: 0.9;
 }
 
 .navbar-brand-text {
 	font-weight: 500;
 	font-size: 1.5rem;
-	text-decoration: none;
 }
 
 .toolbar-spacer {
@@ -62,6 +61,14 @@ button.nav-link-item:hover {
 
 .nav-trigger {
 	line-height: 1;
+}
+
+.nav-trigger mat-icon {
+	transition: transform 0.25s ease-in-out;
+}
+
+.nav-trigger mat-icon.rotated {
+	transform: rotate(180deg);
 }
 
 .mobile-nav-trigger {

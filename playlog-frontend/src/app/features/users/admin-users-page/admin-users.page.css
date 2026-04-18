@@ -1,0 +1,179 @@
+.admin-users-page {
+	max-width: 900px;
+	margin: 0 auto;
+	padding: 32px 24px;
+}
+
+/*  Header  */
+.page-header {
+	margin-bottom: 28px;
+}
+
+.page-header-title {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.page-header-title mat-icon {
+	font-size: 32px;
+	width: 32px;
+	height: 32px;
+	color: var(--mat-sys-primary);
+}
+
+.page-header-title h1 {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 500;
+}
+
+/*  Search row  */
+.search-row {
+	display: flex;
+	gap: 16px;
+	margin-bottom: 20px;
+	align-items: flex-start;
+}
+
+.search-field {
+	flex: 1;
+}
+
+.role-filter-field {
+	width: 180px;
+	flex-shrink: 0;
+}
+
+/*  Results container  */
+.results-container {
+	border-radius: 12px;
+	overflow: hidden;
+	background: var(--mat-sys-surface-container);
+	position: relative;
+	min-height: 120px;
+}
+
+.loading-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(0, 0, 0, 0.06);
+	z-index: 2;
+	border-radius: 12px;
+}
+
+/*  Empty state  */
+.empty-state {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 12px;
+	padding: 48px 0;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+.empty-state mat-icon {
+	font-size: 48px;
+	width: 48px;
+	height: 48px;
+}
+
+.empty-state p {
+	margin: 0;
+	font-size: 15px;
+}
+
+/*  Table  */
+.users-table {
+	width: 100%;
+	background: transparent;
+}
+
+.user-row:hover {
+	background: var(--mat-sys-surface-container-high);
+}
+
+/* Username cell */
+.user-cell {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 6px 0;
+}
+
+.user-avatar {
+	flex-shrink: 0;
+	width: 36px;
+	height: 36px;
+	border-radius: 50%;
+	background: var(--mat-sys-primary-container);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.user-avatar mat-icon {
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+	color: var(--mat-sys-on-primary-container);
+}
+
+.user-info {
+	display: flex;
+	flex-direction: column;
+	gap: 3px;
+}
+
+.username-text {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--mat-sys-on-surface);
+}
+
+/* Role badges */
+.role-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 1px 8px;
+	border-radius: 10px;
+	font-size: 11px;
+	font-weight: 600;
+	width: fit-content;
+}
+
+/* Actions cell */
+.action-buttons {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding: 4px 0;
+}
+
+.no-data-cell {
+	padding: 32px;
+	text-align: center;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+/*  Responsive  */
+@media (max-width: 640px) {
+	.admin-users-page {
+		padding: 20px 16px;
+	}
+
+	.search-row {
+		flex-direction: column;
+	}
+
+	.role-filter-field {
+		width: 100%;
+	}
+
+	.action-buttons {
+		flex-direction: column;
+	}
+}
