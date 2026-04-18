@@ -1,7 +1,10 @@
-use super::{GameRatingStatsResponse, GameReviewResponse, Rating, Result, Review, ReviewError};
+use super::{
+    GameRatingStatsResponse, GameReviewResponse, MostReviewedGameResponse, Rating,
+    RecentReviewResponse, Result, Review, ReviewError, TopGameResponse,
+};
 use anyhow::anyhow;
 use async_trait::async_trait;
-use bson::{serialize_to_bson, Binary, DateTime};
+use bson::{serialize_to_bson, Binary, DateTime, Document};
 use futures::StreamExt;
 use mongodb::{
     bson, bson::{doc, oid::ObjectId},
@@ -20,6 +23,9 @@ pub trait ReviewRepository: Send + Sync {
         rating: Option<Rating>,
         page: u64,
     ) -> Result<Vec<GameReviewResponse>>;
+    async fn find_recent(&self, limit: u64) -> Result<Vec<RecentReviewResponse>>;
+    async fn find_top_rated_games(&self, limit: u64) -> Result<Vec<TopGameResponse>>;
+    async fn find_most_reviewed_games(&self, limit: u64) -> Result<Vec<MostReviewedGameResponse>>;
     async fn find_stats_for_game(&self, game_id: i32) -> Result<Option<GameRatingStatsResponse>>;
     async fn find_by_id(&self, id: ObjectId) -> Result<Option<Review>>;
     async fn find_by_user_and_game(&self, user_id: Uuid, game_id: i32) -> Result<Option<Review>>;
@@ -70,6 +76,56 @@ impl ReviewRepository for MongoReviewRepository {
             reviews.push(review?.into());
         }
         Ok(reviews)
+    }
+
+    async fn find_recent(&self, limit: u64) -> Result<Vec<RecentReviewResponse>> {
+        let filter = doc! {
+            "deleted": false
+        };
+        let mut cursor = self
+            .reviews
+            .find(filter)
+            .sort(doc! { "created_at": -1 })
+            .limit(limit as i64)
+            .await?;
+        let mut reviews = vec![];
+        while let Some(review) = cursor.next().await {
+            reviews.push(review?.into());
+        }
+        Ok(reviews)
+    }
+
+    async fn find_top_rated_games(&self, limit: u64) -> Result<Vec<TopGameResponse>> {
+        let pipeline = Self::make_top_rated_games_pipeline(limit);
+
+        let mut cursor = self.reviews.aggregate(pipeline).await?;
+        let mut result = vec![];
+
+        while let Some(item) = cursor.next().await {
+            let doc = item?;
+            let game_id = doc.get_i32("_id").map_err(|e| anyhow!(e))?;
+            let average_rating = doc.get_f64("averageRating").map_err(|e| anyhow!(e))?;
+
+            result.push(TopGameResponse::new(game_id, average_rating));
+        }
+
+        Ok(result)
+    }
+
+    async fn find_most_reviewed_games(&self, limit: u64) -> Result<Vec<MostReviewedGameResponse>> {
+        let pipeline = Self::make_most_reviewed_games_pipeline(limit);
+        let mut cursor = self.reviews.aggregate(pipeline).await?;
+        let mut result = vec![];
+
+        while let Some(item) = cursor.next().await {
+            let doc = item?;
+            let game_id = doc.get_i32("_id").map_err(|e| anyhow!(e))?;
+            let review_count = doc.get_i32("reviewCount").map_err(|e| anyhow!(e))?;
+
+            result.push(MostReviewedGameResponse::new(game_id, review_count));
+        }
+
+        Ok(result)
     }
 
     async fn find_stats_for_game(&self, game_id: i32) -> Result<Option<GameRatingStatsResponse>> {
@@ -174,5 +230,74 @@ impl ReviewRepository for MongoReviewRepository {
             return Err(ReviewError::Conflict(id));
         }
         Ok(())
+    }
+}
+
+impl MongoReviewRepository {
+    fn make_top_rated_games_pipeline(limit: u64) -> Vec<Document> {
+        vec![
+            doc! {
+                "$match": {
+                    "deleted": false
+                }
+            },
+            doc! {
+                "$addFields": {
+                    "ratingScore": {
+                        "$switch": {
+                            "branches": [
+                                {
+                                    "case": { "$eq": ["$rating", Rating::NotRecommended.as_db_value()] }, "then": 1 },
+                                {
+                                    "case": { "$eq": ["$rating", Rating::Okay.as_db_value()] }, "then": 2 },
+                                {
+                                    "case": { "$eq": ["$rating",Rating::Good.as_db_value()] }, "then": 3 },
+                                {
+                                    "case": { "$eq": ["$rating", Rating::HighlyRecommended.as_db_value()] }, "then": 4 },
+                            ],
+                            "default": 0
+                        }
+                    }
+                }
+            },
+            doc! {
+                "$group": {
+                    "_id": "$game_id",
+                    "averageRating": { "$avg": "$ratingScore" }
+                }
+            },
+            doc! {
+                "$sort": {
+                    "averageRating": -1
+                }
+            },
+            doc! {
+                "$limit": limit as i64
+            },
+        ]
+    }
+
+    fn make_most_reviewed_games_pipeline(limit: u64) -> Vec<Document> {
+        vec![
+            doc! {
+                "$match": {
+                    "deleted": false
+                }
+            },
+            doc! {
+                "$group": {
+                    "_id": "$game_id",
+                    "reviewCount": { "$sum": 1 }
+                }
+            },
+            doc! {
+                "$sort": {
+                    "reviewCount": -1
+                }
+            },
+            doc! {
+                "$limit": limit as i64
+            },
+        ]
     }
 }

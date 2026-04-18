@@ -6,8 +6,9 @@ pub mod repository;
 pub mod service;
 
 pub use dto::{
-    CreateUpdateReviewRequest, GameReviewResponse, GameRatingStatsResponse, ReviewDetailedResponse,
-    ReviewQuery, ReviewSimpleResponse,
+    CreateUpdateReviewRequest, GameRatingStatsResponse, GameReviewResponse,
+    MostReviewedGameResponse, RecentReviewResponse, ReviewDetailedResponse, ReviewQuery,
+    ReviewSimpleResponse, TopGameResponse, TopReviewsQuery,
 };
 pub use error::{Result, ReviewError};
 pub use model::{Rating, Review};

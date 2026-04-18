@@ -12,6 +12,9 @@ pub fn router(state: Arc<ServiceAppState>) -> Router<Arc<ServiceAppState>> {
 
     let public_routes = Router::new()
         .route("/{id}", get(proxy_handler))
+        .route("/recent", get(proxy_handler))
+        .route("/top-rated", get(proxy_handler))
+        .route("/most-reviewed", get(proxy_handler))
         .route("/game/{game_id}", get(proxy_handler))
         .route("/game/{game_id}/stats", get(proxy_handler))
         .route("/user/{user_id}/game/{game_id}", get(proxy_handler));

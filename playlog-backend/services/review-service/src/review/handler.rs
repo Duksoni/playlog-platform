@@ -1,6 +1,7 @@
 use super::{
-    CreateUpdateReviewRequest, GameReviewResponse, GameRatingStatsResponse, ReviewDetailedResponse,
-    ReviewQuery, ReviewSimpleResponse,
+    CreateUpdateReviewRequest, GameRatingStatsResponse, GameReviewResponse,
+    MostReviewedGameResponse, RecentReviewResponse, ReviewDetailedResponse, ReviewQuery,
+    ReviewSimpleResponse, TopGameResponse, TopReviewsQuery,
 };
 use crate::app::AppState;
 use api_error::ApiError;
@@ -25,6 +26,9 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 
     let public_routes = OpenApiRouter::new()
         .route("/{id}", get(get_review))
+        .route("/recent", get(get_recent_reviews))
+        .route("/top-rated", get(get_top_rated_games))
+        .route("/most-reviewed", get(get_most_reviewed_games))
         .route("/game/{game_id}", get(get_reviews_for_game))
         .route("/game/{game_id}/stats", get(get_rating_stats_for_game))
         .route(
@@ -63,6 +67,72 @@ async fn get_review(
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Review ID"))?;
     let review = state.review_service.get(object_id).await?;
     Ok(Json(review))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/reviews/recent",
+    summary = "Get recent reviews",
+    params(TopReviewsQuery),
+    responses(
+        (status = 200, description = "List of recent reviews", body = Vec<RecentReviewResponse>),
+    ),
+    tag = "reviews",
+    operation_id = "get_recent_reviews"
+)]
+#[debug_handler]
+async fn get_recent_reviews(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<TopReviewsQuery>,
+) -> Result<Json<Vec<RecentReviewResponse>>, ApiError> {
+    let reviews = state.review_service.get_recent(query.limit).await?;
+    Ok(Json(reviews))
+}
+
+#[utoipa::path(
+get,
+    path = "/api/reviews/top-rated",
+    summary = "Get top rated games",
+    params(TopReviewsQuery),
+    responses(
+        (status = 200, description = "List of top rated games", body = Vec<TopGameResponse>),
+    ),
+    tag = "reviews",
+    operation_id = "get_top_rated_games"
+)]
+#[debug_handler]
+async fn get_top_rated_games(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<TopReviewsQuery>,
+) -> Result<Json<Vec<TopGameResponse>>, ApiError> {
+    let games = state
+        .review_service
+        .get_top_rated_games(query.limit)
+        .await?;
+    Ok(Json(games))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/reviews/most-reviewed",
+    summary = "Get most reviewed games",
+    params(TopReviewsQuery),
+    responses(
+        (status = 200, description = "List of most reviewed games", body = Vec<MostReviewedGameResponse>),
+    ),
+    tag = "reviews",
+    operation_id = "get_most_reviewed_games"
+)]
+#[debug_handler]
+async fn get_most_reviewed_games(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<TopReviewsQuery>,
+) -> Result<Json<Vec<MostReviewedGameResponse>>, ApiError> {
+    let games = state
+        .review_service
+        .get_most_reviewed_games(query.limit)
+        .await?;
+    Ok(Json(games))
 }
 
 #[utoipa::path(
@@ -108,7 +178,10 @@ async fn get_rating_stats_for_game(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
 ) -> Result<Json<GameRatingStatsResponse>, ApiError> {
-    let stats = state.review_service.get_rating_stats_for_game(game_id).await?;
+    let stats = state
+        .review_service
+        .get_rating_stats_for_game(game_id)
+        .await?;
     Ok(Json(stats))
 }
 

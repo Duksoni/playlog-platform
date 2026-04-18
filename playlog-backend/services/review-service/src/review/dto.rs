@@ -21,6 +21,74 @@ pub struct ReviewQuery {
     pub rating: Option<Rating>,
 }
 
+#[derive(Debug, Validate, Deserialize, IntoParams)]
+pub struct TopReviewsQuery {
+    #[param(required = true, example = "5")]
+    pub limit: u64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RecentReviewResponse {
+    pub id: String,
+    #[serde(rename = "gameId")]
+    pub game_id: i32,
+    pub username: String,
+    pub rating: Rating,
+    pub text: Option<String>,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: DateTime<Utc>,
+}
+
+impl From<Review> for RecentReviewResponse {
+    fn from(value: Review) -> Self {
+        Self {
+            id: value.id.unwrap().to_string(),
+            game_id: value.game_id,
+            username: value.username,
+            rating: value.rating,
+            text: value.text,
+            created_at: value.created_at.to_chrono(),
+            updated_at: value.updated_at.to_chrono(),
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct TopGameResponse {
+    #[serde(rename = "gameId")]
+    pub game_id: i32,
+    #[serde(rename = "averageRating")]
+    pub average_rating: f64,
+}
+
+impl TopGameResponse {
+    pub fn new(game_id: i32, average_rating: f64) -> Self {
+        Self {
+            game_id,
+            average_rating,
+        }
+    }
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct MostReviewedGameResponse {
+    #[serde(rename = "gameId")]
+    pub game_id: i32,
+    #[serde(rename = "reviewCount")]
+    pub review_count: i32,
+}
+
+impl MostReviewedGameResponse {
+    pub fn new(game_id: i32, review_count: i32) -> Self {
+        Self {
+            game_id,
+            review_count,
+        }
+    }
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct GameReviewResponse {
     pub id: String,

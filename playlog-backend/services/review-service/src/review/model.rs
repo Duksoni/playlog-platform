@@ -14,6 +14,12 @@ pub enum Rating {
     HighlyRecommended,
 }
 
+impl Rating {
+    pub fn as_db_value(&self) -> String {
+        format!("{:?}", self).to_uppercase()
+    }
+}
+
 #[derive(Error, Debug)]
 #[error("invalid rating: {0}")]
 pub struct RatingParseError(String);
@@ -21,7 +27,7 @@ pub struct RatingParseError(String);
 impl FromStr for Rating {
     type Err = RatingParseError;
 
-    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "NOT_RECOMMENDED" => Ok(Rating::NotRecommended),
             "OKAY" => Ok(Rating::Okay),
