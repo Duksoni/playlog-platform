@@ -1,7 +1,14 @@
 import {inject, Injectable} from '@angular/core';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
-import {UpdatePasswordRequest, UpdateProfileRequest, UserDetails} from './user.dto';
+import {
+	FindUsersResponse,
+	UpdatePasswordRequest,
+	UpdateProfileRequest,
+	UserDetails,
+	UserRoleChangeResponse,
+} from './user.dto';
+import {Role} from '../auth/auth.dto';
 
 @Injectable({
 	providedIn: 'root',
@@ -24,5 +31,24 @@ export class UserService {
 
 	deactivateAccount() {
 		return this.http.delete<void>(`${this.base}/me`);
+	}
+
+	findUsers(partialUsername: string, role: Role) {
+		const params = new HttpParams()
+			.set('partial_username', partialUsername)
+			.set('role', role);
+		return this.http.get<FindUsersResponse>(`${this.base}`, {params});
+	}
+
+	promoteUser(id: string) {
+		return this.http.put<UserRoleChangeResponse>(`${this.base}/${id}/promote`, {});
+	}
+
+	demoteUser(id: string) {
+		return this.http.put<UserRoleChangeResponse>(`${this.base}/${id}/demote`, {});
+	}
+
+	blockUser(id: string) {
+		return this.http.put<void>(`${this.base}/${id}/block`, {});
 	}
 }

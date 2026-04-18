@@ -51,6 +51,26 @@ export interface GameRatingStatsResponse {
 	notRecommendedCount: number;
 }
 
+export interface RecentReviewResponse {
+	id: string;
+	gameId: number;
+	username: string;
+	rating: Rating;
+	text?: string | null;
+	createdAt: string;
+	updatedAt: string;
+}
+
+export interface TopGameResponse {
+	gameId: number;
+	averageRating: number;
+}
+
+export interface MostReviewedGameResponse {
+	gameId: number;
+	reviewCount: number;
+}
+
 // Display helpers
 
 export const RATING_LABELS: Record<Rating, string> = {

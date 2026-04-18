@@ -4,7 +4,7 @@ import {environment} from '../../../environments/environment';
 import {
 	CommentTargetType,
 	CreateCommentRequest,
-	DetailedCommentResponse,
+	DetailedCommentResponse, RecentCommentResponse,
 	SimpleCommentResponse,
 	UpdateCommentRequest,
 } from './comment.dto';
@@ -42,5 +42,10 @@ export class CommentService {
 
 	deleteComment(id: string) {
 		return this.http.delete<void>(`${this.base}/${id}`);
+	}
+
+	getRecentComments(limit = 6) {
+		const params = new HttpParams().set('limit', limit);
+		return this.http.get<RecentCommentResponse[]>(`${this.base}/games/recent`, {params});
 	}
 }

@@ -3,10 +3,14 @@ import {HttpClient, HttpParams} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
 import {
 	CreateUpdateReviewRequest,
-	GameReviewResponse, GameRatingStatsResponse,
+	GameRatingStatsResponse,
+	GameReviewResponse,
+	MostReviewedGameResponse,
 	Rating,
+	RecentReviewResponse,
 	ReviewDetailedResponse,
 	ReviewSimpleResponse,
+	TopGameResponse,
 } from './review.dto';
 
 @Injectable({
@@ -33,6 +37,21 @@ export class ReviewService {
 
 	getReview(id: string) {
 		return this.http.get<ReviewDetailedResponse>(`${this.base}/${id}`);
+	}
+
+	getRecent(limit = 6) {
+		const params = new HttpParams().set('limit', limit);
+		return this.http.get<RecentReviewResponse[]>(`${this.base}/recent`, {params});
+	}
+
+	getTopRatedGames(limit = 8) {
+		const params = new HttpParams().set('limit', limit);
+		return this.http.get<TopGameResponse[]>(`${this.base}/top-rated`, {params});
+	}
+
+	getMostReviewedGames(limit = 8) {
+		const params = new HttpParams().set('limit', limit);
+		return this.http.get<MostReviewedGameResponse[]>(`${this.base}/most-reviewed`, {params});
 	}
 
 	upsertReview(body: CreateUpdateReviewRequest) {

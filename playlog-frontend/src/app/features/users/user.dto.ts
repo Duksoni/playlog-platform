@@ -18,3 +18,17 @@ export interface UpdatePasswordRequest {
 	oldPassword: string;
 	newPassword: string;
 }
+
+export interface SimpleUser {
+	id: string;
+	username: string;
+}
+
+export interface FindUsersResponse {
+	users: SimpleUser[];
+}
+
+export interface UserRoleChangeResponse {
+	oldRole: string;
+	newRole: string;
+}

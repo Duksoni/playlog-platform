@@ -26,3 +26,12 @@ export interface DetailedCommentResponse extends  SimpleCommentResponse {
 	targetType: CommentTargetType;
 	targetId: string;
 }
+
+export interface RecentCommentResponse {
+	id: string;
+	gameId: number;
+	username: string;
+	text: string;
+	createdAt: string;
+	updatedAt: string;
+}
