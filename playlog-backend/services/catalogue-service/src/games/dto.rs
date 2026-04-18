@@ -58,6 +58,18 @@ pub struct PublsherGamesQuery {
     pub page: u64,
 }
 
+#[derive(Debug, Deserialize, IntoParams)]
+pub struct GetGamesQuery {
+    #[serde(rename = "gameIds")]
+    pub game_ids: Vec<i32>,
+}
+
+#[derive(Debug, Validate, Deserialize, IntoParams)]
+pub struct NewGameReleasesQuery {
+    #[param(required = true, example = "5")]
+    pub limit: u64,
+}
+
 #[derive(Deserialize, IntoParams)]
 #[into_params(parameter_in = Query)]
 pub struct GameFilterQuery {

@@ -8,6 +8,8 @@ use utoipa::OpenApi;
     paths(
         crate::app::health_check,
         crate::games::handler::filter,
+        crate::games::handler::get_games_by_ids,
+        crate::games::handler::get_new_releases,
         crate::games::handler::find_by_developer,
         crate::games::handler::find_by_publisher,
         crate::games::handler::get_game,

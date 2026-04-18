@@ -3,7 +3,7 @@ use super::{
     GameSortField, Genre, Platform, Publisher, Result, SortDirection, Tag, UpdateGameRequest,
 };
 use async_trait::async_trait;
-use sqlx::{query, query_as, query_scalar, PgPool, Postgres, Transaction};
+use sqlx::{PgPool, Postgres, Transaction, query, query_as, query_scalar};
 
 #[async_trait]
 pub trait GameRepository: Send + Sync {
@@ -12,10 +12,12 @@ pub trait GameRepository: Send + Sync {
         include_drafts: bool,
         params: GameFilterQuery,
     ) -> Result<Vec<GameSimple>>;
+    async fn find_new_releases(&self, limit: i64) -> Result<Vec<GameSimple>>;
     async fn find_by_developer(&self, developer_id: i32) -> Result<Vec<GameSimple>>;
     async fn find_by_publisher(&self, publisher_id: i32, page: u64) -> Result<Vec<GameSimple>>;
     async fn get_all_unpublished(&self) -> Result<Vec<GameSimple>>;
     async fn get(&self, id: i32, include_draft: bool) -> Result<Option<Game>>;
+    async fn find_published_by_ids(&self, ids: &[i32]) -> Result<Vec<GameSimple>>;
     async fn get_details(&self, id: i32, include_draft: bool) -> Result<Option<GameDetails>>;
     async fn create(&self, data: CreateGameRequest) -> Result<Game>;
     async fn update(&self, id: i32, data: UpdateGameRequest) -> Result<GameDetails>;
@@ -37,6 +39,24 @@ impl GameRepository for PostgresGameRepository {
     ) -> Result<Vec<GameSimple>> {
         let query = self.build_filter_query(include_drafts, &params);
         let games: Vec<GameSimple> = query_as(&query).fetch_all(&self.pool).await?;
+        Ok(games)
+    }
+
+    async fn find_new_releases(&self, limit: i64) -> Result<Vec<GameSimple>> {
+        let games = query_as!(
+            GameSimple,
+            r#"
+                SELECT id, name, released, draft
+                FROM games
+                WHERE released <= CURRENT_DATE
+                ORDER BY released DESC
+                LIMIT $1
+            "#,
+            limit
+        )
+        .fetch_all(&self.pool)
+        .await?;
+
         Ok(games)
     }
 
@@ -110,6 +130,21 @@ impl GameRepository for PostgresGameRepository {
         .await?;
 
         Ok(game)
+    }
+
+    async fn find_published_by_ids(&self, ids: &[i32]) -> Result<Vec<GameSimple>> {
+        let games = query_as!(
+            GameSimple,
+            r#"
+                SELECT id, name, released, draft
+                FROM games
+                WHERE id = ANY($1) AND draft = false
+            "#,
+            ids
+        )
+            .fetch_all(&self.pool)
+            .await?;
+        Ok(games)
     }
 
     async fn get_details(&self, id: i32, include_draft: bool) -> Result<Option<GameDetails>> {
@@ -262,7 +297,7 @@ impl GameRepository for PostgresGameRepository {
                 Err(GameError::Conflict(id))
             } else {
                 Err(GameError::NotFound(id))
-            }
+            };
         }
 
         if let Some(developer_ids) = data.developer_ids {

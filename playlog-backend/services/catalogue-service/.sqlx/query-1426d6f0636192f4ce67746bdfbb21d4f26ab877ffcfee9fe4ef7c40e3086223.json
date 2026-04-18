@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT id, name, released, draft\n                FROM games\n                WHERE released <= CURRENT_DATE\n                ORDER BY released DESC\n                LIMIT $1\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "released",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 3,
+        "name": "draft",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "1426d6f0636192f4ce67746bdfbb21d4f26ab877ffcfee9fe4ef7c40e3086223"
+}

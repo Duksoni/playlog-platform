@@ -1,6 +1,6 @@
 use super::{
-    CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, PublishUnpublishGameRequest,
-    PublsherGamesQuery, UpdateGameRequest,
+    CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, GetGamesQuery,
+    NewGameReleasesQuery, PublishUnpublishGameRequest, PublsherGamesQuery, UpdateGameRequest,
 };
 use crate::app::AppState;
 use api_error::ApiError;
@@ -24,6 +24,8 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 
     let public_routes = OpenApiRouter::new()
         .route("/filter", get(filter))
+        .route("/by-ids", get(get_games_by_ids))
+        .route("/new-releases", get(get_new_releases))
         .route("/{id}", get(get_game))
         .route("/{id}/details", get(get_details))
         .route("/by-developer/{developer_id}", get(find_by_developer))
@@ -72,6 +74,50 @@ async fn filter(
 
 #[utoipa::path(
     get,
+    path = "/api/games/by-ids",
+    params(GetGamesQuery),
+    summary = "Get games by ids",
+    responses(
+        (status = 200, description = "List of games", body = Vec<GameSimple>),
+    ),
+    tag = "games",
+    security(("bearer" = [])),
+    operation_id = "get_games_by_ids"
+)]
+#[debug_handler]
+async fn get_games_by_ids(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<GetGamesQuery>,
+) -> Result<Json<Vec<GameSimple>>, ApiError> {
+    if query.game_ids.is_empty() {
+        return Ok(Json(vec![]));
+    }
+    let games = state.game_service.get_by_ids(&query.game_ids).await?;
+    Ok(Json(games))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/games/new-releases",
+    params(NewGameReleasesQuery),
+    summary = "Get new releases",
+    responses(
+        (status = 200, description = "List of games", body = Vec<GameSimple>),
+    ),
+    tag = "games",
+    operation_id = "get_new_releases"
+)]
+#[debug_handler]
+async fn get_new_releases(
+    State(state): State<Arc<AppState>>,
+    Query(params): Query<NewGameReleasesQuery>,
+) -> Result<Json<Vec<GameSimple>>, ApiError> {
+    let games = state.game_service.get_new_releases(params.limit).await?;
+    Ok(Json(games))
+}
+
+#[utoipa::path(
+    get,
     path = "/api/games/by-developer/{developer_id}",
     summary = "Get games by developer",
     params(("developer_id" = i32, Path, description = "Developer id")),
@@ -86,7 +132,7 @@ async fn find_by_developer(
     State(state): State<Arc<AppState>>,
     Path(developer_id): Path<i32>,
 ) -> Result<Json<Vec<GameSimple>>, ApiError> {
-    let games = state.game_service.find_by_developer(developer_id).await?;
+    let games = state.game_service.get_by_developer(developer_id).await?;
     Ok(Json(games))
 }
 
@@ -112,7 +158,7 @@ async fn find_by_publisher(
 ) -> Result<Json<Vec<GameSimple>>, ApiError> {
     let games = state
         .game_service
-        .find_by_publisher(publisher_id, params.page)
+        .get_by_publisher(publisher_id, params.page)
         .await?;
     Ok(Json(games))
 }

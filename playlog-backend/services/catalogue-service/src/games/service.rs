@@ -40,11 +40,15 @@ impl GameService {
         self.game_repository.filter(include_drafts, params).await
     }
 
-    pub async fn find_by_developer(&self, developer_id: i32) -> Result<Vec<GameSimple>> {
+    pub async fn get_new_releases(&self, limit: u64) -> Result<Vec<GameSimple>> {
+        self.game_repository.find_new_releases(limit as i64).await
+    }
+
+    pub async fn get_by_developer(&self, developer_id: i32) -> Result<Vec<GameSimple>> {
         self.game_repository.find_by_developer(developer_id).await
     }
 
-    pub async fn find_by_publisher(&self, publisher_id: i32, page: u64) -> Result<Vec<GameSimple>> {
+    pub async fn get_by_publisher(&self, publisher_id: i32, page: u64) -> Result<Vec<GameSimple>> {
         self.game_repository
             .find_by_publisher(publisher_id, page)
             .await
@@ -60,6 +64,12 @@ impl GameService {
             .await?
             .map(GameSimple::from)
             .ok_or(GameError::NotFound(id))
+    }
+
+    pub async fn get_by_ids(&self, ids: &[i32]) -> Result<Vec<GameSimple>> {
+        self.game_repository
+            .find_published_by_ids(ids)
+            .await
     }
 
     pub async fn get_details(&self, id: i32, include_draft: bool) -> Result<GameDetails> {
