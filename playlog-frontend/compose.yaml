@@ -9,7 +9,9 @@ services:
     ports:
       - "8080:8080"
     networks:
-      - playlog_network
+      playlog_network:
+        aliases:
+          - ${STORAGE_ALIAS}
 networks:
   playlog_network:
     external: true
