@@ -3,7 +3,7 @@ use super::{
     NewGameReleasesQuery, PublishUnpublishGameRequest, PublsherGamesQuery, UpdateGameRequest,
 };
 use crate::app::AppState;
-use api_error::ApiError;
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, State},
     http::{Extensions, StatusCode},
@@ -64,7 +64,7 @@ async fn filter(
     State(state): State<Arc<AppState>>,
     extensions: Extensions,
     Query(params): Query<GameFilterQuery>,
-) -> Result<Json<Vec<GameSimple>>, ApiError> {
+) -> ApiResult<Json<Vec<GameSimple>>> {
     let claims = extensions.get::<AuthClaims>();
     let include_drafts = claims.map(|c| c.role == Role::Admin).unwrap_or(false);
 
@@ -88,7 +88,7 @@ async fn filter(
 async fn get_games_by_ids(
     State(state): State<Arc<AppState>>,
     Query(query): Query<GetGamesQuery>,
-) -> Result<Json<Vec<GameSimple>>, ApiError> {
+) -> ApiResult<Json<Vec<GameSimple>>> {
     if query.game_ids.is_empty() {
         return Ok(Json(vec![]));
     }
@@ -111,7 +111,7 @@ async fn get_games_by_ids(
 async fn get_new_releases(
     State(state): State<Arc<AppState>>,
     Query(params): Query<NewGameReleasesQuery>,
-) -> Result<Json<Vec<GameSimple>>, ApiError> {
+) -> ApiResult<Json<Vec<GameSimple>>> {
     let games = state.game_service.get_new_releases(params.limit).await?;
     Ok(Json(games))
 }
@@ -131,7 +131,7 @@ async fn get_new_releases(
 async fn find_by_developer(
     State(state): State<Arc<AppState>>,
     Path(developer_id): Path<i32>,
-) -> Result<Json<Vec<GameSimple>>, ApiError> {
+) -> ApiResult<Json<Vec<GameSimple>>> {
     let games = state.game_service.get_by_developer(developer_id).await?;
     Ok(Json(games))
 }
@@ -155,7 +155,7 @@ async fn find_by_publisher(
     State(state): State<Arc<AppState>>,
     Path(publisher_id): Path<i32>,
     Query(params): Query<PublsherGamesQuery>,
-) -> Result<Json<Vec<GameSimple>>, ApiError> {
+) -> ApiResult<Json<Vec<GameSimple>>> {
     let games = state
         .game_service
         .get_by_publisher(publisher_id, params.page)
@@ -180,7 +180,7 @@ async fn find_by_publisher(
 async fn get_game(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-) -> Result<Json<GameSimple>, ApiError> {
+) -> ApiResult<Json<GameSimple>> {
     let game = state.game_service.get(id).await?;
     Ok(Json(game))
 }
@@ -203,7 +203,7 @@ async fn get_details(
     State(state): State<Arc<AppState>>,
     extensions: Extensions,
     Path(id): Path<i32>,
-) -> Result<Json<GameDetails>, ApiError> {
+) -> ApiResult<Json<GameDetails>> {
     let claims = extensions.get::<AuthClaims>();
     let include_draft = claims.map(|c| c.role == Role::Admin).unwrap_or(false);
 
@@ -223,9 +223,7 @@ async fn get_details(
     operation_id = "get_unpublished_games"
 )]
 #[debug_handler]
-async fn get_unpublished(
-    State(state): State<Arc<AppState>>,
-) -> Result<Json<Vec<GameSimple>>, ApiError> {
+async fn get_unpublished(State(state): State<Arc<AppState>>) -> ApiResult<Json<Vec<GameSimple>>> {
     let games = state.game_service.get_all_unpublished().await?;
     Ok(Json(games))
 }
@@ -249,7 +247,7 @@ async fn get_unpublished(
 async fn create(
     State(state): State<Arc<AppState>>,
     Json(request): Json<CreateGameRequest>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
     let game = state.game_service.create(request).await?;
     Ok((StatusCode::CREATED, Json(game)))
@@ -278,7 +276,7 @@ async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<UpdateGameRequest>,
-) -> Result<Json<GameDetails>, ApiError> {
+) -> ApiResult<Json<GameDetails>> {
     request.validate().map_err(ApiError::from)?;
     let game = state.game_service.update(id, request).await?;
     Ok(Json(game))
@@ -303,7 +301,7 @@ async fn update(
 async fn delete_game(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     state.game_service.delete(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -330,7 +328,7 @@ async fn publish(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<PublishUnpublishGameRequest>,
-) -> Result<Json<Game>, ApiError> {
+) -> ApiResult<Json<Game>> {
     request.validate().map_err(ApiError::from)?;
     let game = state.game_service.publish(id, request.version).await?;
     Ok(Json(game))
@@ -358,7 +356,7 @@ async fn unpublish(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<PublishUnpublishGameRequest>,
-) -> Result<Json<Game>, ApiError> {
+) -> ApiResult<Json<Game>> {
     request.validate().map_err(ApiError::from)?;
     let game = state.game_service.unpublish(id, request.version).await?;
     Ok(Json(game))

@@ -4,7 +4,7 @@ use super::{
     ReviewSimpleResponse, TopGameResponse, TopReviewsQuery,
 };
 use crate::app::AppState;
-use api_error::ApiError;
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, Query, State}, http::StatusCode,
     middleware::{from_fn, from_fn_with_state},
@@ -62,7 +62,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 async fn get_review(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
-) -> Result<Json<ReviewDetailedResponse>, ApiError> {
+) -> ApiResult<Json<ReviewDetailedResponse>> {
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Review ID"))?;
     let review = state.review_service.get(object_id).await?;
@@ -84,7 +84,7 @@ async fn get_review(
 async fn get_recent_reviews(
     State(state): State<Arc<AppState>>,
     Query(query): Query<TopReviewsQuery>,
-) -> Result<Json<Vec<RecentReviewResponse>>, ApiError> {
+) -> ApiResult<Json<Vec<RecentReviewResponse>>> {
     let reviews = state.review_service.get_recent(query.limit).await?;
     Ok(Json(reviews))
 }
@@ -104,7 +104,7 @@ get,
 async fn get_top_rated_games(
     State(state): State<Arc<AppState>>,
     Query(query): Query<TopReviewsQuery>,
-) -> Result<Json<Vec<TopGameResponse>>, ApiError> {
+) -> ApiResult<Json<Vec<TopGameResponse>>> {
     let games = state
         .review_service
         .get_top_rated_games(query.limit)
@@ -127,7 +127,7 @@ async fn get_top_rated_games(
 async fn get_most_reviewed_games(
     State(state): State<Arc<AppState>>,
     Query(query): Query<TopReviewsQuery>,
-) -> Result<Json<Vec<MostReviewedGameResponse>>, ApiError> {
+) -> ApiResult<Json<Vec<MostReviewedGameResponse>>> {
     let games = state
         .review_service
         .get_most_reviewed_games(query.limit)
@@ -154,7 +154,7 @@ async fn get_reviews_for_game(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
     Query(query): Query<ReviewQuery>,
-) -> Result<Json<Vec<GameReviewResponse>>, ApiError> {
+) -> ApiResult<Json<Vec<GameReviewResponse>>> {
     let reviews = state
         .review_service
         .get_for_game(game_id, query.rating, query.page)
@@ -177,7 +177,7 @@ async fn get_reviews_for_game(
 async fn get_rating_stats_for_game(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
-) -> Result<Json<GameRatingStatsResponse>, ApiError> {
+) -> ApiResult<Json<GameRatingStatsResponse>> {
     let stats = state
         .review_service
         .get_rating_stats_for_game(game_id)
@@ -204,7 +204,7 @@ async fn get_rating_stats_for_game(
 async fn get_review_for_user_and_game(
     State(state): State<Arc<AppState>>,
     Path((user_id, game_id)): Path<(Uuid, i32)>,
-) -> Result<Json<ReviewSimpleResponse>, ApiError> {
+) -> ApiResult<Json<ReviewSimpleResponse>> {
     let review = state
         .review_service
         .get_for_user_and_game(user_id, game_id)
@@ -232,7 +232,7 @@ async fn upsert_review(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<CreateUpdateReviewRequest>,
-) -> Result<Json<ReviewDetailedResponse>, ApiError> {
+) -> ApiResult<Json<ReviewDetailedResponse>> {
     request.validate().map_err(ApiError::from)?;
     let review = state
         .review_service
@@ -262,7 +262,7 @@ async fn delete_review(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Review ID"))?;
     state

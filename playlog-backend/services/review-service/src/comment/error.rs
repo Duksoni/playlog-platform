@@ -1,4 +1,4 @@
-use api_error::ApiError;
+use service_common::error::ApiError;
 use axum::http::StatusCode;
 use bson::oid::ObjectId;
 use thiserror::Error;

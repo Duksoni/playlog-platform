@@ -11,6 +11,8 @@ pub struct ApiError {
     pub errors: Vec<String>,
 }
 
+pub type Result<T> = std::result::Result<T, ApiError>;
+
 impl ApiError {
     pub fn new(code: StatusCode, error_message: impl Into<String>) -> Self {
         Self {

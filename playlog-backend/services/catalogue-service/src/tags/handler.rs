@@ -5,7 +5,7 @@ use crate::{
         SearchQuery, UpdateGameEntityRequest,
     },
 };
-use api_error::ApiError;
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::routing::delete;
 use axum::{
     extract::{Path, Query, State},
@@ -56,7 +56,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 async fn get_all_paged(
     State(state): State<Arc<AppState>>,
     Query(query): Query<PagedQuery>,
-) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
+) -> ApiResult<Json<Vec<GameEntitySimple>>> {
     let result = state.tag_repository.get_all_paged(query.page).await?;
     Ok(Json(result))
 }
@@ -78,7 +78,7 @@ async fn get_all_paged(
 async fn get_by_id(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-) -> Result<Json<GameEntity>, ApiError> {
+) -> ApiResult<Json<GameEntity>> {
     let result: Option<GameEntity> = state.tag_repository.get(id).await?;
     let result = result.ok_or_else(|| GameEntityError::NotFound(String::from("Tag"), id))?;
     Ok(Json(result))
@@ -99,7 +99,7 @@ async fn get_by_id(
 async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
-) -> Result<Json<Vec<GameEntitySimple>>, ApiError> {
+) -> ApiResult<Json<Vec<GameEntitySimple>>> {
     let result = state.tag_repository.find_by_name(&query.q).await?;
     Ok(Json(result))
 }
@@ -123,7 +123,7 @@ async fn search(
 async fn create(
     State(state): State<Arc<AppState>>,
     Json(request): Json<CreateGameEntityRequest>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
     let result = state.tag_repository.create(&request.name).await?;
     Ok((StatusCode::CREATED, Json(result)))
@@ -152,7 +152,7 @@ async fn update(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
     Json(request): Json<UpdateGameEntityRequest>,
-) -> Result<Json<GameEntity>, ApiError> {
+) -> ApiResult<Json<GameEntity>> {
     request.validate().map_err(ApiError::from)?;
     let result = state
         .tag_repository
@@ -178,7 +178,7 @@ async fn update(
 async fn delete_tag(
     state: State<Arc<AppState>>,
     Path(id): Path<i32>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     state.tag_repository.delete(id).await?;
     Ok(StatusCode::NO_CONTENT)
 }

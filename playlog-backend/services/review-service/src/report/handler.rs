@@ -3,7 +3,7 @@ use crate::{
     app::AppState,
     report::{CreateReportRequest, ReportQuery, UpdateReportStatusRequest},
 };
-use api_error::ApiError;
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, Query, State}, http::StatusCode,
     middleware::{from_fn, from_fn_with_state},
@@ -57,7 +57,7 @@ async fn report_content(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<CreateReportRequest>,
-) -> Result<Json<ReportResponse>, ApiError> {
+) -> ApiResult<Json<ReportResponse>> {
     request.validate().map_err(ApiError::from)?;
     let target_id = parse_object_id(&request.target_id, "Invalid target ID")?;
     let report = state
@@ -91,7 +91,7 @@ async fn report_content(
 async fn get_pending_reports(
     State(state): State<Arc<AppState>>,
     Query(query): Query<ReportQuery>,
-) -> Result<Json<Vec<ReportResponse>>, ApiError> {
+) -> ApiResult<Json<Vec<ReportResponse>>> {
     let reports = state.report_service.get_pending_reports(query.page).await?;
     Ok(Json(reports))
 }
@@ -112,7 +112,7 @@ async fn get_pending_reports(
 async fn get_report(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
-) -> Result<Json<ReportResponse>, ApiError> {
+) -> ApiResult<Json<ReportResponse>> {
     let object_id = parse_object_id(&id, "Invalid Report ID")?;
     let report = state.report_service.get_one_pending(object_id).await?;
     Ok(Json(report))
@@ -142,7 +142,7 @@ async fn resolve_report(
     Path(id): Path<String>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<UpdateReportStatusRequest>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     let object_id = parse_object_id(&id, "Invalid Report ID")?;
     state
         .report_service
@@ -151,6 +151,6 @@ async fn resolve_report(
     Ok(StatusCode::NO_CONTENT)
 }
 
-fn parse_object_id(id: &str, error_message: &str) -> Result<ObjectId, ApiError> {
+fn parse_object_id(id: &str, error_message: &str) -> ApiResult<ObjectId> {
     ObjectId::parse_str(id).map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, error_message))
 }

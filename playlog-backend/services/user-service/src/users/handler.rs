@@ -2,9 +2,11 @@ use super::{
     FindUsersQuery, FindUsersResponse, UpdatePasswordRequest, UpdateProfileRequest, UserDetails,
     UserError, UserRoleChangeResponse,
 };
-use crate::app::AppState;
-use crate::shared::build_cookie_header;
-use api_error::ApiError;
+use crate::{
+    app::AppState,
+    shared::build_cookie_header
+};
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, Query, State}, http::StatusCode,
     middleware::{from_fn, from_fn_with_state},
@@ -66,7 +68,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 async fn get_user(
     State(state): State<Arc<AppState>>,
     Path(user_id): Path<String>,
-) -> Result<Json<UserDetails>, ApiError> {
+) -> ApiResult<Json<UserDetails>> {
     let user = state.user_service.get_user_details(user_id).await?;
     Ok(Json(user))
 }
@@ -91,7 +93,7 @@ async fn update_user(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<UpdateProfileRequest>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
     let updated = state
         .user_service
@@ -122,7 +124,7 @@ async fn change_password(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<UpdatePasswordRequest>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
     state
         .user_service
@@ -148,7 +150,7 @@ async fn change_password(
 async fn deactivate_account(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     state
         .user_service
         .deactivate_account(claims.user_id)
@@ -178,7 +180,7 @@ async fn find_users(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Query(query): Query<FindUsersQuery>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     query.validate().map_err(ApiError::from)?;
     let users = state
         .user_service
@@ -205,7 +207,7 @@ async fn block_user(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(user_id): Path<Uuid>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     if claims.user_id == user_id {
         return Err(UserError::CantBlockSelf.into());
     }
@@ -232,7 +234,7 @@ async fn promote_user(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(user_id): Path<Uuid>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     if claims.user_id == user_id {
         return Err(UserError::CantPromoteSelf.into());
     }
@@ -259,7 +261,7 @@ async fn demote_user(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(user_id): Path<Uuid>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     if claims.user_id == user_id {
         return Err(UserError::CantDemoteSelf.into());
     }

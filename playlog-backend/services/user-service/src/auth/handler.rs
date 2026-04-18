@@ -3,7 +3,7 @@ use crate::{
     app::AppState,
     shared::{build_cookie_header, REFRESH_TOKEN_COOKIE_NAME},
 };
-use api_error::ApiError;
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json};
 use axum_extra::extract::cookie::CookieJar;
 use axum_macros::debug_handler;
@@ -37,7 +37,7 @@ pub fn router() -> OpenApiRouter<Arc<AppState>> {
 pub async fn login(
     State(state): State<Arc<AppState>>,
     Json(request): Json<LoginRequest>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
     let tokens = state.auth_service.login(request, &state.config).await?;
 
@@ -66,7 +66,7 @@ pub async fn login(
 pub async fn register(
     State(state): State<Arc<AppState>>,
     Json(request): Json<RegisterRequest>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
     let result = state.auth_service.register(request).await?;
     Ok((StatusCode::CREATED, Json(result)).into_response())
@@ -86,7 +86,7 @@ pub async fn register(
 pub async fn logout(
     State(state): State<Arc<AppState>>,
     cookie_jar: CookieJar,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     let refresh_token = extract_refresh_token(&cookie_jar)?;
 
     let result = state.auth_service.revoke_token(&refresh_token).await;
@@ -116,7 +116,7 @@ pub async fn logout(
 pub async fn refresh_tokens(
     State(state): State<Arc<AppState>>,
     cookie_jar: CookieJar,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     let refresh_token = extract_refresh_token(&cookie_jar)?;
     let tokens = state
         .auth_service
@@ -132,7 +132,7 @@ pub async fn refresh_tokens(
     Ok(response)
 }
 
-fn extract_refresh_token(cookie_jar: &CookieJar) -> Result<String, ApiError> {
+fn extract_refresh_token(cookie_jar: &CookieJar) -> ApiResult<String> {
     match cookie_jar.get(REFRESH_TOKEN_COOKIE_NAME) {
         Some(cookie) => Ok(String::from(cookie.value())),
         None => Err(ApiError::from(AuthError::TokenError(String::from(

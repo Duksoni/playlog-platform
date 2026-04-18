@@ -1,7 +1,12 @@
-use std::str::FromStr;
-use std::sync::Arc;
-
-use api_error::ApiError;
+use crate::{
+    app::AppState,
+    dto::GameMediaResponse,
+    dto::{GetGameCoversQuery, GetGameCoversResponse},
+    error::MediaError,
+    model::FieldName,
+    model::UploadedFile,
+};
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -13,11 +18,9 @@ use axum::{
 use axum_extra::extract::{Multipart, Query};
 use axum_macros::debug_handler;
 use jwt_common::{auth, require_admin, JwtConfig};
+use std::str::FromStr;
+use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
-
-use crate::dto::{GetGameCoversQuery, GetGameCoversResponse};
-use crate::model::FieldName;
-use crate::{app::AppState, dto::GameMediaResponse, error::MediaError, model::UploadedFile};
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
@@ -56,7 +59,7 @@ If no game covers are found, an empty object is returned.
 async fn get_game_covers(
     State(state): State<Arc<AppState>>,
     Query(params): Query<GetGameCoversQuery>,
-) -> Result<Json<GetGameCoversResponse>, ApiError> {
+) -> ApiResult<Json<GetGameCoversResponse>> {
     if params.game_ids.is_empty() {
         return Ok(Json(GetGameCoversResponse::empty()));
     }
@@ -84,7 +87,7 @@ async fn get_game_covers(
 async fn get_game_media(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
-) -> Result<Json<GameMediaResponse>, ApiError> {
+) -> ApiResult<Json<GameMediaResponse>> {
     let media = state.media_service.get_game_media(game_id).await?;
     Ok(Json(media))
 }
@@ -129,7 +132,7 @@ async fn upload_game_media(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
     mut multipart: Multipart,
-) -> Result<Json<GameMediaResponse>, ApiError> {
+) -> ApiResult<Json<GameMediaResponse>> {
     state.media_service.ensure_game_exists(game_id).await?;
     let mut files: Vec<UploadedFile> = vec![];
     let mut version: Option<i64> = None;
@@ -167,7 +170,7 @@ async fn upload_game_media(
 async fn delete_game_media(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     state.media_service.delete_game_media(game_id).await?;
     Ok(StatusCode::NO_CONTENT)
 }
@@ -176,7 +179,7 @@ async fn parse_multipart_request(
     multipart: &mut Multipart,
     files: &mut Vec<UploadedFile>,
     version: &mut Option<i64>,
-) -> Result<(), ApiError> {
+) -> ApiResult<()> {
     while let Some(field) = multipart
         .next_field()
         .await

@@ -6,7 +6,7 @@ use crate::{
     app::AppState,
     comment::{CommentQuery, CreateCommentRequest},
 };
-use api_error::ApiError;
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, Query, State}, http::StatusCode,
     middleware::{from_fn, from_fn_with_state},
@@ -56,7 +56,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 async fn get_comments(
     State(state): State<Arc<AppState>>,
     Query(query): Query<CommentQuery>,
-) -> Result<Json<Vec<SimpleCommentResponse>>, ApiError> {
+) -> ApiResult<Json<Vec<SimpleCommentResponse>>> {
     query.validate().map_err(ApiError::from)?;
     let comments = state
         .comment_service
@@ -80,7 +80,7 @@ async fn get_comments(
 async fn get_recent_game_comments(
     State(state): State<Arc<AppState>>,
     Query(query): Query<RecentGameCommentsQuery>,
-) -> Result<Json<Vec<RecentGameCommentResponse>>, ApiError> {
+) -> ApiResult<Json<Vec<RecentGameCommentResponse>>> {
     let comments = state
         .comment_service
         .get_recent_game_comments(query.limit)
@@ -105,7 +105,7 @@ async fn get_recent_game_comments(
 async fn get_comment(
     State(state): State<Arc<AppState>>,
     Path(id): Path<String>,
-) -> Result<Json<DetailedCommentResponse>, ApiError> {
+) -> ApiResult<Json<DetailedCommentResponse>> {
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Comment ID"))?;
     let comment = state.comment_service.get(object_id).await?;
@@ -132,7 +132,7 @@ async fn get_own_comment(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,
-) -> Result<Json<DetailedCommentResponse>, ApiError> {
+) -> ApiResult<Json<DetailedCommentResponse>> {
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Comment ID"))?;
     let comment = state
@@ -162,7 +162,7 @@ async fn add_comment(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<CreateCommentRequest>,
-) -> Result<Json<DetailedCommentResponse>, ApiError> {
+) -> ApiResult<Json<DetailedCommentResponse>> {
     request.validate().map_err(ApiError::from)?;
     let comment = state
         .comment_service
@@ -195,7 +195,7 @@ async fn update_comment(
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,
     Json(request): Json<UpdateCommentRequest>,
-) -> Result<Json<DetailedCommentResponse>, ApiError> {
+) -> ApiResult<Json<DetailedCommentResponse>> {
     request.validate().map_err(ApiError::from)?;
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Comment ID"))?;
@@ -227,7 +227,7 @@ async fn delete_comment(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(id): Path<String>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Comment ID"))?;
     state

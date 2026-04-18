@@ -54,6 +54,5 @@ utoipa-axum = "0.2"
 utoipa-swagger-ui = { version = "9", features = ["axum"] }
 
 # --- Shared ---
-api-error = { path = "shared/api-error" }
 jwt-common = { path = "shared/jwt-common" }
 service-common = { path = "shared/service-common" }

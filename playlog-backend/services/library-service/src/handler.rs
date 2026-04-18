@@ -3,7 +3,7 @@ use crate::{
     dto::{AddUpdateGameRequest, LibraryFilterQuery},
     model::{LibraryGame, UserGame},
 };
-use api_error::ApiError;
+use service_common::error::Result as ApiResult;
 use axum::{
     extract::{Path, Query, State}, http::StatusCode,
     middleware::{from_fn, from_fn_with_state},
@@ -52,7 +52,7 @@ pub async fn get_user_library(
     State(state): State<Arc<AppState>>,
     Path(user_id): Path<Uuid>,
     Query(filter): Query<LibraryFilterQuery>,
-) -> Result<Json<Vec<LibraryGame>>, ApiError> {
+) -> ApiResult<Json<Vec<LibraryGame>>> {
     let games = state
         .library_service
         .get_user_library(user_id, filter.status)
@@ -79,7 +79,7 @@ pub async fn add_or_update_game(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<AddUpdateGameRequest>,
-) -> Result<Json<UserGame>, ApiError> {
+) -> ApiResult<Json<UserGame>> {
     let game = state
         .library_service
         .add_or_update_game(claims.user_id, request.game_id, request.status)
@@ -106,7 +106,7 @@ pub async fn remove_from_library(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(game_id): Path<i32>,
-) -> Result<impl IntoResponse, ApiError> {
+) -> ApiResult<impl IntoResponse> {
     state
         .library_service
         .remove_from_library(claims.user_id, game_id)

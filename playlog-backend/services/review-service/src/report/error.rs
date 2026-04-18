@@ -1,5 +1,5 @@
 use crate::{comment::CommentError, review::ReviewError};
-use api_error::ApiError;
+use service_common::error::ApiError;
 use axum::http::StatusCode;
 use mongodb::bson::oid::ObjectId;
 use thiserror::Error;
