@@ -1,0 +1,107 @@
+<div class="reports-page">
+
+	<!-- Header -->
+	<div class="page-header">
+		<div class="page-header-title">
+			<mat-icon fontSet="material-symbols-rounded">flag</mat-icon>
+			<h1 i18n="@@reports.pageTitle">Pending Reports</h1>
+		</div>
+	</div>
+
+	<!-- Content -->
+	@if (loading() && reports().length === 0) {
+		<div class="loading-container">
+			<mat-spinner diameter="48"></mat-spinner>
+		</div>
+	} @else if (!loading() && reports().length === 0) {
+		<div class="empty-state">
+			<mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+			<p i18n="@@reports.empty">No pending reports. Everything looks clean!</p>
+		</div>
+	} @else {
+		<div class="reports-list">
+			@for (report of reports(); track report.id) {
+				<div class="report-card">
+
+					<!-- Type badge + Date + Actions (Top row) -->
+					<!-- Reporter info (Bottom row) -->
+					<div class="report-meta">
+						<div class="meta-top-row">
+							<button class="type-badge hover-pointer"
+							      [class.type-review]="report.targetType === ReportTargetType.REVIEW"
+							      [class.type-comment]="report.targetType !== ReportTargetType.REVIEW"
+							      (click)="viewContent(report)"
+							      matTooltip="View reported content"
+							      i18n-matTooltip="@@reports.viewContentTooltip">
+								<mat-icon fontSet="material-symbols-rounded">
+									{{ report.targetType === ReportTargetType.REVIEW ? 'rate_review' : 'chat_bubble_outline' }}
+								</mat-icon>
+								@if (report.targetType === ReportTargetType.REVIEW) {
+									<span i18n="@@reports.typeReview">Review</span>
+								} @else {
+									<span i18n="@@reports.typeComment">Comment</span>
+								}
+							</button>
+
+							<span class="report-date">{{ report.createdAt | date:'mediumDate' }}</span>
+
+							<!-- Actions moved to top right -->
+							<div class="report-actions">
+								<button
+									mat-icon-button
+									class="resolve-icon-button"
+									(click)="resolve(report)"
+									[disabled]="actioningId() !== null"
+									matTooltip="Resolve"
+									i18n-matTooltip="@@reports.resolveTooltip"
+								>
+									@if (actioningId() === report.id) {
+										<mat-spinner diameter="18"></mat-spinner>
+									} @else {
+										<mat-icon fontSet="material-symbols-rounded">check_circle</mat-icon>
+									}
+								</button>
+
+								<button
+									mat-icon-button
+									class="dismiss-icon-button"
+									(click)="dismiss(report)"
+									[disabled]="actioningId() !== null"
+									matTooltip="Dismiss"
+									i18n-matTooltip="@@reports.dismissTooltip"
+								>
+									<mat-icon fontSet="material-symbols-rounded">cancel</mat-icon>
+								</button>
+							</div>
+						</div>
+
+						<div class="reporter-info">
+							<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
+							<span i18n="@@reports.reportedBy">Reported by </span>
+							<strong>{{ report.reporterUsername }}</strong>
+						</div>
+					</div>
+
+					<mat-divider></mat-divider>
+
+					<!-- Reason -->
+					<div class="report-reason">
+						<span class="reason-label" i18n="@@reports.reasonLabel">Reason</span>
+						<p class="reason-text">{{ report.reason }}</p>
+					</div>
+				</div>
+			}
+		</div>
+
+		<!-- Infinite scroll sentinel -->
+		@if (hasMore()) {
+			<div class="scroll-sentinel-area">
+				@if (loading()) {
+					<mat-spinner diameter="32"></mat-spinner>
+				} @else {
+					<div #scrollSentinel class="scroll-sentinel"></div>
+				}
+			</div>
+		}
+	}
+</div>
