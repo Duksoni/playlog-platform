@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import {FormBuilder, ReactiveFormsModule} from '@angular/forms';
 import {ActivatedRoute, Router} from '@angular/router';
-import {debounceTime, distinctUntilChanged} from 'rxjs';
+import {debounceTime, distinctUntilChanged, map, of, switchMap} from 'rxjs';
 import {MatCardModule} from '@angular/material/card';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
@@ -31,7 +31,7 @@ import {Role} from '../../auth/auth.dto';
 import {DialogService} from '../../../shared/services/dialog.service';
 import {SnackbarService} from '../../../shared/services/snackbar.service';
 import {GameDialog} from '../game-dialog/game.dialog';
-import {GameFilterParams} from '../game.dto';
+import {GameCard, GameFilterParams, GameSimple} from '../game.dto';
 import {
 	SearchableMultiSelectComponent
 } from '../../../shared/components/searchable-multi-select/searchable-multi-select.component';
@@ -69,7 +69,7 @@ export class GamesListPage implements OnInit, OnDestroy {
 		}
 	}
 
-	protected gameService = inject(GameService);
+	private gameService = inject(GameService);
 	protected sessionService = inject(SessionService);
 	private dialogService = inject(DialogService);
 	private snackbarService = inject(SnackbarService);
@@ -80,6 +80,9 @@ export class GamesListPage implements OnInit, OnDestroy {
 
 	protected readonly Role = Role;
 	protected readonly pageSize = 10;
+
+	protected games = signal<GameCard[]>([]);
+	protected loading = signal(false);
 
 	private pageIndex = 1;
 	private hasMore = true;
@@ -172,7 +175,7 @@ export class GamesListPage implements OnInit, OnDestroy {
 		this.zone.runOutsideAngular(() => {
 			this.observer = new IntersectionObserver(
 				(entries) => {
-					if (entries[0].isIntersecting && !this.gameService.loading() && this.hasMore) {
+					if (entries[0].isIntersecting && !this.loading() && this.hasMore) {
 						this.zone.run(() => this.loadNextPage());
 					}
 				},
@@ -192,56 +195,77 @@ export class GamesListPage implements OnInit, OnDestroy {
 			return {publisherId: this.publisherId()!, page};
 		}
 
-		const v = this.filterForm.getRawValue();
+		const filter = this.filterForm.getRawValue();
 		return {
-			name: v.name || undefined,
+			name: filter.name || undefined,
 			genres: this.selectedGenres().length ? this.selectedGenres() : undefined,
 			platforms: this.selectedPlatforms().length ? this.selectedPlatforms() : undefined,
 			tags: this.selectedTags().length ? this.selectedTags() : undefined,
 			page,
-			sort: v.sort,
-			sortDirection: v.sortDirection,
+			sort: filter.sort,
+			sortDirection: filter.sortDirection,
 		};
 	}
 
 	private loadFirst() {
 		this.pageIndex = 1;
-		// Correct initialization of hasMore to prevent duplication race conditions
-		// onlyDrafts and developerId routes are currently not paginated
 		this.hasMore = !this.showOnlyDrafts() && !this.isDeveloperRoute();
 
-		this.gameService.filterGames(this.buildParams(1));
-		this.watchResultLength();
+		this.loading.set(true);
+		this.gameService.getGamesByFilter(this.buildParams(1)).pipe(
+			switchMap(games => this.attachCovers(games))
+		).subscribe({
+			next: (gameCards) => {
+				this.games.set(gameCards);
+				this.loading.set(false);
+				this.watchResultLength();
+			},
+			error: () => this.loading.set(false),
+		});
 	}
 
 	private loadNextPage() {
-		if (!this.hasMore || this.gameService.loading()) return;
+		if (!this.hasMore || this.loading()) return;
 		this.pageIndex++;
-		this.gameService.filterGamesAppend(this.buildParams(this.pageIndex));
-		this.watchResultLength();
+
+		this.loading.set(true);
+		this.gameService.getGamesByFilter(this.buildParams(this.pageIndex)).pipe(
+			switchMap(games => this.attachCovers(games))
+		).subscribe({
+			next: (gameCards) => {
+				this.games.update(existing => [...existing, ...gameCards]);
+				this.loading.set(false);
+				this.watchResultLength();
+			},
+			error: () => this.loading.set(false),
+		});
+	}
+
+	private attachCovers(games: GameSimple[]) {
+		if (games.length === 0) return of([] as GameCard[]);
+		const gameIds = games.map(game => game.id);
+		return this.gameService.getGameCovers(gameIds).pipe(
+			map(coversResponse => games.map(game => ({
+				...game,
+				cover: coversResponse.gameCovers[game.id] ?? null,
+			})))
+		);
 	}
 
 	private watchResultLength() {
-		const check = () => {
-			if (this.gameService.loading()) {
-				setTimeout(check, 50);
-				return;
-			}
-			const total = this.gameService.games().length;
-			const expectedMin = this.pageIndex * this.pageSize;
+		const total = this.games().length;
+		const expectedMin = this.pageIndex * this.pageSize;
 
-			// Non-paginated routes
-			if (this.showOnlyDrafts() || this.isDeveloperRoute()) {
-				this.hasMore = false;
-				return;
-			}
+		// Non-paginated routes
+		if (this.showOnlyDrafts() || this.isDeveloperRoute()) {
+			this.hasMore = false;
+			return;
+		}
 
-			// For publisher and general catalogue: if we have fewer than full pages, we reached the end
-			if (total < expectedMin) {
-				this.hasMore = false;
-			}
-		};
-		setTimeout(check, 50);
+		// For publisher and general catalogue: if we have fewer than full pages, we reached the end
+		if (total < expectedMin) {
+			this.hasMore = false;
+		}
 	}
 
 	private resetAndLoad() {

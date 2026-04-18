@@ -19,41 +19,11 @@ import {map, Observable, of, switchMap} from 'rxjs';
 	providedIn: 'root',
 })
 export class GameService {
-	public games = signal<GameCard[]>([]);
-	public loading = signal(false);
-	public submitting = signal(false);
-
 	private http = inject(HttpClient);
-	private readonly base = `${environment.apiUrl}/games`;
+	private readonly gamesBase = `${environment.apiUrl}/games`;
+	private readonly mediaBase = `${environment.apiUrl}/media/games`;
 
-	filterGames(params: GameFilterParams) {
-		this.loading.set(true);
-		this.fetchGames(params).pipe(
-			switchMap(games => this.attachCovers(games))
-		).subscribe({
-			next: (gameCards) => {
-				this.games.set(gameCards);
-				this.loading.set(false);
-			},
-			error: () => this.loading.set(false),
-		});
-	}
-
-	/** Append next page — used for infinite scroll. */
-	filterGamesAppend(params: GameFilterParams) {
-		this.loading.set(true);
-		this.fetchGames(params).pipe(
-			switchMap(games => this.attachCovers(games))
-		).subscribe({
-			next: (gameCards) => {
-				this.games.update(existing => [...existing, ...gameCards]);
-				this.loading.set(false);
-			},
-			error: () => this.loading.set(false),
-		});
-	}
-
-	private fetchGames(params: GameFilterParams): Observable<GameSimple[]> {
+	getGamesByFilter(params: GameFilterParams): Observable<GameSimple[]> {
 		if (params.onlyDrafts) {
 			return this.getUnpublishedGames();
 		}
@@ -63,20 +33,20 @@ export class GameService {
 		if (params.publisherId) {
 			return this.getGamesByPublisher(params.publisherId, params.page ?? 1);
 		}
-		return this.http.get<GameSimple[]>(`${this.base}/filter`, {params: this.buildParams(params)});
+		return this.http.get<GameSimple[]>(`${this.gamesBase}/filter`, {params: this.buildParams(params)});
 	}
 
 	getGamesByDeveloper(developerId: number) {
-		return this.http.get<GameSimple[]>(`${this.base}/by-developer/${developerId}`);
+		return this.http.get<GameSimple[]>(`${this.gamesBase}/by-developer/${developerId}`);
 	}
 
 	getGamesByPublisher(publisherId: number, page: number) {
 		const params = new HttpParams().set('page', page.toString());
-		return this.http.get<GameSimple[]>(`${this.base}/by-publisher/${publisherId}`, {params});
+		return this.http.get<GameSimple[]>(`${this.gamesBase}/by-publisher/${publisherId}`, {params});
 	}
 
 	getGame(id: number) {
-		return this.http.get<GameSimple>(`${this.base}/${id}`);
+		return this.http.get<GameSimple>(`${this.gamesBase}/${id}`);
 	}
 
 	private buildParams(filterParams: GameFilterParams): HttpParams {
@@ -103,15 +73,17 @@ export class GameService {
 		return params;
 	}
 
-	private attachCovers(games: GameSimple[]) {
-		if (games.length === 0) return of([] as GameCard[]);
-		const gameIds = games.map(game => game.id);
-		return this.getGameCovers(gameIds).pipe(
-			map(coversResponse => games.map(game => ({
-				...game,
-				cover: coversResponse.gameCovers[game.id] ?? null,
-			})))
-		);
+	getNewReleases(limit = 8) {
+		const params = new HttpParams().set('limit', limit);
+		return this.http.get<GameSimple[]>(`${this.gamesBase}/new-releases`, {params});
+	}
+
+	getByIds(gameIds: number[]) {
+		let params = new HttpParams();
+		for (const gameId of gameIds) {
+			params = params.append('gameIds', gameId);
+		}
+		return this.http.get<GameSimple[]>(`${this.gamesBase}/by-ids`, {params: params});
 	}
 
 	getGameCovers(gameIds: number[]) {
@@ -119,51 +91,49 @@ export class GameService {
 		for (const gameId of gameIds) {
 			params = params.append('gameIds', gameId);
 		}
-		return this.http.get<GetGameCoversResponse>(`${environment.apiUrl}/media/games/covers`, {params: params});
+		return this.http.get<GetGameCoversResponse>(`${this.mediaBase}/covers`, {params: params});
 	}
 
 	getGameDetails(id: number) {
-		return this.http.get<GameDetails>(`${this.base}/${id}/details`);
+		return this.http.get<GameDetails>(`${this.gamesBase}/${id}/details`);
 	}
 
 	getGameMedia(gameId: number) {
-		return this.http.get<GameMediaResponse>(`${environment.apiUrl}/media/games/${gameId}`);
+		return this.http.get<GameMediaResponse>(`${this.mediaBase}/${gameId}`);
 	}
 
 	getUnpublishedGames() {
-		return this.http.get<GameSimple[]>(`${this.base}/unpublished`);
+		return this.http.get<GameSimple[]>(`${this.gamesBase}/unpublished`);
 	}
 
 	createGame(body: CreateGameRequest) {
-		this.submitting.set(true);
-		return this.http.post<GameDetails>(`${this.base}`, body);
+		return this.http.post<GameDetails>(`${this.gamesBase}`, body);
 	}
 
 	updateGame(id: number, body: UpdateGameRequest) {
-		this.submitting.set(true);
-		return this.http.put<GameDetails>(`${this.base}/${id}`, body);
+		return this.http.put<GameDetails>(`${this.gamesBase}/${id}`, body);
 	}
 
 	publishGame(id: number, body: PublishUnpublishGameRequest) {
-		return this.http.put<Game>(`${this.base}/${id}/publish`, body);
+		return this.http.put<Game>(`${this.gamesBase}/${id}/publish`, body);
 	}
 
 	unpublishGame(id: number, body: PublishUnpublishGameRequest) {
-		return this.http.put<Game>(`${this.base}/${id}/unpublish`, body);
+		return this.http.put<Game>(`${this.gamesBase}/${id}/unpublish`, body);
 	}
 
 	deleteGame(id: number) {
-		return this.http.delete<void>(`${this.base}/${id}`);
+		return this.http.delete<void>(`${this.gamesBase}/${id}`);
 	}
 
 	uploadGameMedia(gameId: number, formData: FormData) {
 		return this.http.post<GameMediaResponse>(
-			`${environment.apiUrl}/media/games/${gameId}/upload`,
+			`${this.mediaBase}/${gameId}/upload`,
 			formData,
 		);
 	}
 
 	deleteGameMedia(gameId: number) {
-		return this.http.delete<void>(`${environment.apiUrl}/media/games/${gameId}`);
+		return this.http.delete<void>(`${this.mediaBase}/${gameId}`);
 	}
 }
