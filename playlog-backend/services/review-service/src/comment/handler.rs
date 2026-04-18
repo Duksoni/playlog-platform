@@ -1,4 +1,7 @@
-use crate::comment::{DetailedCommentResponse, SimpleCommentResponse, UpdateCommentRequest};
+use crate::comment::{
+    DetailedCommentResponse, RecentGameCommentResponse, RecentGameCommentsQuery,
+    SimpleCommentResponse, UpdateCommentRequest,
+};
 use crate::{
     app::AppState,
     comment::{CommentQuery, CreateCommentRequest},
@@ -24,6 +27,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 
     let public_routes = OpenApiRouter::new()
         .route("/", get(get_comments))
+        .route("/games/recent", get(get_recent_game_comments))
         .route("/{id}", get(get_comment));
 
     let auth_routes = OpenApiRouter::new()
@@ -57,6 +61,29 @@ async fn get_comments(
     let comments = state
         .comment_service
         .get_for_target(query.target_type, &query.target_id, query.page)
+        .await?;
+    Ok(Json(comments))
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/comments/games/recent",
+    summary = "Get recent comments for games",
+    params(RecentGameCommentsQuery),
+    responses(
+        (status = 200, description = "List of recent comments", body = Vec<RecentGameCommentResponse>),
+    ),
+    tag = "comments",
+    operation_id = "get_recent_game_comments"
+)]
+#[debug_handler]
+async fn get_recent_game_comments(
+    State(state): State<Arc<AppState>>,
+    Query(query): Query<RecentGameCommentsQuery>,
+) -> Result<Json<Vec<RecentGameCommentResponse>>, ApiError> {
+    let comments = state
+        .comment_service
+        .get_recent_game_comments(query.limit)
         .await?;
     Ok(Json(comments))
 }

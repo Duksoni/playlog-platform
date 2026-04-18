@@ -14,6 +14,7 @@ use utoipa::OpenApi;
         crate::review::handler::upsert_review,
         crate::review::handler::delete_review,
         crate::comment::handler::get_comments,
+        crate::comment::handler::get_recent_game_comments,
         crate::comment::handler::get_comment,
         crate::comment::handler::get_own_comment,
         crate::comment::handler::add_comment,

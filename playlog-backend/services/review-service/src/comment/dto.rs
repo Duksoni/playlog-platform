@@ -33,6 +33,38 @@ pub struct CommentQuery {
     pub page: u64,
 }
 
+#[derive(Debug, Validate, Deserialize, IntoParams)]
+pub struct RecentGameCommentsQuery {
+    #[param(required = true, example = "5")]
+    pub limit: u64,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct RecentGameCommentResponse {
+    pub id: String,
+    #[serde(rename = "gameId")]
+    pub game_id: i32,
+    pub username: String,
+    pub text: String,
+    #[serde(rename = "createdAt")]
+    pub created_at: DateTime<Utc>,
+    #[serde(rename = "updatedAt")]
+    pub updated_at: DateTime<Utc>,
+}
+
+impl From<Comment> for RecentGameCommentResponse {
+    fn from(value: Comment) -> Self {
+        Self {
+            id: value.id.unwrap().to_string(),
+            game_id: value.target_id.parse().unwrap(),
+            username: value.username,
+            text: value.text,
+            created_at: value.created_at.to_chrono(),
+            updated_at: value.updated_at.to_chrono(),
+        }
+    }
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct SimpleCommentResponse {
     pub id: String,

@@ -1,6 +1,7 @@
 use super::{
     Comment, CommentError, CommentRepository, CommentTargetType, CreateCommentRequest,
-    DetailedCommentResponse, Result, SimpleCommentResponse, UpdateCommentRequest,
+    DetailedCommentResponse, RecentGameCommentResponse, Result, SimpleCommentResponse,
+    UpdateCommentRequest,
 };
 use crate::{review::ReviewRepository, shared::ensure_game_exists};
 use bson::DateTime;
@@ -36,6 +37,15 @@ impl CommentService {
             .await?
             .map(Comment::into)
             .ok_or(CommentError::NotFound)
+    }
+
+    pub async fn get_recent_game_comments(
+        &self,
+        limit: u64,
+    ) -> Result<Vec<RecentGameCommentResponse>> {
+        self.comment_repository
+            .find_recent_game_comments(limit)
+            .await
     }
 
     pub async fn get_for_target(

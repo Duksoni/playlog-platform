@@ -1,4 +1,7 @@
-use super::{Comment, CommentError, CommentTargetType, Result, SimpleCommentResponse};
+use super::{
+    Comment, CommentError, CommentTargetType, RecentGameCommentResponse, Result,
+    SimpleCommentResponse,
+};
 use async_trait::async_trait;
 use bson::{Binary, DateTime};
 use futures::StreamExt;
@@ -18,6 +21,7 @@ pub trait CommentRepository: Send + Sync {
         target_id: &str,
         page: u64,
     ) -> Result<Vec<SimpleCommentResponse>>;
+    async fn find_recent_game_comments(&self, limit: u64) -> Result<Vec<RecentGameCommentResponse>>;
     async fn find_by_id(&self, id: ObjectId) -> Result<Option<Comment>>;
     async fn find_one_by_user_id(&self, id: ObjectId, user_id: Uuid) -> Result<Option<Comment>>;
     async fn upsert(&self, comment: Comment) -> Result<Comment>;
@@ -55,6 +59,24 @@ impl CommentRepository for MongoCommentRepository {
             .sort(doc! { "created_at": -1 })
             .limit(PAGE_SIZE)
             .skip(skip)
+            .await?;
+        let mut comments = vec![];
+        while let Some(comment) = cursor.next().await {
+            comments.push(comment?.into());
+        }
+        Ok(comments)
+    }
+
+    async fn find_recent_game_comments(&self, limit: u64) -> Result<Vec<RecentGameCommentResponse>> {
+        let filter = doc! {
+            "target_type": CommentTargetType::Game.as_db_value(),
+            "deleted": false
+        };
+        let mut cursor = self
+            .comments
+            .find(filter)
+            .sort(doc! { "created_at": -1 })
+            .limit(limit as i64)
             .await?;
         let mut comments = vec![];
         while let Some(comment) = cursor.next().await {
