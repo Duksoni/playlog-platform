@@ -18,14 +18,14 @@
 					        [disabled]="!composeControl.value?.trim() || submitting()">
 						@if (submitting() && !editingId()) {
 							<span class="d-flex align-items-center justify-content-center w-100">
-						<mat-spinner diameter="18" class="me-2"></mat-spinner>
-						<span i18n="@@comments.posting">Posting…</span>
-					</span>
+								<mat-spinner diameter="18" class="me-2"></mat-spinner>
+								<span i18n="@@comments.posting">Posting…</span>
+							</span>
 						} @else {
 							<span class="post-button-content">
-						<mat-icon fontSet="material-symbols-rounded">send</mat-icon>
-						<span i18n="@@comments.post">Post</span>
-					</span>
+								<mat-icon fontSet="material-symbols-rounded">send</mat-icon>
+								<span i18n="@@comments.post">Post</span>
+							</span>
 						}
 					</button>
 				</div>
@@ -53,36 +53,44 @@
 
 					<div class="comment-body">
 						<div class="comment-header">
-							<button class="comment-username hover-pointer" (click)="navigateToUser(comment.username)"
-							        [attr.aria-label]="comment.username">{{ comment.username }}
-							</button>
+							<button class="comment-username hover-pointer"
+							        (click)="navigateToUser(comment.username)"
+							        [attr.aria-label]="comment.username">{{ comment.username }}</button>
 							<span class="comment-date">
 								{{ comment.createdAt | date:'mediumDate' }} {{ comment.createdAt | date:'shortTime' }}
 							</span>
-
-							@if (comment.createdAt != comment.updatedAt) {
-								<span class="comment-edited">
-									<span i18n="@@comments.edited">(Edited)</span>
-								</span>
+							@if (comment.createdAt !== comment.updatedAt) {
+								<span class="comment-edited" i18n="@@comments.edited">(Edited)</span>
 							}
-							<!-- Own comment actions -->
+
+							<!-- Own comment: edit + delete -->
 							@if (isOwnComment(comment)) {
 								<div class="comment-actions">
 									@if (editingId() !== comment.id) {
-										<button mat-icon-button class="action-btn" (click)="startEdit(comment)"
-										        matTooltip="Edit"
-										        i18n-matTooltip="@@edit" aria-label="Edit comment"
-										        i18n-aria-label="@@comments.editAria">
+										<button mat-icon-button class="action-btn"
+										        (click)="startEdit(comment)"
+										        matTooltip="Edit" i18n-matTooltip="@@edit"
+										        aria-label="Edit comment" i18n-aria-label="@@comments.editAria">
 											<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
 										</button>
 										<button mat-icon-button class="action-btn delete-button"
 										        (click)="confirmDelete(comment.id)"
 										        matTooltip="Delete" i18n-matTooltip="@@comments.deleteTooltip"
-										        aria-label="Delete comment"
-										        i18n-aria-label="@@comments.deleteAria">
+										        aria-label="Delete comment" i18n-aria-label="@@comments.deleteAria">
 											<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
 										</button>
 									}
+								</div>
+
+							<!-- Other users' comments: report button -->
+							} @else if (sessionService.user().role !== Role.GUEST && !reportedCommentIds().has(comment.id)) {
+								<div class="comment-actions">
+									<button mat-icon-button class="action-btn"
+									        (click)="openReportDialog(comment)"
+									        matTooltip="Report comment" i18n-matTooltip="@@comments.reportTooltip"
+									        aria-label="Report comment" i18n-aria-label="@@comments.reportAria">
+										<mat-icon fontSet="material-symbols-rounded">flag</mat-icon>
+									</button>
 								</div>
 							}
 						</div>
@@ -96,11 +104,8 @@
 							>{{ comment.text }}</p>
 
 							@if (isCommentExpandable(comment.id)) {
-								<button
-									class="expand-toggle"
-									(click)="toggleCommentText(comment.id)"
-									[attr.aria-expanded]="isCommentExpanded(comment.id)"
-								>
+								<button class="expand-toggle" (click)="toggleCommentText(comment.id)"
+								        [attr.aria-expanded]="isCommentExpanded(comment.id)">
 									@if (isCommentExpanded(comment.id)) {
 										<span i18n="@@common.showLess">Show less</span>
 										<mat-icon fontSet="material-symbols-rounded">expand_less</mat-icon>
@@ -111,19 +116,19 @@
 								</button>
 							}
 
-							<!-- Edit mode -->
+						<!-- Edit mode -->
 						} @else {
 							<div class="edit-area">
 								<mat-form-field appearance="outline" class="w-100 edit-field">
-						<textarea matInput [formControl]="editControl" rows="3" maxlength="2000" autofocus
-						          (keydown.escape)="cancelEdit()" (keydown.control.enter)="onSaveEdit(comment.id)"
-						          (keydown.meta.enter)="onSaveEdit(comment.id)"></textarea>
+									<textarea matInput [formControl]="editControl" rows="3" maxlength="2000" autofocus
+									          (keydown.escape)="cancelEdit()"
+									          (keydown.control.enter)="onSaveEdit(comment.id)"
+									          (keydown.meta.enter)="onSaveEdit(comment.id)"></textarea>
 									<mat-hint align="end">{{ editControl.value?.length || 0 }} / 2000</mat-hint>
 								</mat-form-field>
 								<div class="edit-actions">
 									<button mat-button (click)="cancelEdit()" [disabled]="submitting()"
-									        i18n="@@comments.cancel">Cancel
-									</button>
+									        i18n="@@comments.cancel">Cancel</button>
 									<button mat-raised-button (click)="onSaveEdit(comment.id)"
 									        [disabled]="!editControl.value?.trim() || submitting()">
 										@if (submitting()) {

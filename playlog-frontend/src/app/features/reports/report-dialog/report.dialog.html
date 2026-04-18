@@ -1,0 +1,79 @@
+<div class="report-dialog">
+	<h2 mat-dialog-title>
+		<mat-icon fontSet="material-symbols-rounded" class="title-icon">flag</mat-icon>
+		@if (data.targetType === ReportTargetType.REVIEW) {
+			<span i18n="@@report.titleReview">Report Review</span>
+		} @else {
+			<span i18n="@@report.titleComment">Report Comment</span>
+		}
+	</h2>
+
+	<mat-dialog-content>
+		<p class="target-label" i18n="@@report.targetLabel">
+			Reporting: <strong>{{ data.targetLabel }}</strong>
+		</p>
+
+		<!-- Preset reason chips -->
+		<p class="presets-label" i18n="@@report.presetsLabel">Select a reason or write your own:</p>
+		<div class="preset-chips">
+			@for (reason of presetReasons; track reason) {
+				<button
+					type="button"
+					class="preset-chip"
+					[class.selected]="selectedPreset() === reason"
+					(click)="selectPreset(reason)"
+				>{{ reason }}
+				</button>
+			}
+		</div>
+
+		<!-- Reason textarea -->
+		<mat-form-field appearance="outline" class="w-100 reason-field">
+			<mat-label i18n="@@report.reasonLabel">Reason</mat-label>
+			<textarea
+				matInput
+				[formControl]="reasonControl"
+				rows="3"
+				maxlength="500"
+				placeholder="Describe the issue…"
+				i18n-placeholder="@@report.reasonPlaceholder"
+			></textarea>
+			<mat-hint align="end">{{ reasonControl.value?.length ?? 0 }} / 500</mat-hint>
+			@if (reasonControl.hasError('required') && reasonControl.touched) {
+				<mat-error i18n="@@report.reasonRequired">Reason is required</mat-error>
+			}
+			@if (reasonControl.hasError('minlength') && reasonControl.touched) {
+				<mat-error i18n="@@report.reasonMinLength">Reason must be at least 10 characters</mat-error>
+			}
+		</mat-form-field>
+
+		@if (error()) {
+			<div class="error-message">
+				<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+				<div class="error-list">
+					@for (error of error()!.error; track error) {
+						<span>{{ error }}</span>
+					}
+				</div>
+			</div>
+		}
+	</mat-dialog-content>
+
+	<mat-dialog-actions>
+		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@report.cancel">Cancel</button>
+		<button mat-flat-button (click)="onSubmit()"
+		        [disabled]="reasonControl.invalid || submitting()">
+			@if (submitting()) {
+				<span class="d-flex align-items-center justify-content-center w-100">
+					<mat-spinner diameter="18" class="me-2"></mat-spinner>
+					<span i18n="@@report.submitting">Submitting…</span>
+				</span>
+			} @else {
+				<span class="d-flex align-items-center justify-content-center gap-2">
+					<mat-icon fontSet="material-symbols-rounded">flag</mat-icon>
+					<span i18n="@@report.submit">Submit Report</span>
+				</span>
+			}
+		</button>
+	</mat-dialog-actions>
+</div>

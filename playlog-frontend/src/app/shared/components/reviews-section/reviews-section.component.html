@@ -13,7 +13,6 @@
 				</div>
 			</div>
 
-			<!-- Visible counts and icons for all users -->
 			<div class="distribution-header">
 				@for (rating of ratingOrder; track rating) {
 					@let count = (rating === 'HIGHLY_RECOMMENDED' ? ratingStats()!.highlyRecommendedCount :
@@ -32,18 +31,12 @@
 				}
 			</div>
 
-			<!-- Single horizontal distribution bar -->
 			<div class="distribution-bar-combined">
 				@let barTotal = total || 1;
-
-				<div class="bar-segment highly"
-				     [style.width.%]="(ratingStats()!.highlyRecommendedCount / barTotal) * 100"></div>
-				<div class="bar-segment good"
-				     [style.width.%]="(ratingStats()!.goodCount / barTotal) * 100"></div>
-				<div class="bar-segment okay"
-				     [style.width.%]="(ratingStats()!.okayCount / barTotal) * 100"></div>
-				<div class="bar-segment not"
-				     [style.width.%]="(ratingStats()!.notRecommendedCount / barTotal) * 100"></div>
+				<div class="bar-segment highly" [style.width.%]="(ratingStats()!.highlyRecommendedCount / barTotal) * 100"></div>
+				<div class="bar-segment good" [style.width.%]="(ratingStats()!.goodCount / barTotal) * 100"></div>
+				<div class="bar-segment okay" [style.width.%]="(ratingStats()!.okayCount / barTotal) * 100"></div>
+				<div class="bar-segment not" [style.width.%]="(ratingStats()!.notRecommendedCount / barTotal) * 100"></div>
 			</div>
 		</div>
 	}
@@ -106,14 +99,9 @@
 	<div class="filter-row">
 		<span class="filter-label" i18n="@@reviews.filterLabel">Filter:</span>
 		<div class="rating-filter-chips">
-			<button
-				class="filter-chip"
-				[class.active]="selectedRatingFilter() === null"
-				[disabled]="!totalReviewsExist()"
-				(click)="setRatingFilter(null)"
-				i18n="@@reviews.filterAll"
-			>All
-			</button>
+			<button class="filter-chip" [class.active]="selectedRatingFilter() === null"
+			        [disabled]="!totalReviewsExist()" (click)="setRatingFilter(null)"
+			        i18n="@@reviews.filterAll">All</button>
 			@for (rating of ratingOrder; track rating) {
 				<button
 					class="filter-chip"
@@ -151,12 +139,9 @@
 					<div class="review-body">
 						<!-- Review header -->
 						<div class="review-card-header">
-							<button
-								class="reviewer-name hover-pointer"
-								(click)="navigateToUser(review.username)"
-								[attr.aria-label]="review.username"
-							>{{ review.username }}
-							</button>
+							<button class="reviewer-name hover-pointer"
+							        (click)="navigateToUser(review.username)"
+							        [attr.aria-label]="review.username">{{ review.username }}</button>
 							<div class="review-rating-badge" [class]="getRatingColorClass(review.rating)">
 								<mat-icon fontSet="material-symbols-rounded" class="filled badge-icon">
 									{{ ratingIcons[review.rating] }}
@@ -169,22 +154,29 @@
 									<span class="review-edited" i18n="@@reviews.edited">(Edited)</span>
 								}
 							</span>
+
+							<!-- Report button — shown to logged-in non-owners on hover -->
+							@if (sessionService.user().role !== Role.GUEST && !isOwnReviewCard(review) && !reportedReviewIds().has(review.id)) {
+								<div class="review-actions">
+									<button mat-icon-button class="action-btn"
+									        (click)="openReportDialog(review)"
+									        matTooltip="Report review" i18n-matTooltip="@@reviews.reportTooltip"
+									        aria-label="Report review" i18n-aria-label="@@reviews.reportAria">
+										<mat-icon fontSet="material-symbols-rounded">flag</mat-icon>
+									</button>
+								</div>
+							}
 						</div>
 
 						<!-- Review text with expand/collapse -->
 						@if (review.text) {
-							<p
-								class="review-text"
-								[id]="'review-text-' + review.id"
-								[class.should-collapse]="isReviewExpandable(review.id) && !isReviewExpanded(review.id)"
+							<p class="review-text" [id]="'review-text-' + review.id"
+							   [class.should-collapse]="isReviewExpandable(review.id) && !isReviewExpanded(review.id)"
 							>{{ review.text }}</p>
 
 							@if (isReviewExpandable(review.id)) {
-								<button
-									class="expand-toggle"
-									(click)="toggleReviewText(review.id)"
-									[attr.aria-expanded]="isReviewExpanded(review.id)"
-								>
+								<button class="expand-toggle" (click)="toggleReviewText(review.id)"
+								        [attr.aria-expanded]="isReviewExpanded(review.id)">
 									@if (isReviewExpanded(review.id)) {
 										<span i18n="@@common.showLess">Show less</span>
 										<mat-icon fontSet="material-symbols-rounded">expand_less</mat-icon>
@@ -195,13 +187,11 @@
 								</button>
 							}
 						}
+
 						<!-- Comments toggle -->
 						<div class="review-footer">
-							<button
-								class="comments-toggle"
-								(click)="toggleComments(review.id)"
-								[attr.aria-expanded]="expandedCommentReviewId() === review.id"
-							>
+							<button class="comments-toggle" (click)="toggleComments(review.id)"
+							        [attr.aria-expanded]="expandedCommentReviewId() === review.id">
 								<mat-icon fontSet="material-symbols-rounded">
 									{{ expandedCommentReviewId() === review.id ? 'chat_bubble' : 'chat_bubble_outline' }}
 								</mat-icon>
@@ -213,7 +203,7 @@
 							</button>
 						</div>
 
-						<!-- Inline comments thread — lazy mounted -->
+						<!-- Inline comments thread -->
 						@if (expandedCommentReviewId() === review.id) {
 							<div class="review-comments">
 								<app-comments-section
@@ -227,7 +217,6 @@
 			}
 		</div>
 
-		<!-- Infinite scroll sentinel -->
 		<div class="scroll-sentinel-area">
 			@if (loading()) {
 				<mat-spinner diameter="32"></mat-spinner>

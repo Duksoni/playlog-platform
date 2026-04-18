@@ -1,0 +1,85 @@
+.report-dialog {
+	min-width: 440px;
+	padding: 20px;
+}
+
+/* Title row */
+h2[mat-dialog-title] {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.title-icon {
+	font-size: 22px;
+	width: 22px;
+	height: 22px;
+	color: var(--mat-sys-error);
+}
+
+/* Target info */
+.target-label {
+	margin: 0 0 16px;
+	font-size: 14px;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+/* Preset chips */
+.presets-label {
+	margin: 0 0 10px;
+	font-size: 13px;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+.preset-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-bottom: 16px;
+}
+
+.preset-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 5px 12px;
+	border-radius: 20px;
+	border: 1px solid var(--mat-sys-outline-variant);
+	background: transparent;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 13px;
+	color: var(--mat-sys-on-surface-variant);
+	transition: background-color 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.preset-chip:hover {
+	background: var(--mat-sys-surface-container);
+}
+
+.preset-chip.selected {
+	border-color: var(--mat-sys-error);
+	background: var(--mat-sys-error-container);
+	color: var(--mat-sys-on-error-container);
+}
+
+/* Reason field */
+.reason-field {
+	margin-bottom: 4px;
+}
+
+.reason-field textarea {
+	resize: none;
+}
+
+mat-dialog-actions {
+	margin: 0;
+	gap: 4px;
+}
+
+@media (max-width: 500px) {
+	.report-dialog {
+		min-width: unset;
+		width: 100%;
+		padding: 12px;
+	}
+}

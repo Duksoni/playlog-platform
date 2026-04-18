@@ -36,9 +36,10 @@ import {Role} from '../../../features/auth/auth.dto';
 import {DialogService} from '../../services/dialog.service';
 import {ReviewDialog} from '../../../features/reviews/review-dialog/review.dialog';
 import {GameLibraryStatus} from '../../../features/library/library.dto';
-import {LibraryService} from '../../../features/library/library.service';
 import {CommentsSectionComponent} from '../comments-section/comments-section.component';
 import {CommentTargetType} from '../../../features/comments/comment.dto';
+import {ReportDialog} from '../../../features/reports/report-dialog/report.dialog';
+import {ReportTargetType} from '../../../features/reports/report.dto';
 
 @Component({
 	selector: 'app-reviews-section',
@@ -70,7 +71,6 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 	libraryStatus = input<GameLibraryStatus | null>(null);
 
 	private reviewService = inject(ReviewService);
-	private libraryService = inject(LibraryService);
 	protected sessionService = inject(SessionService);
 	private dialogService = inject(DialogService);
 	private router = inject(Router);
@@ -89,13 +89,10 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 	protected canReview = signal(false);
 	protected totalReviewsExist = signal(false);
 	protected ratingStats = signal<GameRatingStatsResponse | null>(null);
+	protected reportedReviewIds = signal<Set<string>>(new Set());
 
 	protected selectedRatingFilter = signal<Rating | null>(null);
-
-	// Tracks which review's comments thread is expanded
 	protected expandedCommentReviewId = signal<string | null>(null);
-
-	// Tracks which reviews have expandable text
 	protected expandableReviews = signal<Set<string>>(new Set());
 	protected expandedReviews = signal<Set<string>>(new Set());
 
@@ -187,27 +184,9 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 		this.loadPage(false);
 	}
 
-	public reloadReviewEligibility() {
-		const userId = this.sessionService.user().userId;
-		if (userId) this.checkLibrary(userId);
-	}
-
-	private checkLibrary(userId: string) {
-		this.libraryService.getUserLibrary(userId).subscribe({
-			next: (entries) => {
-				const entry = entries.find(e => e.gameId === this.gameId());
-				const eligible = [GameLibraryStatus.COMPLETED, GameLibraryStatus.DROPPED];
-				this.canReview.set(!!entry && eligible.includes(entry.status));
-			},
-			error: () => this.canReview.set(false),
-		});
-	}
-
 	private loadRatingStats() {
 		this.reviewService.getRatingStatsForGame(this.gameId()).subscribe({
-			next: (stats) => {
-				this.ratingStats.set(stats);
-			},
+			next: (stats) => this.ratingStats.set(stats),
 			error: () => this.ratingStats.set(null),
 		});
 	}
@@ -238,6 +217,27 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 				});
 			}
 			this.resetAndLoad();
+		});
+	}
+
+	protected openReportDialog(review: GameReviewResponse) {
+		this.dialogService.openDialog(ReportDialog, {
+			data: {
+				targetType: ReportTargetType.REVIEW,
+				targetId: review.id,
+				targetLabel: $localize`:@@report.reviewBy:review by ${review.username}`,
+			},
+			width: '500px',
+			disableClose: true,
+			autoFocus: false,
+		}).afterClosed().subscribe(result => {
+			if (result) {
+				this.reportedReviewIds.update(set => {
+					const next = new Set(set);
+					next.add(review.id);
+					return next;
+				});
+			}
 		});
 	}
 
@@ -274,13 +274,9 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 
 	protected toggleReviewText(reviewId: string) {
 		this.expandedReviews.update(set => {
-			const newSet = new Set(set);
-			if (newSet.has(reviewId)) {
-				newSet.delete(reviewId);
-			} else {
-				newSet.add(reviewId);
-			}
-			return newSet;
+			const next = new Set(set);
+			next.has(reviewId) ? next.delete(reviewId) : next.add(reviewId);
+			return next;
 		});
 	}
 
@@ -288,10 +284,8 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 		const newExpandable = new Set<string>();
 		this.reviews().forEach(review => {
 			if (review.text) {
-				const element = document.getElementById(`review-text-${review.id}`);
-				if (element && element.scrollHeight > 150) {
-					newExpandable.add(review.id);
-				}
+				const el = document.getElementById(`review-text-${review.id}`);
+				if (el && el.scrollHeight > 150) newExpandable.add(review.id);
 			}
 		});
 		this.expandableReviews.set(newExpandable);

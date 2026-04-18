@@ -403,6 +403,50 @@
 	font-style: italic;
 }
 
+/*  Report button */
+.review-actions {
+	display: flex;
+}
+
+.action-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 28px;
+	height: 28px;
+}
+
+.action-btn mat-icon {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+/*  Mobile tweaks */
+@media (max-width: 560px) {
+	.review-card-header {
+		gap: 6px;
+	}
+
+	.review-rating-badge {
+		padding: 3px 6px;
+	}
+
+	.review-rating-badge span {
+		display: none;
+	}
+
+	.review-date {
+		margin-left: 0;
+		width: 100%;
+		order: 10;
+	}
+
+	.review-actions {
+		margin-left: auto;
+	}
+}
+
 .review-text {
 	margin: 0;
 	font-size: 14px;

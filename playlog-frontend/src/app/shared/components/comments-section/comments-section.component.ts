@@ -14,20 +14,20 @@ import {
 import {FormControl, ReactiveFormsModule, Validators} from '@angular/forms';
 import {DatePipe} from '@angular/common';
 import {Router} from '@angular/router';
-
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTooltipModule} from '@angular/material/tooltip';
-
 import {CommentService} from '../../../features/comments/comment.service';
 import {CommentTargetType, SimpleCommentResponse} from '../../../features/comments/comment.dto';
 import {SessionService} from '../../../core/services/session.service';
 import {Role} from '../../../features/auth/auth.dto';
 import {SnackbarService} from '../../services/snackbar.service';
 import {DialogService} from '../../services/dialog.service';
+import {ReportDialog} from '../../../features/reports/report-dialog/report.dialog';
+import {ReportTargetType} from '../../../features/reports/report.dto';
 
 @Component({
 	selector: 'app-comments-section',
@@ -69,13 +69,10 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 	protected comments = signal<SimpleCommentResponse[]>([]);
 	protected loading = signal(false);
 	protected submitting = signal(false);
-
-	// Tracks which comment id is currently being edited (null = none)
 	protected editingId = signal<string | null>(null);
-
-	// Tracks which comments have expandable text
 	protected expandableComments = signal<Set<string>>(new Set());
 	protected expandedComments = signal<Set<string>>(new Set());
+	protected reportedCommentIds = signal<Set<string>>(new Set());
 
 	protected composeControl = new FormControl('', [
 		Validators.minLength(10),
@@ -151,7 +148,6 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 			next: (comment) => {
 				this.submitting.set(false);
 				this.composeControl.reset();
-				// Prepend the new comment so it's immediately visible at top
 				this.comments.update(prev => [comment, ...prev]);
 				setTimeout(() => this.checkAllCommentsOverflow(), 50);
 			},
@@ -183,18 +179,16 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 				this.submitting.set(false);
 				this.editingId.set(null);
 				this.editControl.reset();
-				this.comments.update(prev =>
-					prev.map(c => c.id === commentId ? updated : c)
-				);
+				this.comments.update(prev => prev.map(c => c.id === commentId ? updated : c));
 				setTimeout(() => this.checkAllCommentsOverflow(), 50);
 			},
 			error: (err) => {
 				this.submitting.set(false);
-				if (err.status === 409) {
-					this.snackbarService.createSnackbar($localize`:@@comments.conflict:This comment was modified. Please refresh.`);
-				} else {
-					this.snackbarService.createSnackbar($localize`:@@comments.updateFailed:Failed to update comment.`);
-				}
+				this.snackbarService.createSnackbar(
+					err.status === 409
+						? $localize`:@@comments.conflict:This comment was modified. Please refresh.`
+						: $localize`:@@comments.updateFailed:Failed to update comment.`
+				);
 			},
 		});
 	}
@@ -202,32 +196,52 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 	protected confirmDelete(commentId: string) {
 		const dialogRef = this.dialogService.openSimpleDialog({
 			width: '400px',
+			disableClose: true,
+			autoFocus: false,
 			data: {
 				title: $localize`:@@comments.deleteTitle:Delete Comment`,
 				content: $localize`:@@comments.deleteContent:Are you sure you want to delete this comment?`,
 			},
 		});
 
-		dialogRef.componentInstance.setPositiveButton(
-			$localize`:@@common.delete:Delete`,
-			() => {
-				this.commentService.deleteComment(commentId).subscribe({
-					next: () => {
-						this.comments.update(prev => prev.filter(c => c.id !== commentId));
-						dialogRef.close();
-					},
-					error: (err) => {
-						dialogRef.close();
-						if (err.status === 409) {
-							this.snackbarService.createSnackbar($localize`:@@comments.conflict:This comment was modified. Please refresh.`);
-						} else {
-							this.snackbarService.createSnackbar($localize`:@@comments.deleteFailed:Failed to delete comment.`);
-						}
-					},
-				});
-			},
-		);
+		dialogRef.componentInstance.setPositiveButton($localize`:@@common.delete:Delete`, () => {
+			this.commentService.deleteComment(commentId).subscribe({
+				next: () => {
+					this.comments.update(prev => prev.filter(c => c.id !== commentId));
+					dialogRef.close();
+				},
+				error: (err) => {
+					dialogRef.close();
+					this.snackbarService.createSnackbar(
+						err.status === 409
+							? $localize`:@@comments.conflict:This comment was modified. Please refresh.`
+							: $localize`:@@comments.deleteFailed:Failed to delete comment.`
+					);
+				},
+			});
+		});
 		dialogRef.componentInstance.setNegativeButton($localize`:@@common.cancel:Cancel`);
+	}
+
+	protected openReportDialog(comment: SimpleCommentResponse) {
+		this.dialogService.openDialog(ReportDialog, {
+			data: {
+				targetType: ReportTargetType.COMMENT,
+				targetId: comment.id,
+				targetLabel: $localize`:@@report.commentBy:comment by ${comment.username}`,
+			},
+			width: '500px',
+			disableClose: true,
+			autoFocus: false,
+		}).afterClosed().subscribe(result => {
+			if (result) {
+				this.reportedCommentIds.update(set => {
+					const next = new Set(set);
+					next.add(comment.id);
+					return next;
+				});
+			}
+		});
 	}
 
 	protected isOwnComment(comment: SimpleCommentResponse): boolean {
@@ -244,25 +258,17 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 
 	protected toggleCommentText(commentId: string) {
 		this.expandedComments.update(set => {
-			const newSet = new Set(set);
-			if (newSet.has(commentId)) {
-				newSet.delete(commentId);
-			} else {
-				newSet.add(commentId);
-			}
-			return newSet;
+			const next = new Set(set);
+			next.has(commentId) ? next.delete(commentId) : next.add(commentId);
+			return next;
 		});
 	}
 
 	private checkAllCommentsOverflow() {
 		const newExpandable = new Set<string>();
 		this.comments().forEach(comment => {
-			if (comment.text) {
-				const element = document.getElementById(`comment-text-${comment.id}`);
-				if (element && element.scrollHeight > 120) {
-					newExpandable.add(comment.id);
-				}
-			}
+			const el = document.getElementById(`comment-text-${comment.id}`);
+			if (el && el.scrollHeight > 120) newExpandable.add(comment.id);
 		});
 		this.expandableComments.set(newExpandable);
 		this.cd.markForCheck();
