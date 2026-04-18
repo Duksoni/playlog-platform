@@ -50,7 +50,7 @@ impl MediaFileResponse {
 }
 
 #[derive(Debug, Deserialize, IntoParams)]
-pub struct GetGameCoversRequest {
+pub struct GetGameCoversQuery {
     #[serde(rename = "gameIds")]
     pub game_ids: Vec<i32>,
 }

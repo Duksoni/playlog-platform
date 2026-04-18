@@ -15,7 +15,7 @@ use axum_macros::debug_handler;
 use jwt_common::{auth, require_admin, JwtConfig};
 use utoipa_axum::router::OpenApiRouter;
 
-use crate::dto::{GetGameCoversRequest, GetGameCoversResponse};
+use crate::dto::{GetGameCoversQuery, GetGameCoversResponse};
 use crate::model::FieldName;
 use crate::{app::AppState, dto::GameMediaResponse, error::MediaError, model::UploadedFile};
 
@@ -49,13 +49,13 @@ If no game covers are found, an empty object is returned.
     responses(
         (status = 200, body = GetGameCoversResponse),
     ),
-    params(GetGameCoversRequest),
+    params(GetGameCoversQuery),
     tag = "multimedia"
 )]
 #[debug_handler]
 async fn get_game_covers(
     State(state): State<Arc<AppState>>,
-    Query(params): Query<GetGameCoversRequest>,
+    Query(params): Query<GetGameCoversQuery>,
 ) -> Result<Json<GetGameCoversResponse>, ApiError> {
     if params.game_ids.is_empty() {
         return Ok(Json(GetGameCoversResponse::empty()));
