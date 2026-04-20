@@ -313,7 +313,7 @@ export class GamesListPage implements OnInit, OnDestroy {
 		this.dialogService.openDialog(GameDialog, {
 			data: {existing: null},
 			width: '1000px',
-			maxWidth: '50vw',
+			maxWidth: '95vw',
 			disableClose: true,
 			autoFocus: false,
 		}).afterClosed().subscribe(result => {

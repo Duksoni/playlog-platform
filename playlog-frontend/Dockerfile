@@ -17,6 +17,7 @@ COPY angular.json tsconfig*.json ./
 
 # source layer
 COPY src ./src
+COPY public ./public
 
 RUN bun run build
 

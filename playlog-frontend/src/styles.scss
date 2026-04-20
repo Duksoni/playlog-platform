@@ -5,6 +5,12 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
 html {
 	height: 100%;
 	@include mat.theme((
@@ -105,6 +111,8 @@ mat-icon.filled {
 .rating-highly .rating-icon-display,
 .rating-highly .rating-label-display,
 .rating-highly .badge-icon,
+.rating-highly .rating-icon,
+.rating-highly .rating-text,
 .rating-highly.review-rating-badge {
 	color: #2e7d32;
 }
@@ -116,6 +124,8 @@ mat-icon.filled {
 .rating-good .rating-icon-display,
 .rating-good .rating-label-display,
 .rating-good .badge-icon,
+.rating-good .rating-icon,
+.rating-good .rating-text,
 .rating-good.review-rating-badge {
 	color: #558b2f;
 }
@@ -127,6 +137,8 @@ mat-icon.filled {
 .rating-okay .rating-icon-display,
 .rating-okay .rating-label-display,
 .rating-okay .badge-icon,
+.rating-okay .rating-icon,
+.rating-okay .rating-text,
 .rating-okay.review-rating-badge {
 	color: #ef6c00;
 }
@@ -138,6 +150,8 @@ mat-icon.filled {
 .rating-not .rating-icon-display,
 .rating-not .rating-label-display,
 .rating-not .badge-icon,
+.rating-not .rating-icon,
+.rating-not .rating-text,
 .rating-not.review-rating-badge {
 	color: #c62828;
 }
@@ -149,6 +163,8 @@ html.dark-mode .rating-highly {
 html.dark-mode .rating-highly .rating-icon-display,
 html.dark-mode .rating-highly .rating-label-display,
 html.dark-mode .rating-highly .badge-icon,
+html.dark-mode .rating-highly .rating-icon,
+html.dark-mode .rating-highly .rating-text,
 html.dark-mode .rating-highly.review-rating-badge {
 	color: #66bb6a;
 }
@@ -160,6 +176,8 @@ html.dark-mode .rating-good {
 html.dark-mode .rating-good .rating-icon-display,
 html.dark-mode .rating-good .rating-label-display,
 html.dark-mode .rating-good .badge-icon,
+html.dark-mode .rating-good .rating-icon,
+html.dark-mode .rating-good .rating-text,
 html.dark-mode .rating-good.review-rating-badge {
 	color: #9ccc65;
 }
@@ -171,6 +189,8 @@ html.dark-mode .rating-okay {
 html.dark-mode .rating-okay .rating-icon-display,
 html.dark-mode .rating-okay .rating-label-display,
 html.dark-mode .rating-okay .badge-icon,
+html.dark-mode .rating-okay .rating-icon,
+html.dark-mode .rating-okay .rating-text,
 html.dark-mode .rating-okay.review-rating-badge {
 	color: #ffa726;
 }
@@ -182,6 +202,8 @@ html.dark-mode .rating-not {
 html.dark-mode .rating-not .rating-icon-display,
 html.dark-mode .rating-not .rating-label-display,
 html.dark-mode .rating-not .badge-icon,
+html.dark-mode .rating-not .rating-icon,
+html.dark-mode .rating-not .rating-text,
 html.dark-mode .rating-not.review-rating-badge {
 	color: #ef5350;
 }

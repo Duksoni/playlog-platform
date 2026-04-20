@@ -156,7 +156,7 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		this.dialogService.openDialog(GameDialog, {
 			data: {existing: game},
 			width: '1000px',
-			maxWidth: '40vw',
+			maxWidth: '95vw',
 			disableClose: true,
 			autoFocus: false,
 		}).afterClosed().subscribe(updated => {
@@ -174,7 +174,7 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		if (!game || !media) return;
 
 		this.dialogService.openDialog(GameMediaDialog, {
-			data: media, width: '600px', maxWidth: '50vw', disableClose: true, autoFocus: false,
+			data: media, width: '600px', maxWidth: '95vw', disableClose: true, autoFocus: false,
 		}).afterClosed().subscribe(updatedMedia => {
 			if (updatedMedia) {
 				this.media.set(updatedMedia);
