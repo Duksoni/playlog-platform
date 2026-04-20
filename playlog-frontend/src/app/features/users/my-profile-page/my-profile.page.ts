@@ -80,6 +80,15 @@ export class MyProfilePage {
 	})();
 
 	ngOnInit() {
+		this.loadUser();
+
+		this.passwordForm = this.fb.group({
+			oldPassword: ['', [Validators.required, Validators.minLength(8)]],
+			newPassword: ['', [Validators.required, Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[@$!%*?&])(?=.*[0-9]).{8,}$/)]]
+		});
+	}
+
+	private loadUser() {
 		const username = this.sessionService.user().username;
 		if (!username) {
 			this.router.navigate(['/home']);
@@ -97,26 +106,21 @@ export class MyProfilePage {
 				this.router.navigate(['/home']);
 			},
 		});
-
-		this.passwordForm = this.fb.group({
-			oldPassword: ['', [Validators.required, Validators.minLength(8)]],
-			newPassword: ['', [Validators.required, Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[@$!%*?&])(?=.*[0-9]).{8,}$/)]]
-		});
 	}
 
 	private buildProfileForm(user: UserDetails) {
 		this.profileForm = this.fb.group({
 			firstName: [
 				user.firstName ?? '',
-				this.user()!.firstName ? [Validators.required] : []
+				user.firstName ? [Validators.required] : []
 			],
 			lastName: [
 				user.lastName ?? '',
-				this.user()!.lastName ? [Validators.required] : []
+				user.lastName ? [Validators.required] : []
 			],
 			birthdate: [
 				user.birthdate ? new Date(user.birthdate) : null,
-				this.user()!.birthdate ? [Validators.required] : []
+				user.birthdate ? [Validators.required] : []
 			],
 		});
 	}
@@ -140,6 +144,7 @@ export class MyProfilePage {
 			firstName: formValue.firstName || null,
 			lastName: formValue.lastName || null,
 			birthdate,
+			version: this.user()!.version
 		}).subscribe({
 			next: (response) => {
 				this.profileSubmitting.set(false);
@@ -147,6 +152,7 @@ export class MyProfilePage {
 					this.snackbarService.createSnackbar($localize`:@@profile.noChanges:No changes were made.`);
 				} else {
 					this.snackbarService.createSnackbar($localize`:@@profile.updated:Profile updated successfully.`);
+					this.loadUser();
 				}
 			},
 			error: (err) => {
@@ -189,11 +195,13 @@ export class MyProfilePage {
 		this.userService.changePassword({
 			oldPassword: this.passwordForm.value.oldPassword,
 			newPassword: this.passwordForm.value.newPassword,
+			version: this.user()!.version
 		}).subscribe({
 			next: () => {
 				this.passwordSubmitting.set(false);
 				this.passwordForm.reset();
 				this.snackbarService.createSnackbar($localize`:@@profile.passwordChanged:Password changed successfully.`);
+				this.loadUser();
 			},
 			error: (err) => {
 				this.passwordSubmitting.set(false);
@@ -216,7 +224,7 @@ export class MyProfilePage {
 		dialogRef.componentInstance.setPositiveButton(
 			$localize`:@@profile.deactivateConfirm:Deactivate`,
 			() => {
-				this.userService.deactivateAccount().subscribe({
+				this.userService.deactivateAccount(this.user()!.version).subscribe({
 					next: () => {
 						dialogRef.close();
 						this.sessionService.handleLogout();

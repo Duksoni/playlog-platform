@@ -14,6 +14,8 @@ pub struct UpdatePasswordRequest {
     #[validate(custom(function = "validate_password"))]
     #[serde(rename = "newPassword")]
     pub new_password: String,
+    #[validate(range(min = 0))]
+    pub version: i64,
 }
 
 #[derive(Validate, Deserialize, ToSchema)]
@@ -26,6 +28,20 @@ pub struct UpdateProfileRequest {
     pub last_name: Option<String>,
     #[validate(custom(function = "validate_birthdate_range"))]
     pub birthdate: Option<NaiveDate>,
+    #[validate(range(min = 0))]
+    pub version: i64,
+}
+
+#[derive(Validate, Deserialize, ToSchema)]
+pub struct UpdateUserRoleRequest {
+    #[validate(range(min = 0))]
+    pub version: i64,
+}
+
+#[derive(Validate, Deserialize, ToSchema)]
+pub struct BlockUserRequest {
+    #[validate(range(min = 0))]
+    pub version: i64,
 }
 
 #[derive(Validate, Deserialize, IntoParams)]

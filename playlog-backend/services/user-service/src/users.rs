@@ -6,8 +6,8 @@ pub mod repository;
 pub mod service;
 
 pub use dto::{
-    FindUsersQuery, FindUsersResponse, UpdatePasswordRequest, UpdateProfileRequest,
-    UserRoleChangeResponse,
+    BlockUserRequest, FindUsersQuery, FindUsersResponse, UpdatePasswordRequest,
+    UpdateProfileRequest, UpdateUserRoleRequest, UserRoleChangeResponse,
 };
 pub use error::{Result, UserError};
 pub use handler::router;

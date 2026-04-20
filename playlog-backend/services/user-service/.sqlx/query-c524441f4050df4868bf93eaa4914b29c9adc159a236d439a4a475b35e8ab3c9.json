@@ -1,0 +1,15 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "UPDATE users SET account_status = 'BLOCKED', version = version + 1 WHERE id = $1 AND version = $2",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Int8"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "c524441f4050df4868bf93eaa4914b29c9adc159a236d439a4a475b35e8ab3c9"
+}

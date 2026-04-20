@@ -1,0 +1,36 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT u.id, username, version\n                FROM users u\n                         JOIN user_roles ur ON ur.user_id = u.id\n                         JOIN roles r ON r.id = ur.role_id\n                WHERE u.id != $1 AND username LIKE $2\n                  AND account_status = 'ACTIVE'\n                  AND r.name = $3\n                ORDER BY username\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Uuid"
+      },
+      {
+        "ordinal": 1,
+        "name": "username",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "version",
+        "type_info": "Int8"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        "Text",
+        "Text"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      false
+    ]
+  },
+  "hash": "9e08830530584d006a38e19f0eef2be7256f6d94e8f3760722caa689430b6628"
+}

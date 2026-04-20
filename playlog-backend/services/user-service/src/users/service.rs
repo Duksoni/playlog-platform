@@ -68,7 +68,7 @@ impl UserService {
 
         let updated = self
             .repository
-            .update_password(user_id, &hashed_password)
+            .update_password(user_id, &hashed_password, request.version)
             .await?;
         if updated {
             Ok(())
@@ -78,21 +78,15 @@ impl UserService {
     }
 
     pub async fn deactivate_account(&self, user_id: Uuid) -> Result<()> {
-        self.require_active_account(user_id).await?;
-        let role = self.repository.get_user_role(user_id).await?;
-        if role == Admin {
-            Err(UserError::AdminCantDeactivateAccount)
-        } else {
-            self.repository.deactivate_account(user_id).await
-        }
+        self.repository.deactivate_account(user_id).await
     }
 
-    pub async fn block_user(&self, user_id: Uuid) -> Result<()> {
+    pub async fn block_user(&self, user_id: Uuid, version: i64) -> Result<()> {
         self.require_active_account(user_id).await?;
-        self.repository.block_user(user_id).await
+        self.repository.block_user(user_id, version).await
     }
 
-    pub async fn promote_user(&self, user_id: Uuid) -> Result<UserRoleChangeResponse> {
+    pub async fn promote_user(&self, user_id: Uuid, version: i64) -> Result<UserRoleChangeResponse> {
         self.require_active_account(user_id).await?;
         let user_role = self.repository.get_user_role(user_id).await?;
         let new_role = match user_role {
@@ -105,11 +99,11 @@ impl UserService {
                 ));
             }
         };
-        self.repository.update_user_role(user_id, new_role).await?;
+        self.repository.update_user_role(user_id, new_role, version).await?;
         Ok(UserRoleChangeResponse::new(user_role, new_role))
     }
 
-    pub async fn demote_user(&self, user_id: Uuid) -> Result<UserRoleChangeResponse> {
+    pub async fn demote_user(&self, user_id: Uuid, version: i64) -> Result<UserRoleChangeResponse> {
         self.require_active_account(user_id).await?;
         let user_role = self.repository.get_user_role(user_id).await?;
         let new_role = match user_role {
@@ -122,7 +116,7 @@ impl UserService {
             Moderator => User,
             Admin => Moderator,
         };
-        self.repository.update_user_role(user_id, new_role).await?;
+        self.repository.update_user_role(user_id, new_role, version).await?;
         Ok(UserRoleChangeResponse::new(user_role, new_role))
     }
 

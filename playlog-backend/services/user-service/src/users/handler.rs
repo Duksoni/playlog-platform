@@ -1,12 +1,8 @@
 use super::{
-    FindUsersQuery, FindUsersResponse, UpdatePasswordRequest, UpdateProfileRequest, UserDetails,
-    UserError, UserRoleChangeResponse,
+    BlockUserRequest, FindUsersQuery, FindUsersResponse, UpdatePasswordRequest,
+    UpdateProfileRequest, UpdateUserRoleRequest, UserDetails, UserError, UserRoleChangeResponse,
 };
-use crate::{
-    app::AppState,
-    shared::build_cookie_header
-};
-use service_common::error::{ApiError, Result as ApiResult};
+use crate::{app::AppState, shared::build_cookie_header};
 use axum::{
     extract::{Path, Query, State}, http::StatusCode,
     middleware::{from_fn, from_fn_with_state},
@@ -18,6 +14,7 @@ use axum::{
 use axum_macros::debug_handler;
 use cookie::time::Duration;
 use jwt_common::{auth, require_admin, require_user, AuthClaims, JwtConfig};
+use service_common::error::{ApiError, Result as ApiResult};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use uuid::Uuid;
@@ -84,6 +81,7 @@ async fn get_user(
         (status = 400, description = "Nothing was provided to update"),
         (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -115,6 +113,7 @@ async fn update_user(
         (status = 200, description = "Password updated"),
         (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -193,11 +192,13 @@ async fn find_users(
     put,
     path = "/api/users/{id}/block",
     summary = "Block user (Admin only)",
+    request_body = BlockUserRequest,
     responses(
         (status = 200, description = "User blocked"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
         (status = 404, description = "User not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -207,11 +208,16 @@ async fn block_user(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(user_id): Path<Uuid>,
+    Json(request): Json<BlockUserRequest>,
 ) -> ApiResult<impl IntoResponse> {
+    request.validate().map_err(ApiError::from)?;
     if claims.user_id == user_id {
         return Err(UserError::CantBlockSelf.into());
     }
-    state.user_service.block_user(user_id).await?;
+    state
+        .user_service
+        .block_user(user_id, request.version)
+        .await?;
     Ok(())
 }
 
@@ -219,12 +225,14 @@ async fn block_user(
     put,
     path = "/api/users/{id}/promote",
     summary = "Promote user to next higher role (Admin only)",
+    request_body = UpdateUserRoleRequest,
     responses(
         (status = 200, description = "Role updated", body = UserRoleChangeResponse),
         (status = 400, description = "Self promotion, target user is blocked etc."),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
-        (status = 404, description = "User not found")
+        (status = 404, description = "User not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -234,11 +242,16 @@ async fn promote_user(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(user_id): Path<Uuid>,
+    Json(request): Json<UpdateUserRoleRequest>,
 ) -> ApiResult<impl IntoResponse> {
+    request.validate().map_err(ApiError::from)?;
     if claims.user_id == user_id {
         return Err(UserError::CantPromoteSelf.into());
     }
-    let response = state.user_service.promote_user(user_id).await?;
+    let response = state
+        .user_service
+        .promote_user(user_id, request.version)
+        .await?;
     Ok(Json(response))
 }
 
@@ -246,12 +259,14 @@ async fn promote_user(
     put,
     path = "/api/users/{id}/demote",
     summary = "Demote user to next lower role (Admin only)",
+    request_body = UpdateUserRoleRequest,
     responses(
         (status = 200, description = "Role updated", body = UserRoleChangeResponse),
         (status = 400, description = "Self demotion, target user is blocked etc."),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
-        (status = 404, description = "User not found")
+        (status = 404, description = "User not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -261,10 +276,15 @@ async fn demote_user(
     State(state): State<Arc<AppState>>,
     Extension(claims): Extension<AuthClaims>,
     Path(user_id): Path<Uuid>,
+    Json(request): Json<UpdateUserRoleRequest>,
 ) -> ApiResult<impl IntoResponse> {
+    request.validate().map_err(ApiError::from)?;
     if claims.user_id == user_id {
         return Err(UserError::CantDemoteSelf.into());
     }
-    let response = state.user_service.demote_user(user_id).await?;
+    let response = state
+        .user_service
+        .demote_user(user_id, request.version)
+        .await?;
     Ok(Json(response))
 }

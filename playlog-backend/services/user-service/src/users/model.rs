@@ -19,10 +19,12 @@ pub struct UserDetails {
     pub birthdate: Option<NaiveDate>,
     #[serde(rename = "createdAt")]
     pub created_at: DateTime<Utc>,
+    pub version: i64,
 }
 
 #[derive(Serialize, FromRow, ToSchema)]
 pub struct SimpleUser {
     pub id: Uuid,
     pub username: String,
+    pub version: i64,
 }

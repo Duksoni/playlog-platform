@@ -117,7 +117,7 @@ export class AdminUsersPage implements OnInit {
 			$localize`:@@adminUsers.confirmPromote:Promote`,
 			() => {
 				this.actioningId.set(user.id);
-				this.userService.promoteUser(user.id).subscribe({
+				this.userService.promoteUser(user.id, user.version).subscribe({
 					next: (res: UserRoleChangeResponse) => {
 						this.updateCachedRole(user.id, res.newRole);
 						this.actioningId.set(null);
@@ -156,7 +156,7 @@ export class AdminUsersPage implements OnInit {
 			$localize`:@@adminUsers.confirmDemote:Demote`,
 			() => {
 				this.actioningId.set(user.id);
-				this.userService.demoteUser(user.id).subscribe({
+				this.userService.demoteUser(user.id, user.version).subscribe({
 					next: (res: UserRoleChangeResponse) => {
 						this.updateCachedRole(user.id, res.newRole);
 						this.actioningId.set(null);
@@ -192,7 +192,7 @@ export class AdminUsersPage implements OnInit {
 			$localize`:@@adminUsers.confirmBlock:Block`,
 			() => {
 				this.actioningId.set(user.id);
-				this.userService.blockUser(user.id).subscribe({
+				this.userService.blockUser(user.id, user.version).subscribe({
 					next: () => {
 						this.actioningId.set(null);
 						this.snackbarService.createSnackbar(

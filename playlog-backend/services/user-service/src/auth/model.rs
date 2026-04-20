@@ -11,4 +11,5 @@ pub struct User {
     pub password: String,
     #[serde(rename = "accountStatus")]
     pub account_status: AccountStatus,
+    pub version: i64,
 }

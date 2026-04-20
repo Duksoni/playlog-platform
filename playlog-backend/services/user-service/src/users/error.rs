@@ -1,6 +1,7 @@
 use service_common::error::ApiError;
 use axum::http::StatusCode;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Error, Debug)]
 pub enum UserError {
@@ -43,6 +44,9 @@ pub enum UserError {
     #[error("Can't demote from ${0} to ${1}")]
     CantDemote(String, String),
 
+    #[error("Conflict: Version mismatch for user with id {0}")]
+    Conflict(String),
+
     #[error("Database error: {0}")]
     DatabaseError(#[from] sqlx::Error),
 
@@ -70,7 +74,12 @@ impl From<UserError> for ApiError {
             | UserIsBlocked => StatusCode::BAD_REQUEST,
             WrongPassword => StatusCode::UNAUTHORIZED,
             UserNotFound => StatusCode::NOT_FOUND,
-            DatabaseError(_) | InternalError => StatusCode::INTERNAL_SERVER_ERROR,
+            Conflict(_) => StatusCode::CONFLICT,
+            DatabaseError(db_err) => {
+                error!(error = %db_err, "database error");
+                return ApiError::internal_error()
+            }
+            InternalError => StatusCode::INTERNAL_SERVER_ERROR,
         };
         ApiError::new(status_code, error.to_string())
     }

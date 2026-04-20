@@ -2,7 +2,7 @@ use super::{Result, SimpleUser, UpdateProfileRequest, UserDetails, UserError};
 use crate::shared::AccountStatus;
 use async_trait::async_trait;
 use jwt_common::Role;
-use sqlx::{postgres::PgArguments, query, query::Query, query_as, query_scalar, PgPool, Postgres};
+use sqlx::{query, query_as, query_scalar, PgPool};
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -19,10 +19,10 @@ pub trait UserRepository: Send + Sync {
     async fn get_user_role(&self, user_id: Uuid) -> Result<Role>;
     async fn get_account_status(&self, user_id: Uuid) -> Result<AccountStatus>;
     async fn update_profile(&self, user_id: Uuid, request: &UpdateProfileRequest) -> Result<bool>;
-    async fn update_password(&self, user_id: Uuid, new_password: &str) -> Result<bool>;
-    async fn update_user_role(&self, user_id: Uuid, new_role: Role) -> Result<()>;
+    async fn update_password(&self, user_id: Uuid, new_password: &str, version: i64) -> Result<bool>;
+    async fn update_user_role(&self, user_id: Uuid, new_role: Role, version: i64) -> Result<()>;
     async fn deactivate_account(&self, user_id: Uuid) -> Result<()>;
-    async fn block_user(&self, user_id: Uuid) -> Result<()>;
+    async fn block_user(&self, user_id: Uuid, version: i64) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -41,7 +41,7 @@ impl UserRepository for PostgresUserRepository {
         let users = query_as!(
             SimpleUser,
             r#"
-                SELECT u.id, username
+                SELECT u.id, username, version
                 FROM users u
                          JOIN user_roles ur ON ur.user_id = u.id
                          JOIN roles r ON r.id = ur.role_id
@@ -63,7 +63,7 @@ impl UserRepository for PostgresUserRepository {
         let user = query_as!(
             UserDetails,
             r#"
-                SELECT u.id, username, r.name as role, first_name, last_name, birthdate, created_at
+                SELECT u.id, username, r.name as role, first_name, last_name, birthdate, created_at, u.version
                 FROM users u
                     INNER JOIN user_profiles p ON u.id = p.user_id
                     INNER JOIN user_roles ur ON ur.user_id = u.id
@@ -120,7 +120,26 @@ impl UserRepository for PostgresUserRepository {
     }
 
     async fn update_profile(&self, user_id: Uuid, request: &UpdateProfileRequest) -> Result<bool> {
+        let mut tx = self.pool.begin().await?;
+
         let rows_changed = query!(
+            r#"
+                UPDATE users
+                SET version = version + 1
+                WHERE id = $1 AND version = $2
+            "#,
+            user_id,
+            request.version
+        )
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
+
+        if rows_changed == 0 {
+            return self.handle_update_failure::<bool>(user_id, &mut tx).await;
+        }
+
+        query!(
             r#"
                 UPDATE user_profiles
                 SET
@@ -134,30 +153,57 @@ impl UserRepository for PostgresUserRepository {
             request.last_name,
             request.birthdate
         )
-        .execute(&self.pool)
-        .await?
-        .rows_affected();
-        Ok(rows_changed == 1)
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+        Ok(true)
     }
 
-    async fn update_password(&self, user_id: Uuid, new_password: &str) -> Result<bool> {
+    async fn update_password(&self, user_id: Uuid, new_password: &str, version: i64) -> Result<bool> {
         let rows_changed = query!(
             r#"
                 UPDATE users
-                SET password = $2
-                WHERE id = $1
+                SET password = $2, version = version + 1
+                WHERE id = $1 AND version = $3
             "#,
             user_id,
             new_password,
+            version
         )
         .execute(&self.pool)
         .await?
         .rows_affected();
-        Ok(rows_changed == 1)
+
+        if rows_changed == 0 {
+            let mut tx = self.pool.begin().await?;
+            return self.handle_update_failure::<bool>(user_id, &mut tx).await;
+        }
+
+        Ok(true)
     }
 
-    async fn update_user_role(&self, user_id: Uuid, new_role: Role) -> Result<()> {
-        let prepared_query = query!(
+    async fn update_user_role(&self, user_id: Uuid, new_role: Role, version: i64) -> Result<()> {
+        let mut tx = self.pool.begin().await?;
+
+        let rows_changed = query!(
+            r#"
+                UPDATE users
+                SET version = version + 1
+                WHERE id = $1 AND version = $2
+            "#,
+            user_id,
+            version
+        )
+        .execute(&mut *tx)
+        .await?
+        .rows_affected();
+
+        if rows_changed == 0 {
+            return self.handle_update_failure::<()>(user_id, &mut tx).await;
+        }
+
+        query!(
             r#"
                 UPDATE user_roles
                 SET role_id = (SELECT id FROM roles WHERE name = $2)
@@ -165,29 +211,78 @@ impl UserRepository for PostgresUserRepository {
             "#,
             user_id,
             new_role.as_db_value()
-        );
-        self.execute_user_state_update(user_id, prepared_query)
-            .await?;
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        tx.commit().await?;
+        self.clear_refresh_tokens(user_id).await?;
         Ok(())
     }
 
     async fn deactivate_account(&self, user_id: Uuid) -> Result<()> {
-        let prepared_query = query!(
-            "UPDATE users SET account_status = 'DEACTIVATED' WHERE id = $1",
+        let mut tx = self.pool.begin().await?;
+
+        let user_info = query!(
+            r#"
+                SELECT account_status AS "account_status: AccountStatus", r.name as role
+                FROM users u
+                    INNER JOIN user_roles ur ON ur.user_id = u.id
+                    INNER JOIN roles r ON r.id = ur.role_id
+                WHERE u.id = $1
+                FOR UPDATE
+            "#,
             user_id
-        );
-        Ok(self
-            .execute_user_state_update(user_id, prepared_query)
-            .await?)
+        )
+        .fetch_optional(&mut *tx)
+        .await?;
+
+        let user_info = match user_info {
+            Some(info) => info,
+            None => return Err(UserError::UserNotFound),
+        };
+
+        match user_info.account_status {
+            AccountStatus::Active => (),
+            AccountStatus::Blocked => return Err(UserError::UserIsBlocked),
+            AccountStatus::Deactivated => return Err(UserError::UserNotFound),
+        }
+
+        if user_info.role == Role::Admin.as_db_value() {
+            return Err(UserError::AdminCantDeactivateAccount);
+        }
+
+        query!(
+            "UPDATE users SET account_status = 'DEACTIVATED', version = version + 1 WHERE id = $1",
+            user_id
+        )
+        .execute(&mut *tx)
+        .await?;
+
+        query!("DELETE FROM user_tokens WHERE user_id = $1", user_id)
+            .execute(&mut *tx)
+            .await?;
+
+        tx.commit().await?;
+        Ok(())
     }
 
-    async fn block_user(&self, user_id: Uuid) -> Result<()> {
-        let prepared_query = query!(
-            "UPDATE users SET account_status = 'BLOCKED' WHERE id = $1",
-            user_id
-        );
-        self.execute_user_state_update(user_id, prepared_query)
-            .await?;
+    async fn block_user(&self, user_id: Uuid, version: i64) -> Result<()> {
+        let rows_changed = query!(
+            "UPDATE users SET account_status = 'BLOCKED', version = version + 1 WHERE id = $1 AND version = $2",
+            user_id,
+            version
+        )
+        .execute(&self.pool)
+        .await?
+        .rows_affected();
+
+        if rows_changed == 0 {
+            let mut tx = self.pool.begin().await?;
+            return self.handle_update_failure::<()>(user_id, &mut tx).await;
+        }
+
+        self.clear_refresh_tokens(user_id).await?;
         Ok(())
     }
 }
@@ -204,15 +299,23 @@ impl PostgresUserRepository {
         Ok(())
     }
 
-    async fn execute_user_state_update(
+    async fn handle_update_failure<T>(
         &self,
         user_id: Uuid,
-        prepared_query: Query<'_, Postgres, PgArguments>,
-    ) -> Result<()> {
-        let rows_changed = prepared_query.execute(&self.pool).await?.rows_affected();
-        if rows_changed == 1 {
-            self.clear_refresh_tokens(user_id).await?;
+        transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    ) -> Result<T> {
+        let exists = query_scalar!(
+            "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
+            user_id
+        )
+        .fetch_one(&mut **transaction)
+        .await?
+        .unwrap_or(false);
+
+        if exists {
+            Err(UserError::Conflict(user_id.to_string()))
+        } else {
+            Err(UserError::UserNotFound)
         }
-        Ok(())
     }
 }

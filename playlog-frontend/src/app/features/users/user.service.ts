@@ -5,6 +5,7 @@ import {
 	FindUsersResponse,
 	UpdatePasswordRequest,
 	UpdateProfileRequest,
+	UpdateUserStatusRequest,
 	UserDetails,
 	UserRoleChangeResponse,
 } from './user.dto';
@@ -29,8 +30,9 @@ export class UserService {
 		return this.http.put<void>(`${this.base}/me/change-password`, body);
 	}
 
-	deactivateAccount() {
-		return this.http.delete<void>(`${this.base}/me`);
+	deactivateAccount(version: number) {
+		const body: UpdateUserStatusRequest = {version};
+		return this.http.delete<void>(`${this.base}/me`, {body});
 	}
 
 	findUsers(partialUsername: string, role: Role) {
@@ -40,15 +42,18 @@ export class UserService {
 		return this.http.get<FindUsersResponse>(`${this.base}`, {params});
 	}
 
-	promoteUser(id: string) {
-		return this.http.put<UserRoleChangeResponse>(`${this.base}/${id}/promote`, {});
+	promoteUser(id: string, version: number) {
+		const body: UpdateUserStatusRequest = {version};
+		return this.http.put<UserRoleChangeResponse>(`${this.base}/${id}/promote`, body);
 	}
 
-	demoteUser(id: string) {
-		return this.http.put<UserRoleChangeResponse>(`${this.base}/${id}/demote`, {});
+	demoteUser(id: string, version: number) {
+		const body: UpdateUserStatusRequest = {version};
+		return this.http.put<UserRoleChangeResponse>(`${this.base}/${id}/demote`, body);
 	}
 
-	blockUser(id: string) {
-		return this.http.put<void>(`${this.base}/${id}/block`, {});
+	blockUser(id: string, version: number) {
+		const body: UpdateUserStatusRequest = {version};
+		return this.http.put<void>(`${this.base}/${id}/block`, body);
 	}
 }

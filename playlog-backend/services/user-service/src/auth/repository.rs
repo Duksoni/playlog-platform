@@ -41,7 +41,7 @@ impl AuthRepository for PostgresAuthRepository {
         let user = query_as!(
             User,
             r#"
-                SELECT id, username, email, password, account_status AS "account_status!: AccountStatus"
+                SELECT id, username, email, password, account_status AS "account_status!: AccountStatus", version
                 FROM users
                 WHERE email = $1 OR username = $1
             "#,
@@ -56,7 +56,7 @@ impl AuthRepository for PostgresAuthRepository {
         let user = query_as!(
             User,
             r#"
-                SELECT id, username, email, password, account_status AS "account_status!: AccountStatus"
+                SELECT id, username, email, password, account_status AS "account_status!: AccountStatus", version
                 FROM users
                 WHERE id = $1
             "#,
