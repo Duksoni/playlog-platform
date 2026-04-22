@@ -16,13 +16,13 @@
 	</div>
 
 	<div class="table-container mat-elevation-z2">
-		@if (entityService.loading()) {
+		@if (loading()) {
 			<div class="loading-shade">
 				<mat-spinner diameter="40"></mat-spinner>
 			</div>
 		}
 
-		<table mat-table [dataSource]="entityService.items()">
+		<table mat-table [dataSource]="items()">
 			<!-- Name Column -->
 			<ng-container matColumnDef="name">
 				<th mat-header-cell *matHeaderCellDef> Name</th>
@@ -62,21 +62,21 @@
 			<!-- Row shown when there is no matching data. -->
 			<tr class="mat-row" *matNoDataRow>
 				<td class="mat-cell" colspan="3">
-					@if (!entityService.loading()) {
+					@if (!loading()) {
 						<span i18n="@@searchNoDataFound">No data found matching the search criteria.</span>
 					}
 				</td>
 			</tr>
 		</table>
 
-		@if (!searchControl.value) {
-			<mat-paginator
-				[length]="totalItems()"
-				[pageSize]="10"
-				[pageIndex]="pageIndex()"
-				(page)="handlePageEvent($event)"
-			>
-			</mat-paginator>
-		}
+		<mat-paginator
+			[length]="totalItems()"
+			[pageSize]="pageSize()"
+			[pageSizeOptions]="[10, 25, 50, 100]"
+			[pageIndex]="pageIndex()"
+			[showFirstLastButtons]="true"
+			(page)="handlePageEvent($event)"
+		>
+		</mat-paginator>
 	</div>
 </div>

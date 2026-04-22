@@ -3576,6 +3576,7 @@ dependencies = [
  "axum",
  "mongodb",
  "reqwest 0.13.2",
+ "serde",
  "sqlx",
  "tokio",
  "tower-http",

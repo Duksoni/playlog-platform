@@ -1,4 +1,4 @@
-import {inject, Injectable, signal} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
 import {
@@ -8,38 +8,30 @@ import {
 	GameEntityType,
 	UpdateGameEntityRequest
 } from './game-entity.dto';
-import {ApiError} from '../../core/api-error';
+import {PagedResponse} from '../../core/paged-response.dto';
+import {map} from 'rxjs';
 
 @Injectable({
 	providedIn: 'root',
 })
 export class GameEntityService {
-	public items = signal<GameEntitySimple[]>([]);
-	public loading = signal(false);
-	public submitting = signal(false);
-	public error = signal<ApiError | null>(null);
-
+	private readonly GET_ALL_LIMIT = 20;
 	private http = inject(HttpClient);
 
-	loadAll(entityType: GameEntityType, page?: number) {
-		this.loading.set(true);
+	loadAll(entityType: GameEntityType, page: number, limit: number) {
 		let params = new HttpParams();
-		if (page !== undefined) {
-			// API uses 1-based indexing
-			params = params.set('page', (page + 1).toString());
-		}
-		this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}`, {params}).subscribe({
-			next: (data) => {
-				this.items.set(data);
-				this.loading.set(false);
-			},
-			error: () => this.loading.set(false),
-		});
+		params = params.set('page', page + 1);
+		params = params.set('limit', limit);
+		return this.http.get<PagedResponse<GameEntitySimple>>(`${environment.apiUrl}/${entityType}`, {params});
 	}
 
 	/** First 20 by name — for dropdowns and autocomplete initial load. */
 	getAllForFilter(entityType: GameEntityType) {
-		return this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}`);
+		let params = new HttpParams().set('limit', this.GET_ALL_LIMIT);
+		return this.http.get<PagedResponse<GameEntitySimple>>(`${environment.apiUrl}/${entityType}`, {params})
+			.pipe(map(
+				response => response.data
+			));
 	}
 
 	/** Search by partial name — for autocomplete. */
@@ -53,32 +45,19 @@ export class GameEntityService {
 	}
 
 	search(entityType: GameEntityType, query: string) {
-		this.loading.set(true);
 		const params = new HttpParams().set('q', query);
-		this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}/search`, {params}).subscribe({
-			next: (data) => {
-				this.items.set(data);
-				this.loading.set(false);
-			},
-			error: () => this.loading.set(false),
-		});
+		return this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}/search`, {params});
 	}
 
 	create(entityType: GameEntityType, body: CreateGameEntityRequest) {
-		this.submitting.set(true);
-		this.error.set(null);
 		return this.http.post<GameEntity>(`${environment.apiUrl}/${entityType}`, body);
 	}
 
 	update(entityType: GameEntityType, id: number, body: UpdateGameEntityRequest) {
-		this.submitting.set(true);
-		this.error.set(null);
 		return this.http.put<GameEntity>(`${environment.apiUrl}/${entityType}/${id}`, body);
 	}
 
 	delete(entityType: GameEntityType, id: number) {
-		this.submitting.set(true);
-		this.error.set(null);
 		return this.http.delete<void>(`${environment.apiUrl}/${entityType}/${id}`);
 	}
 }

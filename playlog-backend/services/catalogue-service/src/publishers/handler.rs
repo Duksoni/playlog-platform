@@ -1,8 +1,8 @@
 use crate::{
     app::AppState,
     entity::{
-        CreateGameEntityRequest, GameEntity, GameEntityError, GameEntitySimple, PagedQuery,
-        SearchQuery, UpdateGameEntityRequest,
+        CreateGameEntityRequest, GameEntity, GameEntityError, GameEntityPagedResponse,
+        GameEntitySimple, PagedQuery, SearchQuery, UpdateGameEntityRequest,
     },
 };
 use service_common::error::{ApiError, Result as ApiResult};
@@ -45,7 +45,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     summary = "Get all publishers (paged)",
     params(PagedQuery),
     responses(
-        (status = 200, description = "List of publishers", body = Vec<GameEntitySimple>),
+        (status = 200, description = "List of publishers", body = GameEntityPagedResponse),
     ),
     tag = "publishers",
     operation_id = "get_all_publishers_paged"
@@ -54,8 +54,8 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
 async fn get_all_paged(
     State(state): State<Arc<AppState>>,
     Query(query): Query<PagedQuery>,
-) -> ApiResult<Json<Vec<GameEntitySimple>>> {
-    let result = state.publisher_repository.get_all_paged(query.page).await?;
+) -> ApiResult<Json<GameEntityPagedResponse>> {
+    let result = state.publisher_repository.get_all(query.page, query.limit).await?;
     Ok(Json(result))
 }
 

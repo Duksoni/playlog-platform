@@ -8,6 +8,7 @@ anyhow.workspace = true
 axum.workspace = true
 mongodb.workspace = true
 reqwest.workspace = true
+serde.workspace = true
 sqlx.workspace = true
 tokio.workspace = true
 tower-http.workspace = true

@@ -1,4 +1,6 @@
-use serde::Deserialize;
+use crate::entity::GameEntitySimple;
+use serde::{Deserialize, Serialize};
+use service_common::dto::PagedResponse;
 use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
@@ -10,11 +12,15 @@ pub struct CreateGameEntityRequest {
 
 #[derive(Validate, Deserialize, ToSchema)]
 pub struct UpdateGameEntityRequest {
-    #[validate(length(min = 1, max = 100))]    
+    #[validate(length(min = 1, max = 100))]
     pub name: String,
     #[validate(range(min = 0))]
-    pub version: i64
+    pub version: i64,
 }
+
+#[derive(Serialize, ToSchema)]
+#[serde(transparent)]
+pub struct GameEntityPagedResponse(pub PagedResponse<GameEntitySimple>);
 
 #[derive(Deserialize, IntoParams)]
 pub struct SearchQuery {
@@ -27,4 +33,7 @@ pub struct PagedQuery {
     #[serde(default)]
     #[param(required = false, example = "1")]
     pub page: u64,
+    #[serde(default)]
+    #[param(required = false, example = "10")]
+    pub limit: u64,
 }

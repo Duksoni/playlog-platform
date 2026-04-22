@@ -1,4 +1,4 @@
-import {ChangeDetectionStrategy, Component, effect, inject, input, OnInit, signal} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, input, OnInit, signal} from '@angular/core';
 import {GameEntitySimple, GameEntityType} from '../game-entity.dto';
 import {GameEntityService} from '../game-entity.service';
 import {MatTableModule} from '@angular/material/table';
@@ -7,7 +7,7 @@ import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatFormFieldModule} from '@angular/material/form-field';
 import {MatInputModule} from '@angular/material/input';
-import {MatPaginatorIntl, MatPaginatorModule, PageEvent} from '@angular/material/paginator';
+import {MatPaginatorModule, PageEvent} from '@angular/material/paginator';
 import {FormControl, ReactiveFormsModule} from '@angular/forms';
 import {debounceTime, distinctUntilChanged} from 'rxjs';
 import {DialogService} from '../../../shared/services/dialog.service';
@@ -16,7 +16,6 @@ import {GameEntityDialogData} from '../game-entity-dialog/game-entity-dialog-dat
 import {SnackbarService} from '../../../shared/services/snackbar.service';
 import {ApiError} from '../../../core/api-error';
 import {MatTooltip} from '@angular/material/tooltip';
-import {UnknownTotalCountPaginatorIntl} from '../../../shared/unknown-total-count.paginator';
 
 @Component({
 	selector: 'app-game-entities-list',
@@ -32,9 +31,6 @@ import {UnknownTotalCountPaginatorIntl} from '../../../shared/unknown-total-coun
 		ReactiveFormsModule,
 		MatTooltip,
 	],
-	providers: [
-		{provide: MatPaginatorIntl, useClass: UnknownTotalCountPaginatorIntl},
-	],
 	templateUrl: './game-entities-list.component.html',
 	styleUrl: './game-entities-list.component.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
@@ -44,38 +40,21 @@ export class GameEntitiesListComponent implements OnInit {
 	entityLabel = input.required<string>();
 	allowDelete = input<boolean>(false);
 
-	protected entityService = inject(GameEntityService);
+	private entityService = inject(GameEntityService);
 	private dialogService = inject(DialogService);
 	private snackbarService = inject(SnackbarService);
 
 	protected searchControl = new FormControl('');
 	protected displayedColumns: string[] = ['name', 'actions'];
 
+	// Local state
+	protected items = signal<GameEntitySimple[]>([]);
+	protected loading = signal(false);
+
 	// Pagination state
 	protected pageIndex = signal(0);
-	protected readonly pageSize = 10;
-	protected totalItems = signal(Number.MAX_SAFE_INTEGER);
-
-	constructor() {
-		effect(() => {
-			const items = this.entityService.items();
-			if (this.searchControl.value) return;
-
-			const currentIdx = this.pageIndex();
-			if (items.length === 0) {
-				// We found the last page
-				this.totalItems.set(currentIdx * this.pageSize);
-			} else if (items.length < this.pageSize) {
-				// We found the exact count
-				this.totalItems.set(currentIdx * this.pageSize + items.length);
-			} else {
-				// If we don't know the total yet, keep it as 'many'
-				if (this.totalItems() !== Number.MAX_SAFE_INTEGER) {
-					this.totalItems.set(Number.MAX_SAFE_INTEGER);
-				}
-			}
-		});
-	}
+	protected pageSize = signal(10);
+	protected totalItems = signal(0);
 
 	ngOnInit() {
 		this.loadData();
@@ -85,7 +64,15 @@ export class GameEntitiesListComponent implements OnInit {
 			distinctUntilChanged()
 		).subscribe(query => {
 			if (query && query.length >= 2) {
-				this.entityService.search(this.entityType(), query);
+				this.loading.set(true);
+				this.entityService.search(this.entityType(), query).subscribe({
+					next: (data) => {
+						this.items.set(data);
+						this.totalItems.set(data.length);
+						this.loading.set(false);
+					},
+					error: () => this.loading.set(false),
+				});
 			} else if (!query) {
 				this.loadData();
 			}
@@ -93,7 +80,15 @@ export class GameEntitiesListComponent implements OnInit {
 	}
 
 	loadData() {
-		this.entityService.loadAll(this.entityType(), this.pageIndex());
+		this.loading.set(true);
+		this.entityService.loadAll(this.entityType(), this.pageIndex(), this.pageSize()).subscribe({
+			next: (response) => {
+				this.items.set(response.data);
+				this.totalItems.set(response.totalItems);
+				this.loading.set(false);
+			},
+			error: () => this.loading.set(false),
+		});
 	}
 
 	private resetAndLoad() {
@@ -104,6 +99,7 @@ export class GameEntitiesListComponent implements OnInit {
 
 	handlePageEvent(e: PageEvent) {
 		this.pageIndex.set(e.pageIndex);
+		this.pageSize.set(e.pageSize);
 		this.loadData();
 	}
 
