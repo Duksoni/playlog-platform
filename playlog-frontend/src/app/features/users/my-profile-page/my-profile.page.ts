@@ -57,6 +57,8 @@ export class MyProfilePage {
 	protected user = signal<UserDetails | null>(null);
 	protected loading = signal(true);
 
+	protected isEditingProfile = signal(false);
+	protected isChangingPassword = signal(false);
 	protected profileSubmitting = signal(false);
 	protected profileError = signal<ApiError | null>(null);
 
@@ -110,19 +112,31 @@ export class MyProfilePage {
 
 	private buildProfileForm(user: UserDetails) {
 		this.profileForm = this.fb.group({
-			firstName: [
-				user.firstName ?? '',
-				user.firstName ? [Validators.required] : []
-			],
-			lastName: [
-				user.lastName ?? '',
-				user.lastName ? [Validators.required] : []
-			],
-			birthdate: [
-				user.birthdate ? new Date(user.birthdate) : null,
-				user.birthdate ? [Validators.required] : []
-			],
+			firstName: [user.firstName ?? ''],
+			lastName: [user.lastName ?? ''],
+			birthdate: [user.birthdate ? new Date(user.birthdate) : null],
 		});
+	}
+
+	protected toggleEditProfile() {
+		this.isEditingProfile.set(true);
+	}
+
+	protected cancelEditing() {
+		this.isEditingProfile.set(false);
+		if (this.user()) {
+			this.buildProfileForm(this.user()!);
+		}
+	}
+
+	protected toggleChangePassword() {
+		this.isChangingPassword.set(true);
+	}
+
+	protected cancelChangePassword() {
+		this.isChangingPassword.set(false);
+		this.passwordForm.reset();
+		this.passwordError.set(null);
 	}
 
 	protected onProfileSubmit() {
@@ -148,6 +162,7 @@ export class MyProfilePage {
 		}).subscribe({
 			next: (response) => {
 				this.profileSubmitting.set(false);
+				this.isEditingProfile.set(false);
 				if (response.status === 204) {
 					this.snackbarService.createSnackbar($localize`:@@profile.noChanges:No changes were made.`);
 				} else {
@@ -199,6 +214,7 @@ export class MyProfilePage {
 		}).subscribe({
 			next: () => {
 				this.passwordSubmitting.set(false);
+				this.isChangingPassword.set(false);
 				this.passwordForm.reset();
 				this.snackbarService.createSnackbar($localize`:@@profile.passwordChanged:Password changed successfully.`);
 				this.loadUser();

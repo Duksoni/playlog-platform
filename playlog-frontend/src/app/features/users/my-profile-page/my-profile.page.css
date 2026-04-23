@@ -1,41 +1,10 @@
-.loading-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	min-height: 400px;
-}
-
 .my-profile-page {
-	max-width: 700px;
+	max-width: 1000px;
 	margin: 0 auto;
 	padding: 32px 24px;
 	display: flex;
 	flex-direction: column;
 	gap: 0;
-}
-
-/*  Header  */
-.page-header {
-	margin-bottom: 32px;
-}
-
-.page-header-title {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.page-header-title mat-icon {
-	font-size: 32px;
-	width: 32px;
-	height: 32px;
-	color: var(--mat-sys-primary);
-}
-
-.page-header-title h1 {
-	margin: 0;
-	font-size: 28px;
-	font-weight: 500;
 }
 
 /*  Sections  */
@@ -98,6 +67,17 @@
 	display: flex;
 	justify-content: flex-end;
 	padding-top: 8px;
+}
+
+.edit-link {
+	cursor: pointer;
+	color: var(--mat-sys-primary);
+	user-select: none;
+	text-decoration: none;
+}
+
+.edit-link:hover {
+	text-decoration: underline;
 }
 
 /*  Danger Zone  */
