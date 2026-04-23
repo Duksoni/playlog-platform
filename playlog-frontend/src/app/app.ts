@@ -1,4 +1,4 @@
-import {Component, signal} from '@angular/core';
+import {Component} from '@angular/core';
 import {RouterOutlet} from '@angular/router';
 import {Navbar} from './features/navbar/navbar';
 
@@ -9,5 +9,4 @@ import {Navbar} from './features/navbar/navbar';
 	styleUrl: './app.css'
 })
 export class App {
-	protected readonly title = signal('Playlog');
 }

@@ -15,84 +15,102 @@ import {ReportsPage} from './features/reports/reports-page/reports.page';
 import {authGuard} from './core/guards/auth.guard';
 import {Role} from './features/auth/auth.dto';
 
+const titlePrefix = 'Playlog | ';
+const withTitlePrefix = (title: string) => `${titlePrefix}${title}`;
+
 export const routes: Routes = [
 	{
 		path: 'home',
 		component: HomePage,
+		title: withTitlePrefix($localize`:@@routes.home:Home`),
 	},
 	{
 		path: 'games',
 		component: GamesListPage,
+		title: withTitlePrefix($localize`:@@routes.games:Games`),
 	},
 	{
 		path: 'developers/:id/games',
 		component: GamesListPage,
+		title: withTitlePrefix($localize`:@@routes.developerGames:Developer Games`),
 	},
 	{
 		path: 'publishers/:id/games',
 		component: GamesListPage,
+		title: withTitlePrefix($localize`:@@routes.publisherGames:Publisher Games`),
 	},
 	{
 		path: 'games/:id',
 		component: GameDetailPage,
+		title: withTitlePrefix($localize`:@@routes.gameDetails:Game Details`),
 	},
 	{
 		path: 'profile',
 		component: MyProfilePage,
 		canActivate: [authGuard],
 		data: {roles: [Role.USER, Role.MODERATOR, Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.myProfile:My Profile`),
 	},
 	{
 		path: 'library',
 		component: LibraryPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.USER, Role.MODERATOR, Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.myLibrary:My Library`),
 	},
 	{
 		path: 'users/:username',
 		component: UserProfilePage,
+		title: withTitlePrefix($localize`:@@routes.userProfile:User Profile`),
 	},
 	{
 		path: 'reports',
 		component: ReportsPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.MODERATOR, Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.reports:Reports`),
 	},
 	{
 		path: 'admin/users',
 		component: AdminUsersPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.users:Users`),
 	},
 	{
 		path: 'genres',
 		component: GenresPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.genres:Genres`),
 	},
 	{
 		path: 'tags',
 		component: TagsPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.tags:Tags`),
 	},
 	{
 		path: 'platforms',
 		component: PlatformsPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.platforms:Platforms`),
 	},
 	{
 		path: 'publishers',
 		component: PublishersPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.publishers:Publishers`),
 	},
 	{
 		path: 'developers',
 		component: DevelopersPage,
 		canActivate: [authGuard],
 		data: {roles: [Role.ADMIN]},
+		title: withTitlePrefix($localize`:@@routes.developers:Developers`),
 	},
 	{path: '', redirectTo: 'home', pathMatch: 'full'},
 	{path: '**', redirectTo: 'home', pathMatch: 'full'},
