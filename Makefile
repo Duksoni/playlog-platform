@@ -1,93 +1,105 @@
-.PHONY: help start stop build rebuild logs init-network
+.PHONY: help start start-exposed stop build rebuild logs init-network
 
 ENV_FILE := .env.production
 NETWORK := playlog_network
 
-COMPOSE_USER_SERVICE := cd ./playlog-backend/services/user-service ; docker compose -p playlog-user --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/postgres/user/compose.yaml
-COMPOSE_MULTIMEDIA_SERVICE := cd ./playlog-backend/services/multimedia-service ; docker compose -p playlog-multimedia --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/mongodb/multimedia/compose.yaml -f ../../docker/minio/compose.yaml
-COMPOSE_CATALOGUE_SERVICE := cd ./playlog-backend/services/catalogue-service ; docker compose -p playlog-catalogue --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/postgres/catalogue/compose.yaml
-COMPOSE_LIBRARY_SERVICE := cd ./playlog-backend/services/library-service ; docker compose -p playlog-library --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/postgres/library/compose.yaml
-COMPOSE_REVIEW_SERVICE := cd ./playlog-backend/services/review-service ; docker compose -p playlog-review --env-file $(ENV_FILE) -f compose.yaml -f ../../docker/mongodb/review/compose.yaml
-COMPOSE_API_GATEWAY := cd ./playlog-backend/services/api-gateway ; docker compose -p playlog-gateway --env-file $(ENV_FILE)
-COMPOSE_FRONTEND := cd ./playlog-frontend ; docker compose -p playlog-frontend --env-file $(ENV_FILE)
+# --- Service Compose Commands ---
+COMPOSE_USER       := cd ./playlog-backend/services/user-service && docker compose -p playlog-user --env-file $$(ENV_FILE) -f compose.yaml -f ../../docker/postgres/user/compose.yaml
+COMPOSE_MULTIMEDIA := cd ./playlog-backend/services/multimedia-service && docker compose -p playlog-multimedia --env-file $$(ENV_FILE) -f compose.yaml -f ../../docker/mongodb/multimedia/compose.yaml -f ../../docker/minio/compose.yaml
+COMPOSE_CATALOGUE  := cd ./playlog-backend/services/catalogue-service && docker compose -p playlog-catalogue --env-file $$(ENV_FILE) -f compose.yaml -f ../../docker/postgres/catalogue/compose.yaml
+COMPOSE_LIBRARY    := cd ./playlog-backend/services/library-service && docker compose -p playlog-library --env-file $$(ENV_FILE) -f compose.yaml -f ../../docker/postgres/library/compose.yaml
+COMPOSE_REVIEW     := cd ./playlog-backend/services/review-service && docker compose -p playlog-review --env-file $$(ENV_FILE) -f compose.yaml -f ../../docker/mongodb/review/compose.yaml
+COMPOSE_GATEWAY    := cd ./playlog-backend/services/api-gateway && docker compose -p playlog-gateway --env-file $$(ENV_FILE)
+COMPOSE_FRONTEND   := cd ./playlog-frontend && docker compose -p playlog-frontend --env-file $$(ENV_FILE)
 
-DEV_COMPOSE_USER_SERVICE := $(COMPOSE_USER_SERVICE) -f ../../docker/postgres/user/compose.dev.yaml
-DEV_COMPOSE_MULTIMEDIA_SERVICE := $(COMPOSE_MULTIMEDIA_SERVICE) -f ../../docker/mongodb/multimedia/compose.dev.yaml -f ../../docker/minio/compose.dev.yaml
-DEV_COMPOSE_CATALOGUE_SERVICE := $(COMPOSE_CATALOGUE_SERVICE) -f ../../docker/postgres/catalogue/compose.dev.yaml
-DEV_COMPOSE_LIBRARY_SERVICE := $(COMPOSE_LIBRARY_SERVICE) -f ../../docker/postgres/library/compose.dev.yaml
-DEV_COMPOSE_REVIEW_SERVICE := $(COMPOSE_REVIEW_SERVICE) -f ../../docker/mongodb/review/compose.dev.yaml
+# Dev variants with exposed ports
+DEV_USER           := $(COMPOSE_USER) -f ../../docker/postgres/user/compose.dev.yaml
+DEV_MULTIMEDIA     := $(COMPOSE_MULTIMEDIA) -f ../../docker/mongodb/multimedia/compose.dev.yaml -f ../../docker/minio/compose.dev.yaml
+DEV_CATALOGUE      := $(COMPOSE_CATALOGUE) -f ../../docker/postgres/catalogue/compose.dev.yaml
+DEV_LIBRARY        := $(COMPOSE_LIBRARY) -f ../../docker/postgres/library/compose.dev.yaml
+DEV_REVIEW         := $(COMPOSE_REVIEW) -f ../../docker/mongodb/review/compose.dev.yaml
+
+# --- Global Targets ---
 
 help:
 	@echo "Available targets:"
-	@echo "  make start			- Start services"
-	@echo "  make start-exposed		- Start services with exposed DB ports"
-	@echo "  make stop			- Stop services"
-	@echo "  make build			- Build images"
-	@echo "  make rebuild [svc]		- Rebuild images (no cache)"
-	@echo "  make logs [svc]		- Follow logs (optionally for a service)"
-	@echo "  make init network		- Create shared network for services to use (one-time)"
+	@echo "  make start			- Start all services"
+	@echo "  make start-exposed		- Start all services with exposed DB ports"
+	@echo "  make stop			- Stop all services"
+	@echo "  make build			- Build all images"
+	@echo "  make rebuild			- Rebuild all images (no cache)"
+	@echo "  make logs [svc]		- Follow logs (optionally for a specific project)"
+	@echo ""
+	@echo "Service-specific targets ([svc] can be: user-service, multimedia-service, catalogue-service, library-service, review-service, api-gateway, frontend):"
+	@echo "  make start-[svc]"
+	@echo "  make stop-[svc]"
+	@echo "  make restart-[svc]"
+	@echo "  make build-[svc]"
+	@echo "  make rebuild-[svc]"
+	@echo "  make logs-[svc]"
 
-start:
-	@$(MAKE) init-network
-	@$(COMPOSE_CATALOGUE_SERVICE) up -d
-	@$(COMPOSE_USER_SERVICE) up -d
-	@$(COMPOSE_MULTIMEDIA_SERVICE) up -d
-	@$(COMPOSE_LIBRARY_SERVICE) up -d
-	@$(COMPOSE_REVIEW_SERVICE) up -d
-	@$(COMPOSE_API_GATEWAY) up -d
-	@$(COMPOSE_FRONTEND) up -d
+start: init-network start-catalogue-service start-user-service start-multimedia-service start-library-service start-review-service start-api-gateway start-frontend
 	@echo "  Access the app at:		http://localhost:8080";
 	@echo "  Read OpenAPI Docs:		http://localhost:3000/docs";
 
-start-exposed:
-	@$(MAKE) init-network
-	@$(DEV_COMPOSE_CATALOGUE_SERVICE) up -d
-	@$(DEV_COMPOSE_USER_SERVICE) up -d
-	@$(DEV_COMPOSE_MULTIMEDIA_SERVICE) up -d
-	@$(DEV_COMPOSE_LIBRARY_SERVICE) up -d
-	@$(DEV_COMPOSE_REVIEW_SERVICE) up -d
-	@$(COMPOSE_API_GATEWAY) up -d
-	@$(COMPOSE_FRONTEND) up -d
+start-exposed: init-network start-exposed-catalogue-service start-exposed-user-service start-exposed-multimedia-service start-exposed-library-service start-exposed-review-service start-api-gateway start-frontend
 	@echo "  Access the app at:		http://localhost:8080";
 	@echo "  Read OpenAPI Docs:		http://localhost:3000/docs";
 	@echo "  Databases are exposed on their dev ports (5433-5435, 27018-27019, 9000-9001)";
 
-stop:
-	@$(COMPOSE_API_GATEWAY) down
-	@$(COMPOSE_USER_SERVICE) down
-	@$(COMPOSE_MULTIMEDIA_SERVICE) down
-	@$(COMPOSE_CATALOGUE_SERVICE) down
-	@$(COMPOSE_LIBRARY_SERVICE) down
-	@$(COMPOSE_REVIEW_SERVICE) down
-	@$(COMPOSE_FRONTEND) down
+stop: stop-api-gateway stop-user-service stop-multimedia-service stop-catalogue-service stop-library-service stop-review-service stop-frontend
 
-build:
-	@$(MAKE) init-network
-	@$(COMPOSE_USER_SERVICE) build
-	@$(COMPOSE_MULTIMEDIA_SERVICE) build
-	@$(COMPOSE_CATALOGUE_SERVICE) build
-	@$(COMPOSE_LIBRARY_SERVICE) build
-	@$(COMPOSE_REVIEW_SERVICE) build
-	@$(COMPOSE_API_GATEWAY) build
-	@$(COMPOSE_FRONTEND) build
+build: build-user-service build-multimedia-service build-catalogue-service build-library-service build-review-service build-api-gateway build-frontend
 
-rebuild:
-	@$(MAKE) init-network
-	@$(COMPOSE_USER_SERVICE) build --no-cache
-	@$(COMPOSE_MULTIMEDIA_SERVICE) build --no-cache
-	@$(COMPOSE_CATALOGUE_SERVICE) build --no-cache
-	@$(COMPOSE_LIBRARY_SERVICE) build --no-cache
-	@$(COMPOSE_REVIEW_SERVICE) build --no-cache
-	@$(COMPOSE_API_GATEWAY) build --no-cache
-	@$(COMPOSE_FRONTEND) build --no-cache
+rebuild: rebuild-user-service rebuild-multimedia-service rebuild-catalogue-service rebuild-library-service rebuild-review-service rebuild-api-gateway rebuild-frontend
+
+define SERVICE_TARGETS
+.PHONY: start-$(1) stop-$(1) restart-$(1) build-$(1) rebuild-$(1) logs-$(1)
+start-$(1): init-network
+	@$(2) up -d
+stop-$(1):
+	@$(2) down
+restart-$(1):
+	@$(2) down
+	@$(2) up -d
+build-$(1):
+	@$(2) build
+rebuild-$(1):
+	@$(2) build --no-cache
+logs-$(1):
+	@$(2) logs -f
+endef
+
+$(eval $(call SERVICE_TARGETS,user-service,$(COMPOSE_USER)))
+$(eval $(call SERVICE_TARGETS,multimedia-service,$(COMPOSE_MULTIMEDIA)))
+$(eval $(call SERVICE_TARGETS,catalogue-service,$(COMPOSE_CATALOGUE)))
+$(eval $(call SERVICE_TARGETS,library-service,$(COMPOSE_LIBRARY)))
+$(eval $(call SERVICE_TARGETS,review-service,$(COMPOSE_REVIEW)))
+$(eval $(call SERVICE_TARGETS,api-gateway,$(COMPOSE_GATEWAY)))
+$(eval $(call SERVICE_TARGETS,frontend,$(COMPOSE_FRONTEND)))
+
+# Special for start-exposed individual targets
+.PHONY: start-exposed-user-service start-exposed-multimedia-service start-exposed-catalogue-service start-exposed-library-service start-exposed-review-service
+start-exposed-user-service: init-network
+	@$(DEV_USER) up -d
+start-exposed-multimedia-service: init-network
+	@$(DEV_MULTIMEDIA) up -d
+start-exposed-catalogue-service: init-network
+	@$(DEV_CATALOGUE) up -d
+start-exposed-library-service: init-network
+	@$(DEV_LIBRARY) up -d
+start-exposed-review-service: init-network
+	@$(DEV_REVIEW) up -d
+
+# --- Helpers ---
 
 logs:
-	@$(COMPOSE_API_GATEWAY) logs -f $(filter-out $@,$(MAKECMDGOALS))
-	@$(COMPOSE_USER_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
-	@$(COMPOSE_MULTIMEDIA_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
-	@$(COMPOSE_CATALOGUE_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
-	@$(COMPOSE_LIBRARY_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
-	@$(COMPOSE_REVIEW_SERVICE) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_GATEWAY) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_CATALOGUE) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_USER) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_MULTIMEDIA) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_LIBRARY) logs -f $(filter-out $@,$(MAKECMDGOALS))
+	@$(COMPOSE_REVIEW) logs -f $(filter-out $@,$(MAKECMDGOALS))
 	@$(COMPOSE_FRONTEND) logs -f $(filter-out $@,$(MAKECMDGOALS))
 
 init-network:
