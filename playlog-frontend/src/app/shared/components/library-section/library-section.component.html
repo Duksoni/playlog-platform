@@ -1,0 +1,130 @@
+@if (loading()) {
+	<div class="loading-container">
+		<mat-spinner diameter="56"></mat-spinner>
+	</div>
+} @else {
+	<div class="library-section">
+
+		<!-- Header -->
+		@if (showHeader()) {
+			<div class="section-header">
+				<div class="section-header-title">
+					<mat-icon fontSet="material-symbols-rounded">collections_bookmark</mat-icon>
+					<h1 i18n="@@library.title">
+						@if (isOwnLibrary) {
+							My Library
+						} @else {
+							Library
+						}
+					</h1>
+				</div>
+			</div>
+		}
+
+		<!-- Status tabs -->
+		<div class="status-tabs" role="tablist" aria-label="Library status" i18n-aria-label="@@library.tabsAria">
+			@for (status of statuses; track status) {
+				<button
+					class="status-tab"
+					role="tab"
+					[class.active]="activeStatus() === status"
+					[attr.aria-selected]="activeStatus() === status"
+					(click)="setStatus(status)"
+				>
+					<mat-icon fontSet="material-symbols-rounded"
+					          [class.filled]="activeStatus() === status">
+						{{ icons[status] }}
+					</mat-icon>
+					<span class="tab-label">{{ labels[status] }}</span>
+					@if (tabCount(status) > 0) {
+						<span class="tab-count">{{ tabCount(status) }}</span>
+					}
+				</button>
+			}
+		</div>
+
+		<!-- Games list for active status -->
+		<div class="games-area" role="tabpanel">
+			@if (activeGames().length === 0) {
+				<div class="empty-state">
+					<mat-icon fontSet="material-symbols-rounded">{{ icons[activeStatus()] }}</mat-icon>
+					<p>
+						@if (isOwnLibrary) {
+							<span i18n="@@library.emptyOwn">You have no games in this category yet.</span>
+						} @else {
+							<span i18n="@@library.emptyOther">No games in this category.</span>
+						}
+					</p>
+				</div>
+			} @else {
+				<div class="games-list">
+					@for (card of activeGames(); track card.gameId) {
+						<mat-card
+							class="game-card"
+							(click)="navigateToGame(card.gameId)"
+							(keydown.enter)="navigateToGame(card.gameId)"
+							tabindex="0"
+							role="button"
+							[attr.aria-label]="card.name"
+						>
+							<!-- 16:9 cover -->
+							<div class="game-card-cover">
+								@if (card.cover) {
+									<img [src]="card.cover" [alt]="card.name"/>
+								} @else {
+									<div class="cover-placeholder">
+										<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+									</div>
+								}
+							</div>
+
+							<!-- Info -->
+							<mat-card-content class="game-card-content">
+								<h3 class="game-card-title">{{ card.name }}</h3>
+								@if (card.released) {
+									<p class="game-card-year">{{ card.released | slice:0:4 }}</p>
+								}
+								<p class="game-card-added">
+									<mat-icon fontSet="material-symbols-rounded">schedule</mat-icon>
+									<span>{{ card.updatedAt | date:'mediumDate' }}</span>
+								</p>
+							</mat-card-content>
+
+							<!-- Own library: action buttons -->
+							@if (isOwnLibrary) {
+								@if (canReviewStatus(card.status)) {
+									<button
+										mat-icon-button
+										class="action-btn rate-btn"
+										(click)="$event.stopPropagation(); openReviewDialog(card)"
+										[matTooltip]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
+										[attr.aria-label]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
+										i18n-matTooltip="@@library.writeReview"
+										i18n-aria-label="@@library.writeReviewAria"
+									>
+										<mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
+									</button>
+								}
+								<button
+									mat-icon-button
+									class="action-btn edit-btn"
+									(click)="$event.stopPropagation(); openStatusDialog(card)"
+									matTooltip="Change status"
+									i18n-matTooltip="@@library.changeStatus"
+									aria-label="Change library status"
+									i18n-aria-label="@@library.changeStatusAria"
+								>
+									<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+								</button>
+							}
+
+							<mat-icon fontSet="material-symbols-rounded" class="game-card-chevron">
+								chevron_right
+							</mat-icon>
+						</mat-card>
+					}
+				</div>
+			}
+		</div>
+	</div>
+}

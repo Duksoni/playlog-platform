@@ -1,0 +1,137 @@
+/* Hero */
+.profile-hero {
+	display: flex;
+	gap: 28px;
+	align-items: flex-start;
+	margin-bottom: 32px;
+}
+
+.avatar-circle {
+	flex-shrink: 0;
+	width: 96px;
+	height: 96px;
+	border-radius: 50%;
+	background-color: var(--mat-sys-primary-container);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.avatar-circle mat-icon {
+	font-size: 52px;
+	width: 52px;
+	height: 52px;
+	color: var(--mat-sys-on-primary-container);
+}
+
+.profile-hero-info {
+	flex: 1;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.username-row {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.username {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 700;
+	line-height: 1.2;
+}
+
+.member-since {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	font-size: 13px;
+	color: var(--mat-sys-on-surface-variant);
+}
+
+.member-since mat-icon {
+	font-size: 16px;
+	width: 16px;
+	height: 16px;
+}
+
+.profile-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	padding-top: 4px;
+}
+
+/* Body */
+.profile-body {
+	padding-top: 28px;
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+}
+
+.profile-section {
+	padding: 20px 0;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.section-title {
+	margin: 0;
+	font-size: 18px;
+	font-weight: 600;
+}
+
+
+/* Details */
+.details-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.detail-item {
+	display: flex;
+	gap: 16px;
+	align-items: baseline;
+}
+
+.detail-label {
+	font-size: 12px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.07em;
+	color: var(--mat-sys-on-surface-variant);
+	min-width: 120px;
+	flex-shrink: 0;
+}
+
+.detail-value {
+	font-size: 15px;
+	color: var(--mat-sys-on-surface);
+}
+
+/* Responsive */
+@media (max-width: 600px) {
+	.profile-hero {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.profile-hero-info {
+		align-items: center;
+		text-align: center;
+	}
+
+	.detail-item {
+		flex-direction: column;
+		gap: 2px;
+	}
+}

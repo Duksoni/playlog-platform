@@ -1,0 +1,58 @@
+<div class="multi-select-annotated-container">
+	<span class="container-label">{{ label() }}</span>
+
+	<div class="container-content">
+		<mat-form-field appearance="outline" class="w-100 mb-0">
+			<input
+				[placeholder]="placeholder()"
+				[formControl]="searchControl"
+				[matAutocomplete]="auto"
+				autocomplete="off"
+				matInput
+			/>
+
+			<mat-autocomplete
+				#auto="matAutocomplete"
+				[displayWith]="displayFn"
+				(optionSelected)="onOptionSelected($event)"
+			>
+				@if (optionsLoading()) {
+					<mat-option disabled>
+						<div class="option-loading">
+							<mat-spinner diameter="18"></mat-spinner>
+							<span i18n="@@searchableSelect.loading">Loading…</span>
+						</div>
+					</mat-option>
+				} @else {
+					@for (option of filteredOptions(); track option.id) {
+						<mat-option [value]="option">
+							<div class="option-content">
+								@if (isSelected(option.id)) {
+									<mat-icon fontSet="material-symbols-rounded">check</mat-icon>
+								}
+								<span>{{ option.name }}</span>
+							</div>
+						</mat-option>
+					}
+					@if (filteredOptions().length === 0) {
+						<mat-option disabled i18n="@@searchableSelect.noResults">No results found</mat-option>
+					}
+				}
+			</mat-autocomplete>
+		</mat-form-field>
+
+		<!-- Selected chips below the field -->
+		@if (selectedItems().length > 0) {
+			<mat-chip-set class="selected-chips-list">
+				@for (item of selectedItems(); track item.id) {
+					<mat-chip (removed)="removeItem(item.id)">
+						{{ item.name }}
+						<button matChipRemove [attr.aria-label]="'Remove ' + item.name">
+							<mat-icon fontSet="material-symbols-rounded">close</mat-icon>
+						</button>
+					</mat-chip>
+				}
+			</mat-chip-set>
+		}
+	</div>
+</div>

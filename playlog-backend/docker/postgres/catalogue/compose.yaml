@@ -1,0 +1,22 @@
+services:
+  postgres_catalogue:
+    image: postgres:18-alpine
+    container_name: postgres_catalogue
+    environment:
+      POSTGRES_DB: catalogue_db
+      POSTGRES_USER: playlog_user
+      POSTGRES_PASSWORD: ${CATALOGUE_DB_PASSWORD}
+    volumes:
+      - catalogue_pg_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U playlog_user -d catalogue_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - playlog_network
+volumes:
+  catalogue_pg_data:
+networks:
+  playlog_network:
+    external: true

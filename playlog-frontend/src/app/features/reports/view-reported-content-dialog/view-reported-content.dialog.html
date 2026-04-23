@@ -1,0 +1,57 @@
+<div class="view-content-dialog">
+	<h2 mat-dialog-title>
+		<mat-icon fontSet="material-symbols-rounded">
+			{{ data.targetType === ReportTargetType.REVIEW ? 'rate_review' : 'chat_bubble_outline' }}
+		</mat-icon>
+		@if (data.targetType === ReportTargetType.REVIEW) {
+			<span i18n="@@reports.viewReview">Reported Review</span>
+		} @else {
+			<span i18n="@@reports.viewComment">Reported Comment</span>
+		}
+	</h2>
+
+	<mat-dialog-content>
+		@if (loading()) {
+			<div class="d-flex justify-content-center p-4">
+				<mat-spinner diameter="40"></mat-spinner>
+			</div>
+		} @else if (error()) {
+			<div class="error-state p-4 text-center">
+				<mat-icon class="error-icon" fontSet="material-symbols-rounded">error</mat-icon>
+				<p>{{ error() }}</p>
+			</div>
+		} @else {
+			<div class="reported-content-card" [class]="rating() ? getRatingColorClass(rating()!) : ''">
+				<div class="card-header">
+					<div class="meta-info">
+						<mat-icon fontSet="material-symbols-rounded" class="author-icon">person</mat-icon>
+						<span class="author-name">{{ authorUsername() }}</span>
+						<span class="review-date ms-2">
+							{{ createdAt() | date:'mediumDate' }}
+							@if (updatedAt() && createdAt() !== updatedAt()) {
+								<span class="review-edited" i18n="@@common.edited">(Edited)</span>
+							}
+						</span>
+					</div>
+
+					@if (rating()) {
+						<div class="review-rating-badge" [class]="getRatingColorClass(rating()!)">
+							<mat-icon fontSet="material-symbols-rounded" class="filled badge-icon">
+								{{ ratingIcons[rating()!] }}
+							</mat-icon>
+							<span>{{ ratingLabels[rating()!] }}</span>
+						</div>
+					}
+				</div>
+
+				<div class="content-text">
+					{{ contentText() }}
+				</div>
+			</div>
+		}
+	</mat-dialog-content>
+
+	<mat-dialog-actions align="end">
+		<button mat-flat-button mat-dialog-close i18n="@@reports.close">Close</button>
+	</mat-dialog-actions>
+</div>

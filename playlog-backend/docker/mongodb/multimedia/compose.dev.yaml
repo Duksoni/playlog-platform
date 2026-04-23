@@ -1,0 +1,4 @@
+services:
+  mongo_multimedia:
+    ports:
+      - "27019:27017"

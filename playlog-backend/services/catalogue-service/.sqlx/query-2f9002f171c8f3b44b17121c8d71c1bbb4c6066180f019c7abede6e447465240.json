@@ -1,0 +1,40 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT id, name, released, draft\n                FROM games\n                JOIN game_developers gd ON gd.game_id = games.id\n                WHERE gd.developer_id = $1\n                ORDER BY name\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "released",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 3,
+        "name": "draft",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "2f9002f171c8f3b44b17121c8d71c1bbb4c6066180f019c7abede6e447465240"
+}

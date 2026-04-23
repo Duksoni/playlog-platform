@@ -1,0 +1,28 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT g.id, g.name\n                FROM genres g\n                JOIN game_genres gg ON gg.genre_id = g.id\n                WHERE gg.game_id = $1\n                ORDER BY g.name\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "468accfd9f8d563fcfdab5d841534501385d9e361bd9b1d15ba819ead4e61b7c"
+}

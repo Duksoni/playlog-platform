@@ -1,0 +1,168 @@
+<mat-toolbar>
+	<div class="mobile-nav-trigger">
+		<button mat-icon-button [matMenuTriggerFor]="mobileMenu">
+			<mat-icon fontSet="material-symbols-rounded">menu</mat-icon>
+		</button>
+	</div>
+
+	@if (!topLevelDestination) {
+		<button mat-icon-button (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack"
+		        class="back-btn">
+			<mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
+		</button>
+	}
+
+	<a class="navbar-brand-text px-3" routerLink="/" i18n="@@nav.brand">Playlog</a>
+
+	<div class="desktop-nav">
+		<a
+			class="nav-link-item"
+			routerLink="/games"
+			[class.active-link]="gamesActive"
+			[attr.aria-current]="gamesActive ? 'page' : null"
+			i18n="@@nav.games"
+		>
+			<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+			<span>Games</span>
+		</a>
+
+		@if (sessionService.user().role === Role.ADMIN) {
+			<a
+				class="nav-link-item nav-trigger"
+				[class.active-link]="gameEntitiesActive"
+				[matMenuTriggerFor]="gameEntitiesMenu"
+				#gameEntitiesTrigger="matMenuTrigger"
+				matTooltip="Manage Game Entities"
+				i18n-matTooltip="@@nav.manageGameEntities"
+				matTooltipShowDelay="300"
+			>
+				<mat-icon matIconPrefix fontSet="material-symbols-rounded">joystick</mat-icon>
+				<span i18n="@@nav.gameEntities">Game Entities</span>
+				<mat-icon
+					matIconSuffix
+					fontSet="material-symbols-rounded"
+					[class.rotated]="gameEntitiesTrigger.menuOpen"
+				>expand_more</mat-icon>
+			</a>
+
+			<a class="nav-link-item" routerLink="/admin/users"
+			   [class.active-link]="location.path() === '/admin/users'">
+				<mat-icon fontSet="material-symbols-rounded">manage_accounts</mat-icon>
+				<span i18n="@@nav.users">Users</span>
+			</a>
+		}
+
+		@if (sessionService.user().role === Role.MODERATOR || sessionService.user().role === Role.ADMIN) {
+			<a class="nav-link-item" routerLink="/reports"
+			   [class.active-link]="location.path() === '/reports'"
+			   i18n="@@nav.reports">
+				<mat-icon fontSet="material-symbols-rounded">flag</mat-icon>
+				<span>Reports</span>
+			</a>
+		}
+
+	</div>
+
+	<span class="toolbar-spacer"></span>
+
+	<button mat-icon-button (click)="changeTheme()">
+		@if (sessionService.theme() === 'light') {
+			<mat-icon fontSet="material-symbols-rounded"
+			          matTooltip="Switch to Dark Theme" i18n-matTooltip="@@nav.switchToDark">dark_mode</mat-icon>
+		} @else {
+			<mat-icon fontSet="material-symbols-rounded"
+			          matTooltip="Switch to Light Theme" i18n-matTooltip="@@nav.switchToLight">light_mode</mat-icon>
+		}
+	</button>
+
+	<mat-divider vertical class="ps-2"></mat-divider>
+
+	<button
+		mat-icon-button
+		[matMenuTriggerFor]="sessionService.user().role === Role.GUEST ? profileMenuGuest : profileMenuUser"
+		class="profile-menu-trigger"
+		matTooltip="Profile"
+		i18n-matTooltip="@@nav.profile"
+	>
+		<mat-icon fontSet="material-symbols-rounded">account_circle</mat-icon>
+	</button>
+
+	<mat-menu #profileMenuUser="matMenu">
+		<a mat-menu-item routerLink="/profile" i18n="@@nav.myAccount">
+			<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
+			My Account
+		</a>
+		<a mat-menu-item (click)="navigateToLibrary()">
+			<mat-icon fontSet="material-symbols-rounded">videogame_asset</mat-icon>
+			<span i18n="@@nav.myLibrary">My Library</span>
+		</a>
+		<mat-divider></mat-divider>
+		<a mat-menu-item (click)="logout()" routerLink="/home" i18n="@@nav.signOut">
+			<mat-icon fontSet="material-symbols-rounded">logout</mat-icon>
+			Sign Out
+		</a>
+	</mat-menu>
+
+	<mat-menu #profileMenuGuest="matMenu">
+		<a mat-menu-item (click)="openLoginDialog()" i18n="@@nav.signIn">
+			<mat-icon fontSet="material-symbols-rounded">login</mat-icon>
+			Sign in
+		</a>
+		<a mat-menu-item (click)="openRegisterDialog()" i18n="@@nav.signUp">
+			<mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
+			Sign up
+		</a>
+	</mat-menu>
+
+	<!-- Mobile Menu -->
+	<mat-menu #mobileMenu="matMenu">
+		<a mat-menu-item routerLink="/games"
+		   [class.active-link]="gamesActive"
+		   [attr.aria-current]="gamesActive ? 'page' : null">
+			<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+			<span i18n="@@nav.games">Games</span>
+		</a>
+
+		@if (sessionService.user().role === Role.ADMIN) {
+			<a mat-menu-item [matMenuTriggerFor]="gameEntitiesMenu">
+				<mat-icon fontSet="material-symbols-rounded">joystick</mat-icon>
+				<span i18n="@@nav.gameEntities">Game Entities</span>
+			</a>
+			<a mat-menu-item routerLink="/admin/users">
+				<mat-icon fontSet="material-symbols-rounded">manage_accounts</mat-icon>
+				<span i18n="@@nav.users">Users</span>
+			</a>
+		}
+
+		@if (sessionService.user().role === Role.MODERATOR || sessionService.user().role === Role.ADMIN) {
+			<a mat-menu-item routerLink="/reports">
+				<mat-icon fontSet="material-symbols-rounded">flag</mat-icon>
+				<span i18n="@@nav.reports">Reports</span>
+			</a>
+		}
+	</mat-menu>
+
+	<mat-menu #gameEntitiesMenu="matMenu">
+		<a mat-menu-item routerLink="/genres">
+			<mat-icon fontSet="material-symbols-rounded">category</mat-icon>
+			<span i18n="@@genres">Genres</span>
+		</a>
+		<a mat-menu-item routerLink="/tags">
+			<mat-icon fontSet="material-symbols-rounded">label</mat-icon>
+			<span i18n="@@tags">Tags</span>
+		</a>
+		<a mat-menu-item routerLink="/platforms">
+			<mat-icon fontSet="material-symbols-rounded">desktop_windows</mat-icon>
+			<span i18n="@@platforms">Platforms</span>
+		</a>
+		<a mat-menu-item routerLink="/publishers">
+			<mat-icon fontSet="material-symbols-rounded">domain</mat-icon>
+			<span i18n="@@publishers">Publishers</span>
+		</a>
+		<a mat-menu-item routerLink="/developers">
+			<mat-icon fontSet="material-symbols-rounded">code</mat-icon>
+			<span i18n="@@developers">Developers</span>
+		</a>
+	</mat-menu>
+
+</mat-toolbar>

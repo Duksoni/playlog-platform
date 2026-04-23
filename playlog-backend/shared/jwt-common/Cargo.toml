@@ -1,0 +1,13 @@
+[package]
+name = "jwt-common"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+axum.workspace = true
+chrono.workspace = true
+jsonwebtoken.workspace = true
+serde.workspace = true
+thiserror.workspace = true
+utoipa.workspace = true
+uuid.workspace = true

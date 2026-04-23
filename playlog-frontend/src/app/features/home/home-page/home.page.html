@@ -1,0 +1,333 @@
+<div class="home-page">
+
+	<!--  Hero  -->
+	<section class="hero-section">
+		<div class="hero-cover">
+			<picture>
+				<source media="(min-width: 2561px)" srcset="banner_4k.jpg">
+				<source media="(min-width: 1921px)" srcset="banner_qhd.jpg">
+				<source media="(min-width: 1281px)" srcset="banner_fhd.jpg">
+				<source media="(min-width: 601px)" srcset="banner_hd.jpg">
+				<img src="banner_mobile.jpg" alt="Playlog Banner" class="hero-cover-img no-pointer-events" fetchpriority="high" loading="eager" />
+			</picture>
+		</div>
+	</section>
+
+	@if (loadingMain()) {
+		<div class="loading-container">
+			<mat-spinner diameter="56"></mat-spinner>
+		</div>
+	} @else {
+
+		<!-- Motto -->
+		<section class="motto-section">
+			<h1 class="motto-title" i18n="@@home.mottoTitle">Expand your backlog. Share your experience.</h1>
+			<p class="motto-subtitle" i18n="@@home.mottoSubtitle">The unified platform to track, review, and discover video games, regardless of where you play.</p>
+		</section>
+
+		<!--  Currently Playing (authenticated)  -->
+		@if (sessionService.user().role !== Role.GUEST) {
+			@if (!loadingLibrary() && currentlyPlaying().length > 0) {
+				<section class="home-section">
+					<div class="section-header">
+						<div class="section-title-row">
+							<mat-icon fontSet="material-symbols-rounded" class="section-icon">sports_esports</mat-icon>
+							<h2 class="section-title" i18n="@@home.currentlyPlaying">Currently Playing</h2>
+						</div>
+						<button mat-button class="see-all-btn" (click)="navigateToLibrary()">
+							<span i18n="@@home.seeAll">See all</span>
+							<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+						</button>
+					</div>
+
+					<swiper-container class="shelf-swiper"
+					                  slides-per-view="auto"
+					                  space-between="24"
+					                  navigation="true"
+					                  pagination="false">
+						@for (game of currentlyPlaying(); track game.gameId) {
+							<swiper-slide class="shelf-slide px-1 py-2">
+								<div class="shelf-card"
+								     (click)="navigateToGame(game.gameId)"
+								     (keydown.enter)="navigateToGame(game.gameId)"
+								     tabindex="0"
+								     role="button"
+								     [attr.aria-label]="game.name">
+									<div class="shelf-card-cover">
+										@if (game.cover) {
+											<img [ngSrc]="game.cover" [alt]="game.name" class="no-pointer-events" width="300" height="169" />
+										} @else {
+											<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+										}
+									</div>
+									<div class="shelf-card-info">
+										<p class="shelf-card-title">{{ game.name }}</p>
+										@if (game.released) {
+											<p class="shelf-card-year">{{ game.released | slice:0:4 }}</p>
+										}
+									</div>
+								</div>
+							</swiper-slide>
+						}
+					</swiper-container>
+				</section>
+
+				<mat-divider></mat-divider>
+			}
+		}
+
+		<!--  New Releases  -->
+		@if (newReleases().length > 0) {
+			<section class="home-section">
+				<div class="section-header">
+					<div class="section-title-row">
+						<mat-icon fontSet="material-symbols-rounded" class="section-icon">new_releases</mat-icon>
+						<h2 class="section-title" i18n="@@home.newReleases">New Releases</h2>
+					</div>
+					<button mat-button class="see-all-btn" (click)="navigateToCatalogue({sort: 'released', sortDirection: 'desc'})">
+						<span i18n="@@home.seeAll">See all</span>
+						<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+					</button>
+				</div>
+
+				<swiper-container class="shelf-swiper"
+				                  slides-per-view="auto"
+				                  space-between="24"
+				                  navigation="true"
+				                  pagination="false">
+					@for (game of newReleases(); track game.id) {
+						<swiper-slide class="shelf-slide px-1 py-2">
+							<div class="shelf-card"
+							     (click)="navigateToGame(game.id)"
+							     (keydown.enter)="navigateToGame(game.id)"
+							     tabindex="0"
+							     role="button"
+							     [attr.aria-label]="game.name">
+								<div class="shelf-card-cover">
+									@if (game.cover) {
+										<img [ngSrc]="game.cover" [alt]="game.name" class="no-pointer-events" width="300" height="169" />
+									} @else {
+										<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+									}
+								</div>
+								<div class="shelf-card-info">
+									<p class="shelf-card-title">{{ game.name }}</p>
+									@if (game.released) {
+										<p class="shelf-card-year">{{ game.released | slice:0:4 }}</p>
+									}
+								</div>
+							</div>
+						</swiper-slide>
+					}
+				</swiper-container>
+			</section>
+
+			<mat-divider></mat-divider>
+		}
+
+		<!--  Most Reviewed  -->
+		@if (mostReviewed().length > 0) {
+			<section class="home-section">
+				<div class="section-header">
+					<div class="section-title-row">
+						<mat-icon fontSet="material-symbols-rounded" class="section-icon">rate_review</mat-icon>
+						<h2 class="section-title" i18n="@@home.mostReviewed">Most Reviewed</h2>
+					</div>
+					<button mat-button class="see-all-btn" (click)="navigateToCatalogue()">
+						<span i18n="@@home.seeAll">See all</span>
+						<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+					</button>
+				</div>
+
+				<swiper-container class="shelf-swiper"
+				                  slides-per-view="auto"
+				                  space-between="24"
+				                  navigation="true"
+				                  pagination="false">
+					@for (game of mostReviewed(); track game.id) {
+						<swiper-slide class="shelf-slide px-1 py-2">
+							<div class="shelf-card"
+							     (click)="navigateToGame(game.id)"
+							     (keydown.enter)="navigateToGame(game.id)"
+							     tabindex="0"
+							     role="button"
+							     [attr.aria-label]="game.name">
+								<div class="shelf-card-cover">
+									@if (game.cover) {
+										<img [ngSrc]="game.cover" [alt]="game.name" width="300" height="169" />
+									} @else {
+										<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+									}
+								</div>
+								<div class="shelf-card-info">
+									<p class="shelf-card-title">{{ game.name }}</p>
+									@if (game.released) {
+										<p class="shelf-card-year">{{ game.released | slice:0:4 }}</p>
+									}
+								</div>
+							</div>
+						</swiper-slide>
+					}
+				</swiper-container>
+			</section>
+
+			<mat-divider></mat-divider>
+		}
+
+		<!--  Top Rated  -->
+		@if (topRated().length > 0) {
+			<section class="home-section">
+				<div class="section-header">
+					<div class="section-title-row">
+						<mat-icon fontSet="material-symbols-rounded" class="section-icon">thumb_up</mat-icon>
+						<h2 class="section-title" i18n="@@home.topRated">Top Rated</h2>
+					</div>
+					<button mat-button class="see-all-btn" (click)="navigateToCatalogue()">
+						<span i18n="@@home.seeAll">See all</span>
+						<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+					</button>
+				</div>
+
+				<swiper-container class="shelf-swiper"
+				                  slides-per-view="auto"
+				                  space-between="24"
+				                  navigation="true"
+				                  pagination="false">
+					@for (game of topRated(); track game.id) {
+						<swiper-slide class="shelf-slide px-1 py-2">
+							<div class="shelf-card"
+							     (click)="navigateToGame(game.id)"
+							     (keydown.enter)="navigateToGame(game.id)"
+							     tabindex="0"
+							     role="button"
+							     [attr.aria-label]="game.name">
+								<div class="shelf-card-cover">
+									@if (game.cover) {
+										<img [ngSrc]="game.cover" [alt]="game.name" width="300" height="169" />
+									} @else {
+										<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+									}
+								</div>
+								<div class="shelf-card-info">
+									<p class="shelf-card-title">{{ game.name }}</p>
+									@if (game.released) {
+										<p class="shelf-card-year">{{ game.released | slice:0:4 }}</p>
+									}
+								</div>
+							</div>
+						</swiper-slide>
+					}
+				</swiper-container>
+			</section>
+
+			<mat-divider></mat-divider>
+		}
+
+		<!--  Activity: Recent Reviews + Recent Discussions  -->
+		@if (recentReviews().length > 0 || recentComments().length > 0) {
+			<section class="home-section activity-section">
+				<div class="activity-columns">
+
+					<!-- Recent Reviews -->
+					@if (recentReviews().length > 0) {
+						<div class="activity-column">
+							<div class="section-title-row">
+								<mat-icon fontSet="material-symbols-rounded" class="section-icon">rate_review</mat-icon>
+								<h2 class="section-title" i18n="@@home.recentReviews">Recent Reviews</h2>
+							</div>
+							<div class="activity-feed">
+								@for (review of recentReviews(); track review.id) {
+									<div class="activity-item">
+										<div class="activity-avatar" aria-hidden="true">
+											<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
+										</div>
+										<div class="activity-body">
+											<div class="activity-meta">
+												<button class="activity-username hover-pointer"
+												        (click)="$event.stopPropagation(); navigateToUser(review.username)">
+													{{ review.username }}
+												</button>
+												<span class="activity-action" i18n="@@home.reviewed">reviewed</span>
+												<span class="activity-target"
+												      (click)="navigateToGame(review.gameId)"
+												      (keydown.enter)="navigateToGame(review.gameId)"
+												      tabindex="0" role="button">
+													{{ review.gameName }}
+												</span>
+											</div>
+											<div class="activity-rating" [class]="getRatingColorClass(review.rating)">
+												<mat-icon fontSet="material-symbols-rounded" class="filled rating-icon">
+													{{ ratingIcons[review.rating] }}
+												</mat-icon>
+												<span class="rating-text">{{ ratingLabels[review.rating] }}</span>
+											</div>
+											@if (review.text) {
+												<p class="activity-excerpt">{{ review.text | slice:0:120 }}@if (review.text.length > 120) {…}</p>
+											}
+											<span class="activity-date">{{ review.updatedAt | date:'mediumDate' }}</span>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					}
+
+					<!-- Recent Discussions -->
+					@if (recentComments().length > 0) {
+						<div class="activity-column">
+							<div class="section-title-row">
+								<mat-icon fontSet="material-symbols-rounded" class="section-icon">chat_bubble_outline</mat-icon>
+								<h2 class="section-title" i18n="@@home.recentDiscussions">Recent Discussions</h2>
+							</div>
+							<div class="activity-feed">
+								@for (comment of recentComments(); track comment.id) {
+									<div class="activity-item">
+										<div class="activity-avatar" aria-hidden="true">
+											<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
+										</div>
+										<div class="activity-body">
+											<div class="activity-meta">
+												<button class="activity-username hover-pointer"
+												        (click)="$event.stopPropagation(); navigateToUser(comment.username)">
+													{{ comment.username }}
+												</button>
+												<span class="activity-action" i18n="@@home.commentedOn">commented on</span>
+												<span class="activity-target"
+												      (click)="navigateToGame(comment.gameId)"
+												      (keydown.enter)="navigateToGame(comment.gameId)"
+												      tabindex="0" role="button">
+													 {{ comment.gameName }}
+												</span>
+											</div>
+											<p class="activity-excerpt">{{ comment.text | slice:0:60 }}@if (comment.text.length > 60) {…}</p>
+											<span class="activity-date">{{ comment.createdAt | date:'mediumDate' }}</span>
+										</div>
+									</div>
+								}
+							</div>
+						</div>
+					}
+
+				</div>
+			</section>
+		}
+
+		<!--  Guest CTA  -->
+		@if (sessionService.user().role === Role.GUEST) {
+			<section class="cta-section">
+				<mat-icon fontSet="material-symbols-rounded" class="cta-icon">collections_bookmark</mat-icon>
+				<h2 class="cta-title" i18n="@@home.ctaTitle">Track your games. Share your thoughts.</h2>
+				<p class="cta-body" i18n="@@home.ctaBody">
+					Create a free account to build your game library, write reviews, and join the conversation.
+				</p>
+				<div class="cta-actions">
+					<button mat-raised-button color="primary" (click)="navigateToCatalogue()">
+						<mat-icon fontSet="material-symbols-rounded">explore</mat-icon>
+						<span i18n="@@home.browseCatalogue">Browse Catalogue</span>
+					</button>
+				</div>
+			</section>
+		}
+
+	}
+</div>

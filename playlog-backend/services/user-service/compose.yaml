@@ -1,0 +1,25 @@
+services:
+  axum-server:
+    image: playlog/user-service:latest
+    container_name: user-service-axum-server
+    build:
+      context: ../..
+      dockerfile: services/user-service/Dockerfile
+      target: final
+    environment:
+      DATABASE_URL: ${DATABASE_URL}
+      JWT_PRIVATE_KEY_PATH: ${JWT_PRIVATE_KEY_PATH}
+      JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH}
+      ADMIN_BOOTSTRAP_ENABLED: ${ADMIN_BOOTSTRAP_ENABLED}
+      # Not required if ADMIN_BOOTSTRAP_ENABLED is false and admin is already created
+      ADMIN_USERNAME: ${ADMIN_USERNAME}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_TEMP_PASSWORD: ${ADMIN_TEMP_PASSWORD}
+    depends_on:
+      postgres_users:
+        condition: service_healthy
+    networks:
+      - playlog_network
+networks:
+  playlog_network:
+    external: true

@@ -1,0 +1,17 @@
+services:
+  nginx-server:
+    image: playlog/frontend:latest
+    container_name: frontend-nginx-server
+    build:
+      context: .
+    environment:
+      BACKEND_URL: ${BACKEND_URL}
+    ports:
+      - "8080:8080"
+    networks:
+      playlog_network:
+        aliases:
+          - ${STORAGE_ALIAS}
+networks:
+  playlog_network:
+    external: true

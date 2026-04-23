@@ -1,0 +1,241 @@
+@if (loading()) {
+	<div class="loading-container">
+		<mat-spinner diameter="56"></mat-spinner>
+	</div>
+} @else if (user()) {
+	<div class="my-profile-page">
+
+		<!--  Page Header  -->
+		<div class="page-header">
+			<div class="page-header-title">
+				<mat-icon fontSet="material-symbols-rounded">manage_accounts</mat-icon>
+				<h1 i18n="@@myProfile.title">My Account</h1>
+			</div>
+		</div>
+
+		<!--  Account Info (read-only)  -->
+		<section class="profile-section mat-elevation-z1">
+			<h2 class="section-title" i18n="@@myProfile.accountInfo">Account Info</h2>
+			<div class="readonly-grid">
+				<div class="readonly-item">
+					<span class="readonly-label" i18n="@@myProfile.username">Username</span>
+					<span class="readonly-value">{{ user()!.username }}</span>
+				</div>
+				<div class="readonly-item">
+					<span class="readonly-label" i18n="@@myProfile.email">Email</span>
+					<span class="readonly-value">{{ sessionService.user().email }}</span>
+				</div>
+				<div class="readonly-item">
+					<span class="readonly-label" i18n="@@myProfile.role">Role</span>
+					<span class="readonly-value">{{ user()!.role }}</span>
+				</div>
+				<div class="readonly-item">
+					<span class="readonly-label" i18n="@@myProfile.memberSince">Member since</span>
+					<span class="readonly-value">{{ user()!.createdAt | date:'mediumDate' }}</span>
+				</div>
+			</div>
+		</section>
+
+		<!--  Edit Profile  -->
+		<section class="profile-section">
+			<div class="d-flex justify-content-between align-items-center">
+				<h2 class="section-title" i18n="@@myProfile.profileInfo">Profile info</h2>
+				<div class="d-flex gap-3">
+					@if (!isEditingProfile() && !isChangingPassword()) {
+						<span class="edit-link" (click)="toggleEditProfile()" i18n="@@myProfile.editProfileLink">Edit Profile</span>
+						<span class="edit-link" (click)="toggleChangePassword()" i18n="@@myProfile.changePasswordLink">Change Password</span>
+					}
+				</div>
+			</div>
+
+			@if (!isEditingProfile()) {
+				<div class="readonly-grid">
+					<div class="readonly-item">
+						<span class="readonly-label" i18n="@@myProfile.firstName">First Name</span>
+						<span class="readonly-value">
+							@if (user()!.firstName) {
+								{{ user()!.firstName }}
+							} @else {
+								<span i18n="@@notSet">Not set</span>
+							}
+						</span>
+					</div>
+					<div class="readonly-item">
+						<span class="readonly-label" i18n="@@myProfile.lastName">Last Name</span>
+						<span class="readonly-value">
+							@if (user()!.lastName) {
+								{{ user()!.lastName }}
+							} @else {
+								<span i18n="@@notSet">Not set</span>
+							}
+						</span>
+					</div>
+					<div class="readonly-item">
+						<span class="readonly-label" i18n="@@myProfile.birthdate">Birthdate</span>
+						<span class="readonly-value">
+							@if (user()!.birthdate) {
+								{{ user()!.birthdate | date:'mediumDate' }}
+							} @else {
+								<span i18n="@@notSet">Not set</span>
+							}
+						</span>
+					</div>
+				</div>
+			} @else {
+				<form [formGroup]="profileForm" class="profile-form">
+					<div class="row g-3">
+						<div class="col-md-6">
+							<mat-form-field appearance="outline" class="w-100">
+								<mat-label i18n="@@myProfile.firstName">First Name</mat-label>
+								<input matInput formControlName="firstName" maxlength="50"
+								       autocomplete="given-name"/>
+								@if (profileForm.get('firstName')?.hasError('backend')) {
+									<mat-error>{{ profileForm.get('firstName')?.getError('backend') }}</mat-error>
+								}
+							</mat-form-field>
+						</div>
+						<div class="col-md-6">
+							<mat-form-field appearance="outline" class="w-100">
+								<mat-label i18n="@@myProfile.lastName">Last Name</mat-label>
+								<input matInput formControlName="lastName" maxlength="50"
+								       autocomplete="family-name"/>
+								@if (profileForm.get('lastName')?.hasError('backend')) {
+									<mat-error>{{ profileForm.get('lastName')?.getError('backend') }}</mat-error>
+								}
+							</mat-form-field>
+						</div>
+					</div>
+
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@myProfile.birthdate">Birthdate</mat-label>
+						<input matInput [matDatepicker]="birthdatePicker" formControlName="birthdate"
+						       [max]="maxDate" [min]="minDate"/>
+						<mat-datepicker-toggle matIconSuffix [for]="birthdatePicker"></mat-datepicker-toggle>
+						<mat-datepicker #birthdatePicker></mat-datepicker>
+						@if (profileForm.get('birthdate')?.hasError('backend')) {
+							<mat-error>{{ profileForm.get('birthdate')?.getError('backend') }}</mat-error>
+						}
+					</mat-form-field>
+
+					@if (profileError()) {
+						<div class="error-message">
+							<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+							<div class="error-list">
+								@for (error of profileError()!.error; track error) {
+									<span>{{ error }}</span>
+								}
+							</div>
+						</div>
+					}
+
+					<div class="form-actions gap-2">
+						<button mat-button (click)="cancelEditing()" [disabled]="profileSubmitting()">
+							<span i18n="@@common.cancel">Cancel</span>
+						</button>
+						<button mat-flat-button (click)="onProfileSubmit()"
+						        [disabled]="profileForm.invalid || profileSubmitting()">
+							@if (profileSubmitting()) {
+								<span class="d-flex align-items-center justify-content-center w-100">
+									<mat-spinner diameter="20" class="me-2"></mat-spinner>
+									<span i18n="@@saving">Saving…</span>
+								</span>
+							} @else {
+								<span i18n="@@myProfile.saveProfile">Save Profile</span>
+							}
+						</button>
+					</div>
+				</form>
+			}
+		</section>
+
+		@if (isChangingPassword()) {
+			<mat-divider></mat-divider>
+
+			<!--  Change Password  -->
+			<section class="profile-section">
+				<h2 class="section-title" i18n="@@myProfile.changePassword">Change Password</h2>
+				<form [formGroup]="passwordForm" class="profile-form">
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@myProfile.oldPassword">Current Password</mat-label>
+						<input matInput [type]="hideOldPassword ? 'password' : 'text'"
+						       formControlName="oldPassword" autocomplete="current-password"/>
+						<button mat-icon-button matSuffix type="button"
+						        (click)="hideOldPassword = !hideOldPassword"
+						        [matTooltip]="hideOldPassword ? 'Show password' : 'Hide password'"
+						        i18n-matTooltip="@@myProfile.togglePassword">
+							<mat-icon fontSet="material-symbols-rounded">
+								{{ hideOldPassword ? 'visibility_off' : 'visibility' }}
+							</mat-icon>
+						</button>
+						@if (passwordForm.get('oldPassword')?.hasError('required')) {
+							<mat-error i18n="@@myProfile.oldPasswordRequired">Current password is required</mat-error>
+						}
+					</mat-form-field>
+
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@myProfile.newPassword">New Password</mat-label>
+						<input matInput [type]="hideNewPassword ? 'password' : 'text'"
+						       formControlName="newPassword" autocomplete="new-password"/>
+						<button mat-icon-button matSuffix type="button"
+						        (click)="hideNewPassword = !hideNewPassword"
+						        [matTooltip]="hideNewPassword ? 'Show password' : 'Hide password'"
+						        i18n-matTooltip="@@myProfile.togglePassword">
+							<mat-icon fontSet="material-symbols-rounded">
+								{{ hideNewPassword ? 'visibility_off' : 'visibility' }}
+							</mat-icon>
+						</button>
+						@if (passwordForm.get('newPassword')?.hasError('required')) {
+							<mat-error i18n="@@myProfile.newPasswordRequired">New password is required</mat-error>
+						}
+						@if (passwordForm.get('newPassword')?.hasError('pattern')) {
+							<mat-error i18n="@@myProfile.newPasswordPattern">
+								Must be 8+ characters with an uppercase letter, digit, and special character (&#64;$!%*?&amp;)
+							</mat-error>
+						}
+					</mat-form-field>
+
+					@if (passwordError()) {
+						<div class="error-message">
+							<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+							<div class="error-list">
+								@for (error of passwordError()!.error; track error) {
+									<span>{{ error }}</span>
+								}
+							</div>
+						</div>
+					}
+
+					<div class="form-actions gap-2">
+						<button mat-button (click)="cancelChangePassword()" [disabled]="passwordSubmitting()">
+							<span i18n="@@common.cancel">Cancel</span>
+						</button>
+						<button mat-flat-button (click)="onPasswordSubmit()"
+						        [disabled]="passwordForm.invalid || passwordSubmitting()">
+							@if (passwordSubmitting()) {
+								<span class="d-flex align-items-center justify-content-center w-100">
+									<mat-spinner diameter="20" class="me-2"></mat-spinner>
+									<span i18n="@@myProfile.changingPassword">Changing…</span>
+								</span>
+							} @else {
+								<span i18n="@@myProfile.changePasswordBtn">Change Password</span>
+							}
+						</button>
+					</div>
+				</form>
+			</section>
+		}
+
+		<!--  Danger Zone  -->
+		<section class="profile-section danger-zone">
+			<h2 class="section-title danger-title" i18n="@@myProfile.dangerZone">Danger Zone</h2>
+			<p class="danger-description" i18n="@@myProfile.deactivateDescription">
+				Deactivating your account will log you out and make your profile inaccessible.
+				This action cannot be undone.
+			</p>
+			<button mat-stroked-button class="delete-button" (click)="confirmDeactivate()">
+				<mat-icon fontSet="material-symbols-rounded">person_remove</mat-icon>
+				<span i18n="@@myProfile.deactivateBtn">Deactivate Account</span>
+			</button>
+		</section>
+	</div>
+}

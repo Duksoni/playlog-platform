@@ -1,0 +1,162 @@
+<div class="game-dialog">
+	<h2 mat-dialog-title>
+		@if (isEditing) {
+			<span i18n="@@gameDialog.titleEdit">Edit Game</span>
+		} @else {
+			<span i18n="@@gameDialog.titleCreate">Create Game</span>
+		}
+	</h2>
+
+	<mat-dialog-content>
+		<form [formGroup]="gameForm" class="game-form">
+
+			<!-- Name -->
+			<mat-form-field appearance="outline" class="w-100">
+				<mat-label i18n="@@gameDialog.name">Name</mat-label>
+				<input matInput formControlName="name" maxlength="200"
+					   placeholder="Enter game name" i18n-placeholder="@@gameDialog.namePlaceholder" />
+				@if (gameForm.get('name')?.hasError('required')) {
+					<mat-error i18n="@@gameDialog.nameRequired">Name is required</mat-error>
+				}
+			</mat-form-field>
+
+			<!-- Description -->
+			<mat-form-field appearance="outline" class="w-100">
+				<mat-label i18n="@@gameDialog.description">Description</mat-label>
+				<textarea
+					matInput
+					formControlName="description"
+					rows="4" maxlength="10000"
+					cdkTextareaAutosize cdkAutosizeMinRows="3" cdkAutosizeMaxRows="6"
+					placeholder="Enter game description" i18n-placeholder="@@gameDialog.descriptionPlaceholder"
+				></textarea>
+				<mat-hint align="end">{{ gameForm.controls.description.value.length || 0 }} / 10000</mat-hint>
+				@if (gameForm.get('description')?.hasError('required')) {
+					<mat-error i18n="@@gameDialog.descriptionRequired">Description is required</mat-error>
+				}
+				@if (gameForm.get('description')?.hasError('minlength')) {
+					<mat-error i18n="@@gameDialog.descriptionMinLength">Description must be at least 10 characters</mat-error>
+				}
+				@if (gameForm.get('description')?.hasError('maxlength')) {
+					<mat-error i18n="@@gameDialog.descriptionMaxLength">Description can't exceed 10000 characters</mat-error>
+				}
+			</mat-form-field>
+
+			<!-- Release date + Website -->
+			<div class="row g-3">
+				<div class="col-md-6">
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@gameDialog.released">Release Date</mat-label>
+						<input matInput [matDatepicker]="releasedPicker" formControlName="released" />
+						<mat-datepicker-toggle matIconSuffix [for]="releasedPicker"></mat-datepicker-toggle>
+						<mat-datepicker #releasedPicker></mat-datepicker>
+					</mat-form-field>
+				</div>
+				<div class="col-md-6">
+					<mat-form-field appearance="outline" class="w-100">
+						<mat-label i18n="@@gameDialog.website">Website</mat-label>
+						<input matInput formControlName="website" type="url"
+							   placeholder="https://..." i18n-placeholder="@@gameDialog.websitePlaceholder" />
+						<mat-icon matSuffix fontSet="material-symbols-rounded">link</mat-icon>
+					</mat-form-field>
+				</div>
+			</div>
+
+			<!-- Developers + Publishers -->
+			<div class="row g-3">
+				<div class="col-md-6">
+					<app-searchable-multi-select
+						entityType="developers"
+						label="Developers"
+						i18n-label="@@gameDialog.developers"
+						[initialValue]="data.existing?.developers || []"
+						(selectedIdsChange)="onDevelopersChange($event)"
+					/>
+					@if (selectedDeveloperIds().length === 0) {
+						<div class="field-error" i18n="@@gameDialog.developersRequired">At least one developer is required</div>
+					}
+				</div>
+				<div class="col-md-6">
+					<app-searchable-multi-select
+						entityType="publishers"
+						label="Publishers"
+						i18n-label="@@gameDialog.publishers"
+						[initialValue]="data.existing?.publishers || []"
+						(selectedIdsChange)="onPublishersChange($event)"
+					/>
+					@if (selectedPublisherIds().length === 0) {
+						<div class="field-error" i18n="@@gameDialog.publishersRequired">At least one publisher is required</div>
+					}
+				</div>
+			</div>
+
+			<!-- Genres + Platforms -->
+			<div class="row g-3">
+				<div class="col-md-6">
+					<app-searchable-multi-select
+						entityType="genres"
+						label="Genres"
+						i18n-label="@@gameDialog.genres"
+						[initialValue]="data.existing?.genres || []"
+						(selectedIdsChange)="onGenresChange($event)"
+					/>
+					@if (selectedGenreIds().length === 0) {
+						<div class="field-error" i18n="@@gameDialog.genresRequired">At least one genre is required</div>
+					}
+				</div>
+				<div class="col-md-6">
+					<app-searchable-multi-select
+						entityType="platforms"
+						label="Platforms"
+						i18n-label="@@gameDialog.platforms"
+						[initialValue]="data.existing?.platforms || []"
+						(selectedIdsChange)="onPlatformsChange($event)"
+					/>
+					@if (selectedPlatformIds().length === 0) {
+						<div class="field-error" i18n="@@gameDialog.platformsRequired">At least one platform is required</div>
+					}
+				</div>
+			</div>
+
+			<!-- Tags -->
+			<app-searchable-multi-select
+				entityType="tags"
+				label="Tags"
+				i18n-label="@@gameDialog.tags"
+				[initialValue]="data.existing?.tags || []"
+				(selectedIdsChange)="onTagsChange($event)"
+			/>
+			@if (selectedTagIds().length === 0) {
+				<div class="field-error" i18n="@@gameDialog.tagsRequired">At least one tag is required</div>
+			}
+
+			@if (error()) {
+				<div class="error-message">
+					<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+					<div class="error-list">
+						@for (error of error()!.error; track error) {
+							<span>{{ error }}</span>
+						}
+					</div>
+				</div>
+			}
+		</form>
+	</mat-dialog-content>
+
+	<mat-dialog-actions>
+		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@gameDialog.cancel">Cancel</button>
+		<button mat-flat-button (click)="onSubmit()"
+				[disabled]="gameForm.invalid || !multiSelectsValid || submitting()">
+			@if (submitting()) {
+				<span class="d-flex align-items-center justify-content-center w-100">
+					<mat-spinner diameter="20" class="me-2"></mat-spinner>
+					<span i18n="@@saving">Saving…</span>
+				</span>
+			} @else if (isEditing) {
+				<span i18n="@@gameDialog.save">Save Changes</span>
+			} @else {
+				<span i18n="@@gameDialog.create">Create Game</span>
+			}
+		</button>
+	</mat-dialog-actions>
+</div>

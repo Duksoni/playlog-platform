@@ -1,0 +1,22 @@
+services:
+  postgres_library:
+    image: postgres:18-alpine
+    container_name: postgres_library
+    environment:
+      POSTGRES_DB: library_db
+      POSTGRES_USER: playlog_user
+      POSTGRES_PASSWORD: ${LIBRARY_DB_PASSWORD}
+    volumes:
+      - library_pg_data:/var/lib/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U playlog_user -d library_db" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - playlog_network
+volumes:
+  library_pg_data:
+networks:
+  playlog_network:
+    external: true

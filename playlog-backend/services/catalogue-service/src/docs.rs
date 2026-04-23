@@ -1,0 +1,53 @@
+use service_common::docs::SecurityAddon;
+use utoipa::OpenApi;
+
+#[derive(OpenApi)]
+#[openapi(
+    modifiers(&SecurityAddon),
+    info(title = "Catalogue Service"),
+    paths(
+        crate::app::health_check,
+        crate::games::handler::filter,
+        crate::games::handler::get_games_by_ids,
+        crate::games::handler::get_new_releases,
+        crate::games::handler::find_by_developer,
+        crate::games::handler::find_by_publisher,
+        crate::games::handler::get_game,
+        crate::games::handler::get_details,
+        crate::games::handler::get_unpublished,
+        crate::games::handler::create,
+        crate::games::handler::update,
+        crate::games::handler::delete_game,
+        crate::games::handler::publish,
+        crate::games::handler::unpublish,
+        crate::developers::handler::get_all_paged,
+        crate::developers::handler::get_by_id,
+        crate::developers::handler::search,
+        crate::developers::handler::create,
+        crate::developers::handler::update,
+        crate::genres::handler::get_all_paged,
+        crate::genres::handler::get_by_id,
+        crate::genres::handler::search,
+        crate::genres::handler::create,
+        crate::genres::handler::update,
+        crate::genres::handler::delete_genre,
+        crate::platforms::handler::get_all_paged,
+        crate::platforms::handler::get_by_id,
+        crate::platforms::handler::search,
+        crate::platforms::handler::create,
+        crate::platforms::handler::update,
+        crate::platforms::handler::delete_platform,
+        crate::publishers::handler::get_all_paged,
+        crate::publishers::handler::get_by_id,
+        crate::publishers::handler::search,
+        crate::publishers::handler::create,
+        crate::publishers::handler::update,
+        crate::tags::handler::get_all_paged,
+        crate::tags::handler::get_by_id,
+        crate::tags::handler::search,
+        crate::tags::handler::create,
+        crate::tags::handler::update,
+        crate::tags::handler::delete_tag,
+    )
+)]
+pub struct ApiDoc;

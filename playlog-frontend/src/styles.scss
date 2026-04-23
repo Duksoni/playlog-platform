@@ -5,6 +5,12 @@
 // custom components at https://material.angular.dev/guide/theming
 @use '@angular/material' as mat;
 
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
 html {
 	height: 100%;
 	@include mat.theme((
@@ -12,13 +18,27 @@ html {
 		typography: Roboto,
 		density: 0,
 	));
+
+	&.dark-mode {
+		@include mat.theme((
+			color: (
+				primary: mat.$green-palette,
+				tertiary: mat.$green-palette,
+				neutral: mat.$green-palette,
+				neutral-variant: mat.$green-palette,
+				theme-type: dark
+			),
+		));
+	}
+
 }
 
 body {
-	// Default the application to a light color theme. This can be changed to
-	// `dark` to enable the dark color theme, or to `light dark` to defer to the
-	// user's system settings.
 	color-scheme: light;
+
+	html.dark-mode & {
+		color-scheme: dark;
+	}
 
 	// Set a default background, font and text colors for the application using
 	// Angular Material's system-level CSS variables. Learn more about these
@@ -32,4 +52,219 @@ body {
 	height: 100%;
 }
 
-/* You can add global styles to this file, and also import other style files */
+
+.hover-pointer {
+	cursor: pointer;
+}
+
+/*  Error Messages  */
+.error-message {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	padding: 12px 16px;
+	background-color: var(--mat-sys-error-container);
+	border-radius: 8px;
+	color: var(--mat-sys-on-error-container);
+	margin-top: 8px;
+}
+
+.error-message mat-icon {
+	flex-shrink: 0;
+	font-size: 20px;
+	width: 20px;
+	height: 20px;
+}
+
+.error-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 1;
+}
+
+.error-list span {
+	font-size: 14px;
+	line-height: 1.4;
+}
+
+.delete-button:enabled {
+	color: #f44336 !important;
+}
+
+.justify-text {
+	text-align: justify;
+}
+
+mat-icon.filled {
+	font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 48;
+}
+
+.no-pointer-events {
+	pointer-events: none;
+}
+
+.page-header {
+	margin-bottom: 28px;
+}
+
+.page-header-title {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.page-header-title h1 {
+	margin: 0;
+	font-size: 28px;
+	font-weight: 500;
+}
+
+.page-header-title mat-icon {
+	font-size: 32px;
+	width: 32px;
+	height: 32px;
+	color: var(--mat-sys-primary);
+}
+
+.primary-page {
+	max-width: 1000px;
+	margin: 0 auto;
+	padding: 32px 24px;
+}
+
+.loading-container {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: 400px;
+}
+
+.status-tab {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 10px 16px;
+	border: none;
+	border-bottom: 2px solid transparent;
+	background: transparent;
+	cursor: pointer;
+	font-family: inherit;
+	font-size: 14px;
+	font-weight: 500;
+	color: var(--mat-sys-on-surface-variant);
+	white-space: nowrap;
+	border-radius: 4px 4px 0 0;
+	transition: color 0.15s, border-color 0.15s;
+	margin-bottom: -1px;
+}
+
+.rating-highly {
+	border-left-color: #2e7d32 !important;
+}
+
+.rating-highly .rating-icon-display,
+.rating-highly .rating-label-display,
+.rating-highly .badge-icon,
+.rating-highly .rating-icon,
+.rating-highly .rating-text,
+.rating-highly.review-rating-badge {
+	color: #2e7d32;
+}
+
+.rating-good {
+	border-left-color: #558b2f !important;
+}
+
+.rating-good .rating-icon-display,
+.rating-good .rating-label-display,
+.rating-good .badge-icon,
+.rating-good .rating-icon,
+.rating-good .rating-text,
+.rating-good.review-rating-badge {
+	color: #558b2f;
+}
+
+.rating-okay {
+	border-left-color: #ef6c00 !important;
+}
+
+.rating-okay .rating-icon-display,
+.rating-okay .rating-label-display,
+.rating-okay .badge-icon,
+.rating-okay .rating-icon,
+.rating-okay .rating-text,
+.rating-okay.review-rating-badge {
+	color: #ef6c00;
+}
+
+.rating-not {
+	border-left-color: #c62828 !important;
+}
+
+.rating-not .rating-icon-display,
+.rating-not .rating-label-display,
+.rating-not .badge-icon,
+.rating-not .rating-icon,
+.rating-not .rating-text,
+.rating-not.review-rating-badge {
+	color: #c62828;
+}
+
+html.dark-mode .rating-highly {
+	border-left-color: #66bb6a !important;
+}
+
+html.dark-mode .rating-highly .rating-icon-display,
+html.dark-mode .rating-highly .rating-label-display,
+html.dark-mode .rating-highly .badge-icon,
+html.dark-mode .rating-highly .rating-icon,
+html.dark-mode .rating-highly .rating-text,
+html.dark-mode .rating-highly.review-rating-badge {
+	color: #66bb6a;
+}
+
+html.dark-mode .rating-good {
+	border-left-color: #9ccc65 !important;
+}
+
+html.dark-mode .rating-good .rating-icon-display,
+html.dark-mode .rating-good .rating-label-display,
+html.dark-mode .rating-good .badge-icon,
+html.dark-mode .rating-good .rating-icon,
+html.dark-mode .rating-good .rating-text,
+html.dark-mode .rating-good.review-rating-badge {
+	color: #9ccc65;
+}
+
+html.dark-mode .rating-okay {
+	border-left-color: #ffa726 !important;
+}
+
+html.dark-mode .rating-okay .rating-icon-display,
+html.dark-mode .rating-okay .rating-label-display,
+html.dark-mode .rating-okay .badge-icon,
+html.dark-mode .rating-okay .rating-icon,
+html.dark-mode .rating-okay .rating-text,
+html.dark-mode .rating-okay.review-rating-badge {
+	color: #ffa726;
+}
+
+html.dark-mode .rating-not {
+	border-left-color: #ef5350 !important;
+}
+
+html.dark-mode .rating-not .rating-icon-display,
+html.dark-mode .rating-not .rating-label-display,
+html.dark-mode .rating-not .badge-icon,
+html.dark-mode .rating-not .rating-icon,
+html.dark-mode .rating-not .rating-text,
+html.dark-mode .rating-not.review-rating-badge {
+	color: #ef5350;
+}
+
+@media (max-width: 640px) {
+	.primary-page {
+		padding: 20px 16px;
+	}
+}

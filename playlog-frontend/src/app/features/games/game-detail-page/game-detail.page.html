@@ -1,0 +1,313 @@
+@if (loading()) {
+	<div class="loading-container">
+		<mat-spinner diameter="56"></mat-spinner>
+	</div>
+} @else if (game()) {
+	<div class="game-detail-page">
+
+		<!-- Cover + Hero Section -->
+		<div class="hero-section">
+			<div class="cover-wrapper no-pointer-events">
+				@if (!mediaLoading() && media()?.cover) {
+					<img [src]="media()!.cover!.url" [alt]="game()!.name" class="cover-image"/>
+				} @else {
+					<div class="cover-placeholder">
+						<mat-icon fontSet="material-symbols-rounded">sports_esports</mat-icon>
+					</div>
+				}
+			</div>
+
+			<div class="hero-info">
+				<div class="hero-title-row">
+					<h1 class="game-title">{{ game()!.name }}</h1>
+					@if (game()!.draft) {
+						<span class="draft-badge" i18n="@@gameDetail.draft">Draft</span>
+					}
+				</div>
+
+				@if (game()!.released) {
+					<p class="game-meta">
+						<mat-icon fontSet="material-symbols-rounded">calendar_month</mat-icon>
+						<span>{{ game()!.released | date:'mediumDate' }}</span>
+					</p>
+				}
+
+				@if (game()!.website) {
+					<p class="game-meta">
+						<mat-icon fontSet="material-symbols-rounded">link</mat-icon>
+						<a [href]="game()!.website!" target="_blank" rel="noopener noreferrer"
+						   i18n="@@gameDetail.officialSite">
+							Official Website
+						</a>
+					</p>
+				}
+
+				<!-- Platforms -->
+				@if (game()!.platforms.length > 0) {
+					<mat-chip-set class="chips-row" aria-label="Platforms" i18n-aria-label="@@gameDetail.platformsAria">
+						@for (platform of game()!.platforms; track platform.id) {
+							<mat-chip>{{ platform.name }}</mat-chip>
+						}
+					</mat-chip-set>
+				}
+
+				<!-- Developers / Publishers -->
+				<div class="credits-row">
+					@if (game()!.developers.length > 0) {
+						<div class="credit-group">
+							@if (game()!.developers.length == 1) {
+								<span class="credit-label" i18n="@@gameDetail.developer">Developer</span>
+							} @else {
+								<span class="credit-label" i18n="@@gameDetail.developers">Developers</span>
+							}
+							<mat-chip-set class="chips-row">
+								@for (dev of game()!.developers; track dev.id) {
+									<mat-chip (click)="navigateToGamesByEntity('developers', dev.id, dev.name)">
+										{{ dev.name }}
+									</mat-chip>
+								}
+							</mat-chip-set>
+						</div>
+					}
+					@if (game()!.publishers.length > 0) {
+						<div class="credit-group">
+							@if (game()!.publishers.length == 1) {
+								<span class="credit-label" i18n="@@gameDetail.publisherr">Publisher</span>
+							} @else {
+								<span class="credit-label" i18n="@@gameDetail.publishers">Publishers</span>
+							}
+							<mat-chip-set class="chips-row">
+								@for (pub of game()!.publishers; track pub.id) {
+									<mat-chip (click)="navigateToGamesByEntity('publishers', pub.id, pub.name)">
+										{{ pub.name }}
+									</mat-chip>
+								}
+							</mat-chip-set>
+						</div>
+					}
+				</div>
+
+				<!-- Library Section -->
+				@if (sessionService.user().role !== Role.GUEST) {
+					<div class="library-section">
+						@if (libraryStatus() === null) {
+							<button mat-stroked-button (click)="openLibraryDialog()"
+							        matTooltip="Add this game to your library"
+							        i18n-matTooltip="@@gameDetail.addToLibraryTooltip">
+								<mat-icon fontSet="material-symbols-rounded">collections_bookmark</mat-icon>
+								<span i18n="@@gameDetail.addToLibrary">Add to Library</span>
+							</button>
+						} @else {
+							<div class="library-status-row">
+								<span class="library-status-label" i18n="@@gameDetail.inLibrary">In Library:</span>
+								<mat-chip-set>
+									<mat-chip highlighted>
+										<mat-icon fontSet="material-symbols-rounded" class="status-icon">
+											{{ statusIcons[libraryStatus()!] }}
+										</mat-icon>
+										{{ statusLabels[libraryStatus()!] }}
+									</mat-chip>
+								</mat-chip-set>
+								<button mat-icon-button (click)="openLibraryDialog()"
+								        matTooltip="Edit library status"
+								        i18n-matTooltip="@@gameDetail.editLibraryTooltip"
+								        class="edit-status-btn">
+									<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+								</button>
+							</div>
+						}
+					</div>
+				}
+
+				<!-- Admin actions -->
+				@if (sessionService.user().role === Role.ADMIN) {
+					<div class="admin-actions">
+						<button mat-stroked-button (click)="openEditDialog()"
+						        matTooltip="Edit game details" i18n-matTooltip="@@gameDetail.editTooltip">
+							<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
+							<span i18n="@@gameDetail.edit">Edit</span>
+						</button>
+						<button mat-stroked-button (click)="openMediaDialog()"
+						        matTooltip="Manage cover, screenshots and trailer"
+						        i18n-matTooltip="@@gameDetail.mediaTooltip">
+							<mat-icon fontSet="material-symbols-rounded">photo_library</mat-icon>
+							<span i18n="@@gameDetail.media">Media</span>
+						</button>
+						@if (game()!.draft) {
+							<button mat-stroked-button (click)="togglePublish()"
+							        matTooltip="Publish this game" i18n-matTooltip="@@gameDetail.publishTooltip">
+								<mat-icon fontSet="material-symbols-rounded">publish</mat-icon>
+								<span i18n="@@gameDetail.publish">Publish</span>
+							</button>
+						} @else {
+							<button mat-stroked-button (click)="togglePublish()"
+							        matTooltip="Move back to draft" i18n-matTooltip="@@gameDetail.unpublishTooltip">
+								<mat-icon fontSet="material-symbols-rounded">unpublished</mat-icon>
+								<span i18n="@@gameDetail.unpublish">Unpublish</span>
+							</button>
+						}
+						<button mat-stroked-button class="delete-button" (click)="confirmDelete()"
+						        matTooltip="Delete game permanently" i18n-matTooltip="@@gameDetail.deleteTooltip">
+							<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+							<span i18n="@@gameDetail.delete">Delete</span>
+						</button>
+					</div>
+				}
+			</div>
+		</div>
+
+		<mat-divider></mat-divider>
+
+		<!-- Tabs -->
+		<mat-tab-group animationDuration="200ms" class="detail-tabs">
+
+			<!-- About Tab -->
+			<mat-tab>
+				<ng-template mat-tab-label>
+					<mat-icon fontSet="material-symbols-rounded" class="tab-icon">info</mat-icon>
+					<span i18n="@@gameDetail.tabAbout">About</span>
+				</ng-template>
+
+				<div class="tab-content">
+					<section class="description-section">
+						<h2 i18n="@@gameDetail.description">Description</h2>
+						<div class="description-container" [class.expanded]="isDescriptionExpanded()">
+							<p #descriptionText class="description-text justify-text">{{ game()!.description }}</p>
+						</div>
+						@if (isDescriptionExpandable()) {
+							<span
+								class="expand-link"
+								(click)="toggleDescription()"
+								role="button"
+								tabindex="0"
+								(keydown.enter)="toggleDescription()"
+								(keydown.space)="$event.preventDefault(); toggleDescription()"
+							>
+								@if (isDescriptionExpanded()) {
+									<span i18n="@@gameDetail.showLess">Show Less</span>
+									<mat-icon fontSet="material-symbols-rounded">expand_less</mat-icon>
+								} @else {
+									<span i18n="@@gameDetail.showMore">Show More</span>
+									<mat-icon fontSet="material-symbols-rounded">expand_more</mat-icon>
+								}
+							</span>
+						}
+					</section>
+
+					<div class="metadata-grid">
+						@if (game()!.genres.length > 0) {
+							<div class="metadata-item">
+								<span class="metadata-label" i18n="@@gameDetail.genres">Genres</span>
+								<mat-chip-set>
+									@for (genre of game()!.genres; track genre.id) {
+										<mat-chip>{{ genre.name }}</mat-chip>
+									}
+								</mat-chip-set>
+							</div>
+						}
+						@if (game()!.tags.length > 0) {
+							<div class="metadata-item">
+								<span class="metadata-label" i18n="@@gameDetail.tags">Tags</span>
+								<mat-chip-set>
+									@for (tag of game()!.tags; track tag.id) {
+										<mat-chip>{{ tag.name }}</mat-chip>
+									}
+								</mat-chip-set>
+							</div>
+						}
+					</div>
+				</div>
+			</mat-tab>
+
+			<!-- Media Tab -->
+			<mat-tab>
+				<ng-template mat-tab-label>
+					<mat-icon fontSet="material-symbols-rounded" class="tab-icon">photo_library</mat-icon>
+					<span i18n="@@gameDetail.tabMedia">Media</span>
+				</ng-template>
+
+				<div class="tab-content">
+					@if (mediaLoading()) {
+						<div class="loading-container small">
+							<mat-spinner diameter="36"></mat-spinner>
+						</div>
+					} @else if (!media() || (!media()!.cover && media()!.screenshots.length === 0 && !media()!.trailer)) {
+						<div class="empty-media">
+							<mat-icon fontSet="material-symbols-rounded">hide_image</mat-icon>
+							<p i18n="@@gameDetail.noMedia">No media available for this game yet.</p>
+						</div>
+					} @else {
+						@if (media()!.screenshots.length > 0) {
+							<section class="media-section">
+								<h3 i18n="@@gameDetail.screenshots">Screenshots</h3>
+								<div class="screenshot-main no-pointer-events">
+									<img
+										[src]="selectedScreenshot() ?? media()!.screenshots[0].url"
+										alt="Game screenshot"
+										i18n-alt="@@gameDetail.screenshotAlt"
+										class="screenshot-main-img"
+									/>
+								</div>
+								@if (media()!.screenshots.length > 1) {
+									<div class="screenshot-thumbs">
+										@for (ss of media()!.screenshots; track ss.url) {
+											<div (click)="selectScreenshot(ss.url)"
+											     (keydown.enter)="selectScreenshot(ss.url)"
+											     tabindex="0" role="button">
+												<img [src]="ss.url"
+												     alt="Screenshot thumbnail"
+												     i18n-alt="@@gameDetail.screenshotThumbAlt"
+												     class="screenshot-thumb no-pointer-events"
+												     [class.selected]="selectedScreenshot() === ss.url" />
+											</div>
+										}
+									</div>
+								}
+							</section>
+						}
+						@if (media()!.trailer) {
+							<section class="media-section">
+								<h3 i18n="@@gameDetail.trailer">Trailer</h3>
+								<video class="trailer-video" controls oncontextmenu="return false;"
+								       [src]="media()!.trailer!.url"
+								       aria-label="Game trailer"
+								       i18n-aria-label="@@gameDetail.trailerAria">
+								</video>
+							</section>
+						}
+					}
+				</div>
+			</mat-tab>
+
+			<!-- Reviews Tab -->
+			<mat-tab>
+				<ng-template mat-tab-label>
+					<mat-icon fontSet="material-symbols-rounded" class="tab-icon">rate_review</mat-icon>
+					<span i18n="@@gameDetail.tabReviews">Reviews</span>
+				</ng-template>
+				<div class="tab-content">
+					@if (game()) {
+						<app-reviews-section [gameId]="game()!.id" [gameName]="game()!.name" [libraryStatus]="libraryStatus()" />
+					}
+				</div>
+			</mat-tab>
+
+			<!-- Comments Tab -->
+			<mat-tab>
+				<ng-template mat-tab-label>
+					<mat-icon fontSet="material-symbols-rounded" class="tab-icon">chat_bubble_outline</mat-icon>
+					<span i18n="@@gameDetail.tabComments">Comments</span>
+				</ng-template>
+				<div class="tab-content">
+					@if (game()) {
+						<app-comments-section
+							[targetType]="CommentTargetType.GAME"
+							[targetId]="game()!.id.toString()"
+						/>
+					}
+				</div>
+			</mat-tab>
+
+		</mat-tab-group>
+	</div>
+}

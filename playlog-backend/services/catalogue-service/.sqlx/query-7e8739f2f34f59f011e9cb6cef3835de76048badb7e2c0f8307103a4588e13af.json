@@ -1,0 +1,41 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n                SELECT id, name, released, draft\n                FROM games JOIN game_publishers gp ON gp.game_id = games.id\n                WHERE gp.publisher_id = $1\n                ORDER BY name\n                LIMIT 10\n                OFFSET $2\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "id",
+        "type_info": "Int4"
+      },
+      {
+        "ordinal": 1,
+        "name": "name",
+        "type_info": "Varchar"
+      },
+      {
+        "ordinal": 2,
+        "name": "released",
+        "type_info": "Date"
+      },
+      {
+        "ordinal": 3,
+        "name": "draft",
+        "type_info": "Bool"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Int4",
+        "Int8"
+      ]
+    },
+    "nullable": [
+      false,
+      false,
+      true,
+      false
+    ]
+  },
+  "hash": "7e8739f2f34f59f011e9cb6cef3835de76048badb7e2c0f8307103a4588e13af"
+}

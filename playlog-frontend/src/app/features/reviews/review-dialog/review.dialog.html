@@ -1,0 +1,86 @@
+<div class="review-dialog">
+	<h2 mat-dialog-title>
+		@if (isEditing) {
+			<span i18n="@@reviewDialog.titleEdit">Edit Review</span>
+		} @else {
+			<span i18n="@@reviewDialog.titleCreate">Write a Review</span>
+		}
+	</h2>
+
+	<mat-dialog-content>
+		<p class="game-name">{{ data.gameName }}</p>
+
+		<!-- Rating picker -->
+		<p class="rating-label" i18n="@@reviewDialog.ratingLabel">Your rating</p>
+		<div class="rating-grid" role="listbox" aria-label="Rating" i18n-aria-label="@@reviewDialog.ratingAria">
+			@for (rating of ratingOrder; track rating) {
+				<button
+					class="rating-option"
+					[class.selected]="selectedRating() === rating"
+					(click)="selectRating(rating)"
+					role="option"
+					[attr.aria-selected]="selectedRating() === rating"
+					type="button"
+				>
+					<mat-icon
+						fontSet="material-symbols-rounded"
+						class="rating-icon"
+						[class.filled]="selectedRating() === rating"
+					>
+						{{ ratingIcons[rating] }}
+					</mat-icon>
+					<span class="rating-text">{{ ratingLabels[rating] }}</span>
+				</button>
+			}
+		</div>
+
+		<!-- Optional review text -->
+		<mat-form-field appearance="outline" class="w-100 review-field">
+			<mat-label i18n="@@reviewDialog.textLabel">Your review (optional)</mat-label>
+			<textarea
+				matInput
+				[formControl]="form.controls['text']"
+				rows="5" maxlength="5000"
+				cdkTextareaAutosize cdkAutosizeMinRows="5" cdkAutosizeMaxRows="5"
+				autocomplete="off"
+				placeholder="Share your thoughts about this game..."
+				i18n-placeholder="@@reviewDialog.textPlaceholder"
+			></textarea>
+			<mat-hint align="end">{{ form.controls['text'].value?.length ?? 0 }} / 5000</mat-hint>
+		</mat-form-field>
+
+		@if (error()) {
+			<div class="error-message">
+				<mat-icon fontSet="material-symbols-rounded">error</mat-icon>
+				<div class="error-list">
+					@for (error of error()!.error; track error) {
+						<span>{{ error }}</span>
+					}
+				</div>
+			</div>
+		}
+	</mat-dialog-content>
+
+	<mat-dialog-actions>
+		@if (isEditing) {
+			<button mat-stroked-button class="delete-button" (click)="onDelete()" [disabled]="submitting()">
+				<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+				<span i18n="@@reviewDialog.delete">Delete</span>
+			</button>
+		}
+		<button mat-stroked-button mat-dialog-close [disabled]="submitting()" i18n="@@reviewDialog.cancel">Cancel</button>
+		<button mat-flat-button (click)="onSubmit()"
+		        [disabled]="!selectedRating() || submitting()">
+			@if (submitting()) {
+				<span class="d-flex align-items-center justify-content-center w-100">
+					<mat-spinner diameter="20" class="me-2"></mat-spinner>
+					<span i18n="@@reviewDialog.submitting">Submitting…</span>
+				</span>
+			} @else if (isEditing) {
+				<span i18n="@@reviewDialog.update">Update</span>
+			} @else {
+				<span i18n="@@reviewDialog.submit">Submit Review</span>
+			}
+		</button>
+	</mat-dialog-actions>
+</div>

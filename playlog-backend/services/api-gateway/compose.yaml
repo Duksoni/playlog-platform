@@ -1,0 +1,23 @@
+services:
+  axum-server:
+    image: playlog/api-gateway:latest
+    container_name: api-gateway-axum-server
+    build:
+      context: ../..
+      dockerfile: services/api-gateway/Dockerfile
+      target: final
+    environment:
+      JWT_PUBLIC_KEY_PATH: ${JWT_PUBLIC_KEY_PATH}
+      CATALOGUE_SERVICE_URL: ${CATALOGUE_SERVICE_URL}
+      LIBRARY_SERVICE_URL: ${LIBRARY_SERVICE_URL}
+      MULTIMEDIA_SERVICE_URL: ${MULTIMEDIA_SERVICE_URL}
+      REVIEW_SERVICE_URL: ${REVIEW_SERVICE_URL}
+      USER_SERVICE_URL: ${USER_SERVICE_URL}
+      RUST_LOG: ${RUST_LOG}
+    ports:
+      - "3000:3000"
+    networks:
+      - playlog_network
+networks:
+  playlog_network:
+    external: true
