@@ -132,8 +132,10 @@
 									<button mat-raised-button (click)="onSaveEdit(comment.id)"
 									        [disabled]="!editControl.value?.trim() || submitting()">
 										@if (submitting()) {
-											<mat-spinner diameter="18" class="me-2"></mat-spinner>
-											<span i18n="@@comments.saving">Saving…</span>
+											<span class="d-flex align-items-center justify-content-center w-100">
+												<mat-spinner diameter="18" class="me-2"></mat-spinner>
+												<span i18n="@@comments.saving">Saving…</span>
+											</span>
 										} @else {
 											<span i18n="@@comments.save">Save</span>
 										}
