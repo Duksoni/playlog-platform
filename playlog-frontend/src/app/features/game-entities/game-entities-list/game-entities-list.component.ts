@@ -65,7 +65,7 @@ export class GameEntitiesListComponent implements OnInit {
 		).subscribe(query => {
 			if (query && query.length >= 2) {
 				this.loading.set(true);
-				this.entityService.search(this.entityType(), query).subscribe({
+				this.entityService.search(this.entityType(), query, this.pageSize()).subscribe({
 					next: (data) => {
 						this.items.set(data);
 						this.totalItems.set(data.length);

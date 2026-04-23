@@ -26,6 +26,8 @@ pub struct GameEntityPagedResponse(pub PagedResponse<GameEntitySimple>);
 pub struct SearchQuery {
     /// Partial name to search for
     pub q: String,
+    #[param(required = false, example = "10")]
+    pub limit: u64
 }
 
 #[derive(Deserialize, IntoParams)]

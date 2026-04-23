@@ -97,7 +97,7 @@ async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
 ) -> ApiResult<Json<Vec<GameEntitySimple>>> {
-    let result = state.developer_repository.find_by_name(&query.q).await?;
+    let result = state.developer_repository.find_by_name(&query.q, query.limit).await?;
     Ok(Json(result))
 }
 

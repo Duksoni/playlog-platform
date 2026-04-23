@@ -1,4 +1,6 @@
-use super::{GameEntity, GameEntityError, GameEntityPagedResponse, GameEntitySimple, GameEntityTable, Result};
+use super::{
+    GameEntity, GameEntityError, GameEntityPagedResponse, GameEntitySimple, GameEntityTable, Result,
+};
 use async_trait::async_trait;
 use sqlx::{query_as, query_scalar, PgPool};
 
@@ -6,7 +8,7 @@ use sqlx::{query_as, query_scalar, PgPool};
 pub trait GameEntityRepository: Send + Sync {
     async fn get(&self, id: i32) -> Result<Option<GameEntity>>;
     async fn get_all(&self, page: u64, limit: u64) -> Result<GameEntityPagedResponse>;
-    async fn find_by_name(&self, name: &str) -> Result<Vec<GameEntitySimple>>;
+    async fn find_by_name(&self, name: &str, limit: u64) -> Result<Vec<GameEntitySimple>>;
     async fn exists(&self, id: i32) -> Result<()>;
     async fn create(&self, name: &str) -> Result<GameEntity>;
     async fn update_name(&self, id: i32, name: &str, version: i64) -> Result<GameEntity>;
@@ -44,14 +46,12 @@ impl GameEntityRepository for PostgresGameEntityRepository {
     }
 
     async fn get_all(&self, page: u64, limit: u64) -> Result<GameEntityPagedResponse> {
-        let limit = if limit == 0 { 10 } else { limit } as i64;
+        let limit = limit.max(10) as i64;
         let page = page.max(1);
         let offset = (page - 1) as i64 * limit;
 
         let count_query = format!("SELECT COUNT(*) FROM {}", self.table.table_name());
-        let total_items: i64 = query_scalar(&count_query)
-            .fetch_one(&self.pool)
-            .await?;
+        let total_items: i64 = query_scalar(&count_query).fetch_one(&self.pool).await?;
 
         let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
 
@@ -76,11 +76,13 @@ impl GameEntityRepository for PostgresGameEntityRepository {
         ))
     }
 
-    async fn find_by_name(&self, name: &str) -> Result<Vec<GameEntitySimple>> {
+    async fn find_by_name(&self, name: &str, limit: u64) -> Result<Vec<GameEntitySimple>> {
         let query_pattern = format!("%{}%", name);
+        let limit = limit.max(10) as i64;
         let query = format!(
-            "SELECT id, name FROM {} WHERE name ILIKE $1 ORDER BY name LIMIT 30",
-            self.table.table_name()
+            "SELECT id, name FROM {} WHERE name ILIKE $1 ORDER BY name LIMIT {}",
+            self.table.table_name(),
+            limit
         );
         let result = query_as::<_, GameEntitySimple>(&query)
             .bind(query_pattern)

@@ -36,7 +36,7 @@ export class GameEntityService {
 
 	/** Search by partial name — for autocomplete. */
 	searchForFilter(entityType: GameEntityType, query: string) {
-		const params = new HttpParams().set('q', query);
+		const params = new HttpParams().set('q', query).set('limit', this.GET_ALL_LIMIT);
 		return this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}/search`, {params});
 	}
 
@@ -44,8 +44,8 @@ export class GameEntityService {
 		return this.http.get<GameEntity>(`${environment.apiUrl}/${entityType}/${id}`);
 	}
 
-	search(entityType: GameEntityType, query: string) {
-		const params = new HttpParams().set('q', query);
+	search(entityType: GameEntityType, query: string, limit: number) {
+		const params = new HttpParams().set('q', query).set('limit', limit);
 		return this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}/search`, {params});
 	}
 
