@@ -216,6 +216,7 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 					text: result.text, createdAt: result.createdAt, updatedAt: result.updatedAt,
 				});
 			}
+			this.loadRatingStats();
 			this.resetAndLoad();
 		});
 	}
