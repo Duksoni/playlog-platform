@@ -34,6 +34,10 @@
 							<mat-icon fontSet="material-symbols-rounded" class="section-icon">sports_esports</mat-icon>
 							<h2 class="section-title" i18n="@@home.currentlyPlaying">Currently Playing</h2>
 						</div>
+						<button mat-button class="see-all-btn" (click)="navigateToLibrary()">
+							<span i18n="@@home.seeAll">See all</span>
+							<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
+						</button>
 					</div>
 
 					<swiper-container class="shelf-swiper"

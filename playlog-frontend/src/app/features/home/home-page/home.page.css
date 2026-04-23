@@ -4,14 +4,6 @@
 	padding: 0 0 48px;
 }
 
-/*  Loading  */
-.loading-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	min-height: 400px;
-}
-
 /*  Hero  */
 .hero-section {
 	position: relative;

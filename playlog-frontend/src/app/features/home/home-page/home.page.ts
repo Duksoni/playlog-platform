@@ -170,6 +170,12 @@ export class HomePage implements OnInit {
 		this.router.navigate(['/users', username]);
 	}
 
+	protected navigateToLibrary() {
+		this.router.navigate(['/library'], {
+			state: {userId: this.sessionService.user().userId},
+		});
+	}
+
 	protected navigateToCatalogue(queryParams?: Record<string, string>) {
 		this.router.navigate(['/games'], {queryParams});
 	}
