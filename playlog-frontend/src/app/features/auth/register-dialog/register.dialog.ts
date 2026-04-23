@@ -57,9 +57,9 @@ export class RegisterDialog {
 	protected maxDate = new Date();
 
 	registerForm: FormGroup = this.fb.group({
-		firstName: ['', [Validators.required]],
-		lastName: ['', [Validators.required]],
-		birthdate: [null, [Validators.required]],
+		firstName: ['', []],
+		lastName: ['', []],
+		birthdate: [null, []],
 		username: ['', [Validators.required, Validators.minLength(3), Validators.maxLength(50)]],
 		email: ['', [Validators.required, Validators.email]],
 		password: ['', [Validators.required, Validators.pattern(/^(?=.*[A-Z])(?=.*[a-z])(?=.*[@$!%*?&])(?=.*[0-9]).{8,}$/)]]
@@ -84,20 +84,17 @@ export class RegisterDialog {
 
 	protected onRegister() {
 		if (this.registerForm.valid) {
-			let {first_name, last_name, birthdate, username, email, password} = this.registerForm.value;
-			if (birthdate instanceof Date) {
-				const year = birthdate.getFullYear();
-				const month = String(birthdate.getMonth() + 1).padStart(2, '0');
-				const day = String(birthdate.getDate()).padStart(2, '0');
-				birthdate = `${year}-${month}-${day}`;
-			}
+			const formValue = this.registerForm.value;
+			const birthdate = formValue.birthdate instanceof Date
+				? `${formValue.birthdate.getFullYear()}-${String(formValue.birthdate.getMonth() + 1).padStart(2, '0')}-${String(formValue.birthdate.getDate()).padStart(2, '0')}`
+				: formValue.birthdate || null;
 
 			this.registerService.register({
-				username: username,
-				email: email,
-				password: password,
-				firstName: first_name,
-				lastName: last_name,
+				username: formValue.username,
+				email: formValue.email,
+				password: formValue.password,
+				firstName: formValue.firstName || null,
+				lastName: formValue.lastName || null,
 				birthdate: birthdate
 			});
 		}

@@ -8,62 +8,15 @@
 				<u class="hover-pointer" (click)="openLoginDialog()" i18n="@@register.signInLink">Sign in</u>
 			</p>
 			<form [formGroup]="registerForm" class="register-form">
-				<div class="row g-3">
-					<div class="col-md-6">
-						<mat-form-field appearance="outline" class="w-100">
-							<mat-label i18n="@@register.firstNameLabel">First Name</mat-label>
-							<input matInput formControlName="firstName" maxlength="50"
-								   placeholder="Enter your first name" i18n-placeholder="@@register.firstNamePlaceholder" autocomplete="given-name">
-							@if (registerForm.get('first_name')?.hasError('required')) {
-								<mat-error i18n="@@register.firstNameRequired">
-									First name is required
-								</mat-error>
-							}
-						</mat-form-field>
-					</div>
-
-					<div class="col-md-6">
-						<mat-form-field appearance="outline" class="w-100">
-							<mat-label i18n="@@register.lastNameLabel">Last Name</mat-label>
-							<input matInput formControlName="lastName" maxlength="50"
-								   placeholder="Enter your last name" i18n-placeholder="@@register.lastNamePlaceholder" autocomplete="family-name">
-							@if (registerForm.get('last_name')?.hasError('required')) {
-								<mat-error i18n="@@register.lastNameRequired">
-									Last name is required
-								</mat-error>
-							}
-						</mat-form-field>
-					</div>
-				</div>
 
 				<!-- Birthdate + Username Row -->
 				<div class="row g-3">
 					<div class="col-md-6">
 						<mat-form-field appearance="outline" class="w-100">
-							<mat-label i18n="@@register.birthdateLabel">Birthdate</mat-label>
-							<input matInput
-								   formControlName="birthdate"
-								   [matDatepicker]="birthdatePicker"
-								   [min]="minDate"
-								   [max]="maxDate"
-							>
-							<mat-datepicker-toggle matIconSuffix [for]="birthdatePicker">
-							</mat-datepicker-toggle>
-							<mat-datepicker [startAt]="startDate" #birthdatePicker></mat-datepicker>
-							@if (registerForm.get('birthdate')?.hasError('required')) {
-								<mat-error i18n="@@register.birthdateRequired">
-									Birthdate is required
-								</mat-error>
-							}
-						</mat-form-field>
-					</div>
-
-					<div class="col-md-6">
-						<mat-form-field appearance="outline" class="w-100">
 							<mat-label i18n="@@register.usernameLabel">Username</mat-label>
 							<input matInput formControlName="username" maxlength="50" placeholder="Choose a username"
-								   i18n-placeholder="@@register.usernamePlaceholder"
-								   autocomplete="username">
+							       i18n-placeholder="@@register.usernamePlaceholder"
+							       autocomplete="username">
 							@if (registerForm.get('username')?.hasError('required')) {
 								<mat-error i18n="@@register.usernameRequired">
 									Username is required
@@ -76,6 +29,41 @@
 							}
 						</mat-form-field>
 					</div>
+
+					<div class="col-md-6">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.birthdateLabel">Birthdate</mat-label>
+							<input matInput
+							       formControlName="birthdate"
+							       [matDatepicker]="birthdatePicker"
+							       [min]="minDate"
+							       [max]="maxDate"
+							>
+							<mat-datepicker-toggle matIconSuffix [for]="birthdatePicker">
+							</mat-datepicker-toggle>
+							<mat-datepicker [startAt]="startDate" #birthdatePicker></mat-datepicker>
+						</mat-form-field>
+					</div>
+				</div>
+
+				<div class="row g-3">
+					<div class="col-md-6">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.firstNameLabel">First Name</mat-label>
+							<input matInput formControlName="firstName" maxlength="50"
+							       placeholder="Enter your first name"
+							       i18n-placeholder="@@register.firstNamePlaceholder" autocomplete="given-name">
+						</mat-form-field>
+					</div>
+
+					<div class="col-md-6">
+						<mat-form-field appearance="outline" class="w-100">
+							<mat-label i18n="@@register.lastNameLabel">Last Name</mat-label>
+							<input matInput formControlName="lastName" maxlength="50"
+							       placeholder="Enter your last name" i18n-placeholder="@@register.lastNamePlaceholder"
+							       autocomplete="family-name">
+						</mat-form-field>
+					</div>
 				</div>
 
 				<!-- Email Row -->
@@ -84,8 +72,8 @@
 						<mat-form-field appearance="outline" class="w-100">
 							<mat-label i18n="@@register.emailLabel">Email</mat-label>
 							<input matInput formControlName="email" type="email" placeholder="Enter your email"
-								   i18n-placeholder="@@register.emailPlaceholder"
-								   autocomplete="email">
+							       i18n-placeholder="@@register.emailPlaceholder"
+							       autocomplete="email">
 							@if (registerForm.get('email')?.hasError('required')) {
 								<mat-error i18n="@@register.emailRequired">
 									Email is required
@@ -106,7 +94,8 @@
 						<mat-form-field appearance="outline" class="w-100">
 							<mat-label i18n="@@register.passwordLabel">Password</mat-label>
 							<input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password"
-								   placeholder="Enter your password" i18n-placeholder="@@register.passwordPlaceholder" (keydown.enter)="onRegister()">
+							       placeholder="Enter your password" i18n-placeholder="@@register.passwordPlaceholder"
+							       (keydown.enter)="onRegister()">
 							<button
 								mat-icon-button
 								matSuffix type="button"
@@ -115,7 +104,8 @@
 								matTooltipShowDelay="300"
 							>
 								<mat-icon
-									fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+									fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}
+								</mat-icon>
 							</button>
 							@if (registerForm.get('password')?.hasError('required')) {
 								<mat-error i18n="@@register.passwordRequired">
@@ -147,14 +137,15 @@
 	</mat-dialog-content>
 
 	<mat-dialog-actions class="d-flex justify-content-end">
-		<button mat-button mat-dialog-close [disabled]="registerService.submitting()" i18n="@@register.cancel">Cancel</button>
+		<button mat-button mat-dialog-close [disabled]="registerService.submitting()" i18n="@@register.cancel">Cancel
+		</button>
 		<button mat-flat-button
-				(click)="onRegister()"
-				[disabled]="registerForm.invalid || registerService.submitting()">
+		        (click)="onRegister()"
+		        [disabled]="registerForm.invalid || registerService.submitting()">
 			@if (registerService.submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">
 					<mat-spinner diameter="20" class="me-2"></mat-spinner>
-				  	<span i18n="@@register.submitting">Creating account...</span>
+				  	<span i18n="@@register.submitting">Creating account…</span>
         		</span>
 			} @else {
 				<span i18n="@@register.submit">Sign Up</span>
