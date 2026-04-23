@@ -9,28 +9,9 @@
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	margin-bottom: 32px;
+	margin-bottom: 28px;
 	flex-wrap: wrap;
 	gap: 12px;
-}
-
-.page-header-title {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.page-header-title mat-icon {
-	font-size: 32px;
-	width: 32px;
-	height: 32px;
-	color: var(--mat-sys-primary);
-}
-
-.page-header-title h1 {
-	margin: 0;
-	font-size: 28px;
-	font-weight: 500;
 }
 
 .page-header-actions {
@@ -85,13 +66,6 @@
 .games-area {
 	flex: 1;
 	min-width: 0;
-}
-
-.loading-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	min-height: 300px;
 }
 
 .empty-state {

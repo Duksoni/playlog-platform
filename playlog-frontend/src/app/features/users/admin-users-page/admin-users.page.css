@@ -1,33 +1,3 @@
-.admin-users-page {
-	max-width: 900px;
-	margin: 0 auto;
-	padding: 32px 24px;
-}
-
-/*  Header  */
-.page-header {
-	margin-bottom: 28px;
-}
-
-.page-header-title {
-	display: flex;
-	align-items: center;
-	gap: 12px;
-}
-
-.page-header-title mat-icon {
-	font-size: 32px;
-	width: 32px;
-	height: 32px;
-	color: var(--mat-sys-primary);
-}
-
-.page-header-title h1 {
-	margin: 0;
-	font-size: 28px;
-	font-weight: 500;
-}
-
 /*  Search row  */
 .search-row {
 	display: flex;
@@ -161,10 +131,6 @@
 
 /*  Responsive  */
 @media (max-width: 640px) {
-	.admin-users-page {
-		padding: 20px 16px;
-	}
-
 	.search-row {
 		flex-direction: column;
 	}

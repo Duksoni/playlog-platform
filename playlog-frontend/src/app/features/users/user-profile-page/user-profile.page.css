@@ -1,16 +1,3 @@
-.loading-container {
-	display: flex;
-	justify-content: center;
-	align-items: center;
-	min-height: 400px;
-}
-
-.profile-page {
-	max-width: 860px;
-	margin: 0 auto;
-	padding: 32px 24px;
-}
-
 /* Hero */
 .profile-hero {
 	display: flex;
