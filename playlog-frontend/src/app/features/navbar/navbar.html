@@ -30,14 +30,16 @@
 			<a
 				class="nav-link-item nav-trigger"
 				[class.active-link]="gameEntitiesActive"
-				[matMenuTriggerFor]="gameEntitiesAdminMenu"
+				[matMenuTriggerFor]="gameEntitiesMenu"
 				#gameEntitiesTrigger="matMenuTrigger"
 				matTooltip="Manage Game Entities"
 				i18n-matTooltip="@@nav.manageGameEntities"
 				matTooltipShowDelay="300"
 			>
+				<mat-icon matIconPrefix fontSet="material-symbols-rounded">joystick</mat-icon>
 				<span i18n="@@nav.gameEntities">Game Entities</span>
 				<mat-icon
+					matIconSuffix
 					fontSet="material-symbols-rounded"
 					[class.rotated]="gameEntitiesTrigger.menuOpen"
 				>expand_more</mat-icon>
@@ -48,14 +50,6 @@
 				<mat-icon fontSet="material-symbols-rounded">manage_accounts</mat-icon>
 				<span i18n="@@nav.users">Users</span>
 			</a>
-
-			<mat-menu #gameEntitiesAdminMenu="matMenu">
-				<a mat-menu-item routerLink="/genres" i18n="@@genres">Genres</a>
-				<a mat-menu-item routerLink="/tags" i18n="@@tags">Tags</a>
-				<a mat-menu-item routerLink="/platforms" i18n="@@platforms">Platforms</a>
-				<a mat-menu-item routerLink="/publishers" i18n="@@publishers">Publishers</a>
-				<a mat-menu-item routerLink="/developers" i18n="@@developers">Developers</a>
-			</mat-menu>
 		}
 
 		@if (sessionService.user().role === Role.MODERATOR || sessionService.user().role === Role.ADMIN) {
@@ -129,14 +123,14 @@
 			<span i18n="@@nav.games">Games</span>
 		</a>
 
-		@if (sessionService.user().role !== Role.GUEST) {
-			<a mat-menu-item routerLink="/profile">
-				<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
-				<span i18n="@@nav.myAccount">My Account</span>
+		@if (sessionService.user().role === Role.ADMIN) {
+			<a mat-menu-item [matMenuTriggerFor]="gameEntitiesMenu">
+				<mat-icon fontSet="material-symbols-rounded">joystick</mat-icon>
+				<span i18n="@@nav.gameEntities">Game Entities</span>
 			</a>
-			<a mat-menu-item (click)="navigateToLibrary()">
-				<mat-icon fontSet="material-symbols-rounded">videogame_asset</mat-icon>
-				<span i18n="@@nav.myLibrary">My Library</span>
+			<a mat-menu-item routerLink="/admin/users">
+				<mat-icon fontSet="material-symbols-rounded">manage_accounts</mat-icon>
+				<span i18n="@@nav.users">Users</span>
 			</a>
 		}
 
@@ -146,25 +140,29 @@
 				<span i18n="@@nav.reports">Reports</span>
 			</a>
 		}
-
-		@if (sessionService.user().role === Role.ADMIN) {
-			<a mat-menu-item routerLink="/admin/users">
-				<mat-icon fontSet="material-symbols-rounded">manage_accounts</mat-icon>
-				<span i18n="@@nav.userManagement">User Management</span>
-			</a>
-			<a mat-menu-item [matMenuTriggerFor]="mobileGameEntitiesMenu">
-				<mat-icon fontSet="material-symbols-rounded">database</mat-icon>
-				<span i18n="@@nav.gameEntities">Game Entities</span>
-			</a>
-		}
 	</mat-menu>
 
-	<mat-menu #mobileGameEntitiesMenu="matMenu">
-		<a mat-menu-item routerLink="/genres" i18n="@@genres">Genres</a>
-		<a mat-menu-item routerLink="/tags" i18n="@@tags">Tags</a>
-		<a mat-menu-item routerLink="/platforms" i18n="@@platforms">Platforms</a>
-		<a mat-menu-item routerLink="/publishers" i18n="@@publishers">Publishers</a>
-		<a mat-menu-item routerLink="/developers" i18n="@@developers">Developers</a>
+	<mat-menu #gameEntitiesMenu="matMenu">
+		<a mat-menu-item routerLink="/genres">
+			<mat-icon fontSet="material-symbols-rounded">category</mat-icon>
+			<span i18n="@@genres">Genres</span>
+		</a>
+		<a mat-menu-item routerLink="/tags">
+			<mat-icon fontSet="material-symbols-rounded">label</mat-icon>
+			<span i18n="@@tags">Tags</span>
+		</a>
+		<a mat-menu-item routerLink="/platforms">
+			<mat-icon fontSet="material-symbols-rounded">desktop_windows</mat-icon>
+			<span i18n="@@platforms">Platforms</span>
+		</a>
+		<a mat-menu-item routerLink="/publishers">
+			<mat-icon fontSet="material-symbols-rounded">domain</mat-icon>
+			<span i18n="@@publishers">Publishers</span>
+		</a>
+		<a mat-menu-item routerLink="/developers">
+			<mat-icon fontSet="material-symbols-rounded">code</mat-icon>
+			<span i18n="@@developers">Developers</span>
+		</a>
 	</mat-menu>
 
 </mat-toolbar>

@@ -14,6 +14,7 @@ import {environment} from '../../../environments/environment';
 import {DialogService} from '../../shared/services/dialog.service';
 import {LoginDialog} from '../auth/login-dialog/login.dialog';
 import {RegisterDialog} from '../auth/register-dialog/register.dialog';
+import {MatPrefix, MatSuffix} from '@angular/material/input';
 
 @Component({
 	selector: 'app-navbar',
@@ -27,6 +28,8 @@ import {RegisterDialog} from '../auth/register-dialog/register.dialog';
 		MatMenuTrigger,
 		MatMenu,
 		MatMenuItem,
+		MatPrefix,
+		MatSuffix,
 	],
 	templateUrl: './navbar.html',
 	styleUrl: './navbar.css',
