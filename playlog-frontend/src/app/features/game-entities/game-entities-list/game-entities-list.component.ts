@@ -38,6 +38,7 @@ import {MatTooltip} from '@angular/material/tooltip';
 export class GameEntitiesListComponent implements OnInit {
 	entityType = input.required<GameEntityType>();
 	entityLabel = input.required<string>();
+	entityIcon = input.required<string>();
 	allowDelete = input<boolean>(false);
 
 	private entityService = inject(GameEntityService);

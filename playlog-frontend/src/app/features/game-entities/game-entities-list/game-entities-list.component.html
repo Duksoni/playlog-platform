@@ -1,10 +1,15 @@
-<div class="list-container">
-	<div class="header">
-		<h2>Manage {{ entityLabel() }}</h2>
-		<button mat-flat-button (click)="openCreateDialog()">
-			<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
-			Create {{ entityLabel() }}
-		</button>
+<div class="primary-page">
+	<div class="page-header">
+		<div class="page-header-title">
+			<mat-icon fontSet="material-symbols-rounded">{{ entityIcon() }}</mat-icon>
+			<h1>{{ entityLabel() }} Management</h1>
+		</div>
+		<div class="page-header-actions">
+			<button mat-flat-button (click)="openCreateDialog()">
+				<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
+				<span i18n="@@gameEntities.addNew">Add new</span>
+			</button>
+		</div>
 	</div>
 
 	<div class="filters">

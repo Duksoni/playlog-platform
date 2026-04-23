@@ -6,7 +6,12 @@ import {GameEntitiesListComponent} from '../game-entities-list/game-entities-lis
 	standalone: true,
 	imports: [GameEntitiesListComponent],
 	template: `
-		<app-game-entities-list entityType="genres" entityLabel="Genre" i18n-entityLabel="@@genresPage.label" [allowDelete]="true" />
+		<app-game-entities-list
+			entityType="genres"
+			entityLabel="Genre"
+			entityIcon="category"
+			i18n-entityLabel="@@genresPage.label"
+			[allowDelete]="true"/>
 	`,
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })

@@ -6,7 +6,11 @@ import {GameEntitiesListComponent} from '../game-entities-list/game-entities-lis
 	standalone: true,
 	imports: [GameEntitiesListComponent],
 	template: `
-		<app-game-entities-list entityType="publishers" entityLabel="Publisher" i18n-entityLabel="@@publishers" />
+		<app-game-entities-list
+			entityType="publishers"
+			entityLabel="Publisher"
+			entityIcon="domain"
+			i18n-entityLabel="@@publishers"/>
 	`,
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })

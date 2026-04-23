@@ -1,18 +1,17 @@
-.list-container {
-	padding: 24px;
-	max-width: 1000px;
-	margin: 0 auto;
-}
-
-.header {
+/*  Header  */
+.page-header {
 	display: flex;
-	justify-content: space-between;
 	align-items: center;
-	margin-bottom: 24px;
+	justify-content: space-between;
+	margin-bottom: 28px;
+	flex-wrap: wrap;
+	gap: 12px;
 }
 
-.header h2 {
-	margin: 0;
+.page-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 12px;
 }
 
 .filters {
@@ -46,28 +45,6 @@
 
 table {
 	width: 100%;
-}
-
-.mat-column-name {
-	width: 100%;
-}
-
-.mat-column-actions {
-	width: 120px;
-	min-width: 120px;
-	padding-right: 16px !important;
-}
-
-.mat-header-cell.mat-column-actions,
-.mat-cell.mat-column-actions {
-	display: flex;
-	justify-content: flex-end;
-	align-items: center;
-	overflow: visible;
-}
-
-.mat-cell.mat-column-actions button {
-	flex-shrink: 0;
 }
 
 .mat-row:hover {

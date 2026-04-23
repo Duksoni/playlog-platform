@@ -6,7 +6,12 @@ import {GameEntitiesListComponent} from '../game-entities-list/game-entities-lis
 	standalone: true,
 	imports: [GameEntitiesListComponent],
 	template: `
-		<app-game-entities-list entityType="platforms" entityLabel="Platform" i18n-entityLabel="@@platformsPage.label" [allowDelete]="true" />
+		<app-game-entities-list
+			entityType="platforms"
+			entityLabel="Platform"
+			entityIcon="desktop_windows"
+			i18n-entityLabel="@@platformsPage.label"
+			[allowDelete]="true"/>
 	`,
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })

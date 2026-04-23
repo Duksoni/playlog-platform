@@ -6,8 +6,13 @@ import {GameEntitiesListComponent} from '../game-entities-list/game-entities-lis
 	standalone: true,
 	imports: [GameEntitiesListComponent],
 	template: `
-		<app-game-entities-list entityType="developers" entityLabel="Developer" i18n-entityLabel="@@developers"/>
+		<app-game-entities-list
+			entityType="developers"
+			entityLabel="Developer"
+			entityIcon="code"
+			i18n-entityLabel="@@developers"/>
 	`,
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class DevelopersPage {}
+export class DevelopersPage {
+}
