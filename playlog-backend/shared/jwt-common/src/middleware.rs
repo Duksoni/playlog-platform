@@ -39,13 +39,11 @@ pub async fn auth_optional(
     mut req: Request,
     next: Next,
 ) -> Response {
-    if let Ok(token) = extract_bearer_token(req.headers()) {
-        if let Ok(claims) = decode_token(&token, &config.public_key) {
-            if let Ok(auth_claims) = AuthClaims::try_from(claims) {
+    if let Ok(token) = extract_bearer_token(req.headers())
+        && let Ok(claims) = decode_token(&token, &config.public_key)
+            && let Ok(auth_claims) = AuthClaims::try_from(claims) {
                 req.extensions_mut().insert(auth_claims);
             }
-        }
-    }
     next.run(req).await
 }
 

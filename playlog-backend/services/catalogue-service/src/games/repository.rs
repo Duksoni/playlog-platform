@@ -3,7 +3,7 @@ use super::{
     GameSortField, Genre, Platform, Publisher, Result, SortDirection, Tag, UpdateGameRequest,
 };
 use async_trait::async_trait;
-use sqlx::{PgPool, Postgres, Transaction, query, query_as, query_scalar};
+use sqlx::{PgPool, Postgres, Transaction, query, query_as, query_scalar, QueryBuilder};
 
 #[async_trait]
 pub trait GameRepository: Send + Sync {
@@ -37,8 +37,11 @@ impl GameRepository for PostgresGameRepository {
         include_drafts: bool,
         params: GameFilterQuery,
     ) -> Result<Vec<GameSimple>> {
-        let query = self.build_filter_query(include_drafts, &params);
-        let games: Vec<GameSimple> = query_as(&query).fetch_all(&self.pool).await?;
+        let mut builder = self.build_filter_query(include_drafts, &params);
+        let games: Vec<GameSimple> = builder
+            .build_query_as::<GameSimple>()
+            .fetch_all(&self.pool)
+            .await?;
         Ok(games)
     }
 
@@ -376,67 +379,72 @@ impl PostgresGameRepository {
         Self { pool }
     }
 
-    fn build_filter_query(&self, include_drafts: bool, params: &GameFilterQuery) -> String {
-        let mut query = String::from(
+    fn build_filter_query(
+        &self,
+        include_drafts: bool,
+        params: &GameFilterQuery,
+    ) -> QueryBuilder<Postgres> {
+        let mut builder = QueryBuilder::new(
             r#"
             SELECT DISTINCT g.id, g.name, g.released, g.draft
             FROM games g
                 LEFT JOIN game_tags gt ON gt.game_id = g.id
                 LEFT JOIN game_genres gg ON gg.game_id = g.id
                 LEFT JOIN game_platforms gp ON gp.game_id = g.id
-            WHERE
+            WHERE (g.draft = false OR
         "#,
         );
-        query.push_str(&format!(" (g.draft = false OR {}) ", include_drafts));
+        builder.push_bind(include_drafts);
+        builder.push(")");
 
         if !params.platform_ids.is_empty() {
-            let id_str = params
-                .platform_ids
-                .iter()
-                .map(|id| format!("{}", id))
-                .collect::<Vec<String>>()
-                .join(", ");
-            query.push_str(&format!(" AND gp.platform_id IN ({})", id_str));
+            builder.push(" AND gp.platform_id IN (");
+            let mut separated = builder.separated(", ");
+            for id in &params.platform_ids {
+                separated.push_bind(*id);
+            }
+            separated.push_unseparated(")");
         }
         if !params.genre_ids.is_empty() {
-            let id_str = params
-                .genre_ids
-                .iter()
-                .map(|id| format!("{}", id))
-                .collect::<Vec<String>>()
-                .join(", ");
-            query.push_str(&format!(" AND gg.genre_id IN ({})", id_str));
+            builder.push(" AND gg.genre_id IN (");
+            let mut separated = builder.separated(", ");
+            for id in &params.genre_ids {
+                separated.push_bind(*id);
+            }
+            separated.push_unseparated(")");
         }
         if !params.tag_ids.is_empty() {
-            let id_str = params
-                .tag_ids
-                .iter()
-                .map(|id| format!("{}", id))
-                .collect::<Vec<String>>()
-                .join(", ");
-            query.push_str(&format!(" AND gt.tag_id IN ({})", id_str));
+            builder.push(" AND gt.tag_id IN (");
+            let mut separated = builder.separated(", ");
+            for id in &params.tag_ids {
+                separated.push_bind(*id);
+            }
+            separated.push_unseparated(")");
         }
         if let Some(name) = &params.name {
-            query.push_str(" AND g.name ILIKE ");
-            query.push_str(&format!("'%{}%'", name));
+            builder.push(" AND g.name ILIKE ");
+            builder.push_bind(format!("%{}%", name));
         }
 
         let sort_field = match params.sort.unwrap_or(GameSortField::Name) {
             GameSortField::Name => "g.name",
             GameSortField::Released => "g.released",
         };
-
         let direction = match params.sort_direction.unwrap_or(SortDirection::Asc) {
             SortDirection::Asc => "ASC",
             SortDirection::Desc => "DESC",
         };
+        // sort_field/direction are derived from enums, not user input,
+        // so interpolating them is safe (identifiers/keywords can't be bound).
+        builder.push(format!(" ORDER BY {} {}", sort_field, direction));
 
-        query.push_str(&format!(" ORDER BY {} {}", sort_field, direction));
-        query.push_str(" LIMIT 10");
-        query.push_str(" OFFSET ");
+        builder.push(" LIMIT ");
+        builder.push_bind(10_i64);
+        builder.push(" OFFSET ");
         let offset = (params.page.max(1) - 1) * 10;
-        query.push_str(&format!("{}", offset));
-        query
+        builder.push_bind(offset as i64);
+
+        builder
     }
 
     async fn set_developers(
