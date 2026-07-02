@@ -40,7 +40,11 @@
 		@if (!loading() && users().length === 0) {
 			<div class="empty-state">
 				<mat-icon fontSet="material-symbols-rounded">person_search</mat-icon>
-				<p i18n="@@adminUsers.noResults">No users found.</p>
+				@if (hasSearched()) {
+					<p i18n="@@adminUsers.noResultsQuery">No users found matching "{{ searchQuery() }}".</p>
+				} @else {
+					<p i18n="@@adminUsers.typeToSearch">Type a username to search the users.</p>
+				}
 			</div>
 		} @else {
 			<table mat-table [dataSource]="users()" class="users-table">
@@ -71,7 +75,7 @@
 							<!-- Promote -->
 							@if (canPromote(user.id)) {
 								<button
-									mat-stroked-button
+									matButton="outlined"
 									(click)="promote(user)"
 									[disabled]="actioningId() !== null"
 									matTooltip="Promote to next role"
@@ -90,7 +94,7 @@
 							<!-- Demote -->
 							@if (canDemote(user.id)) {
 								<button
-									mat-stroked-button
+									matButton="outlined"
 									(click)="demote(user)"
 									[disabled]="actioningId() !== null"
 									matTooltip="Demote to previous role"
@@ -108,7 +112,7 @@
 
 							<!-- Block -->
 							<button
-								mat-stroked-button
+								matButton="outlined"
 								class="delete-button"
 								(click)="block(user)"
 								[disabled]="actioningId() !== null"
