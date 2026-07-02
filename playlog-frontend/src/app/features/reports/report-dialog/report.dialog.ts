@@ -24,8 +24,9 @@ const PRESET_REASONS: string[] = [
 	$localize`:@@report.reasonSpam:Spam or advertising`,
 	$localize`:@@report.reasonSpoilers:Unmarked spoilers`,
 	$localize`:@@report.reasonInappropriate:Inappropriate content`,
-	$localize`:@@report.reasonOther:Other`,
 ];
+
+const OTHER = $localize`:@@report.reasonOther:Other`;
 
 @Component({
 	selector: 'app-report-dialog',
@@ -52,11 +53,13 @@ export class ReportDialog {
 	private snackbarService = inject(SnackbarService);
 
 	protected readonly presetReasons = PRESET_REASONS;
+	protected readonly other = OTHER;
 	protected readonly ReportTargetType = ReportTargetType;
 
 	protected submitting = signal(false);
 	protected error = signal<ApiError | null>(null);
 	protected selectedPreset = signal<string | null>(null);
+	protected showCustomReason = signal(false);
 
 	protected reasonControl = new FormControl('', [
 		Validators.required,
@@ -64,36 +67,37 @@ export class ReportDialog {
 		Validators.maxLength(500),
 	]);
 
-	constructor() {
-		this.reasonControl.valueChanges.subscribe(val => {
-			// If user types something that doesn't match any preset (excluding 'Other'), deselect
-			const other = this.presetReasons[this.presetReasons.length - 1];
-			if (val !== this.selectedPreset() && this.selectedPreset() !== other) {
-				this.selectedPreset.set(null);
-			}
-		});
-	}
-
 	protected selectPreset(reason: string) {
 		this.selectedPreset.set(reason);
-		const other = this.presetReasons[this.presetReasons.length - 1];
-		if (reason === other) {
-			this.reasonControl.setValue('');
-		} else {
-			this.reasonControl.setValue(reason);
-		}
+		this.showCustomReason.set(false);
+	}
+
+	protected selectOther() {
+		this.selectedPreset.set(this.other);
+		this.showCustomReason.set(true);
+		this.reasonControl.setValue('');
 		this.reasonControl.markAsTouched();
 	}
 
+	protected canSubmit(): boolean {
+		if (!this.selectedPreset()) return false;
+		if (this.selectedPreset() === this.other) return this.reasonControl.valid;
+		return true;
+	}
+
 	protected onSubmit() {
-		if (this.reasonControl.invalid || this.submitting()) return;
+		if (!this.canSubmit() || this.submitting()) return;
 		this.submitting.set(true);
 		this.error.set(null);
+
+		const reason = this.selectedPreset() === this.other
+			? this.reasonControl.value!.trim()
+			: this.selectedPreset()!;
 
 		this.reportService.report({
 			targetType: this.data.targetType,
 			targetId: this.data.targetId,
-			reason: this.reasonControl.value!.trim(),
+			reason,
 		}).subscribe({
 			next: () => {
 				this.submitting.set(false);
