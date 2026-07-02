@@ -204,6 +204,9 @@
 								} @else {
 									<span i18n="@@reviews.showComments">Comments</span>
 								}
+								@if (review.commentCount > 0) {
+									<span class="comment-count-badge">{{ review.commentCount }}</span>
+								}
 							</button>
 						</div>
 

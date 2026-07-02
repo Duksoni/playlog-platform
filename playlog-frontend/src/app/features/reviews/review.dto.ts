@@ -42,6 +42,7 @@ export interface GameReviewResponse {
 	text?: string | null;
 	createdAt: string;
 	updatedAt: string;
+	commentCount: number;
 }
 
 export interface GameRatingStatsResponse {

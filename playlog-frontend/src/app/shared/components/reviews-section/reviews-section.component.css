@@ -526,6 +526,21 @@
 	height: 16px;
 }
 
+.comment-count-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 5px;
+	border-radius: 9px;
+	background: var(--mat-sys-primary-container);
+	color: var(--mat-sys-on-primary-container);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1;
+}
+
 /*  Inline comments thread  */
 .review-comments {
 	padding: 12px 0 4px;
