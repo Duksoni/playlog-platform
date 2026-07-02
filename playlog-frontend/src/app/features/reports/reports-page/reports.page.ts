@@ -21,9 +21,7 @@ import {ReportService} from '../report.service';
 import {ReportResponse, ReportStatus, ReportTargetType} from '../report.dto';
 import {SnackbarService} from '../../../shared/services/snackbar.service';
 import {DialogService} from '../../../shared/services/dialog.service';
-import {
-	ViewReportedContentDialog
-} from '../view-reported-content-dialog/view-reported-content.dialog';
+import {ViewReportedContentDialog} from '../view-reported-content-dialog/view-reported-content.dialog';
 
 @Component({
 	selector: 'app-reports-page',
@@ -103,7 +101,11 @@ export class ReportsPage implements OnInit, AfterViewInit, OnDestroy {
 			next: (data) => {
 				this.loading.set(false);
 				if (data.length < this.pageSize) this.hasMore.set(false);
-				replace ? this.reports.set(data) : this.reports.update(prev => [...prev, ...data]);
+				if (replace) {
+					this.reports.set(data);
+				} else {
+					this.reports.update(prev => [...prev, ...data]);
+				}
 			},
 			error: () => this.loading.set(false),
 		});

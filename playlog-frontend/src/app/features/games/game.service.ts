@@ -1,10 +1,9 @@
-import {inject, Injectable, signal} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
 import {
 	CreateGameRequest,
 	Game,
-	GameCard,
 	GameDetails,
 	GameFilterParams,
 	GameMediaResponse,
@@ -13,7 +12,7 @@ import {
 	PublishUnpublishGameRequest,
 	UpdateGameRequest,
 } from './game.dto';
-import {map, Observable, of, switchMap} from 'rxjs';
+import {Observable} from 'rxjs';
 
 @Injectable({
 	providedIn: 'root',

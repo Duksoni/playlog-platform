@@ -1,12 +1,11 @@
-import {Injectable} from '@angular/core';
+import {inject, Injectable} from '@angular/core';
 import {MatSnackBar, MatSnackBarConfig} from '@angular/material/snack-bar';
 
 @Injectable({
 	providedIn: 'root',
 })
 export class SnackbarService {
-	constructor(private _snackbar: MatSnackBar) {
-	}
+	private _snackbar = inject(MatSnackBar);
 
 	private readonly defaultConfig: MatSnackBarConfig = {
 		horizontalPosition: 'center',

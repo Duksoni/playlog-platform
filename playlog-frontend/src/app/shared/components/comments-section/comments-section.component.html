@@ -55,7 +55,8 @@
 						<div class="comment-header">
 							<button class="comment-username hover-pointer"
 							        (click)="navigateToUser(comment.username)"
-							        [attr.aria-label]="comment.username">{{ comment.username }}</button>
+							        [attr.aria-label]="comment.username">{{ comment.username }}
+							</button>
 							<span class="comment-date">
 								{{ comment.createdAt | date:'mediumDate' }} {{ comment.createdAt | date:'shortTime' }}
 							</span>
@@ -82,7 +83,7 @@
 									}
 								</div>
 
-							<!-- Other users' comments: report button -->
+								<!-- Other users' comments: report button -->
 							} @else if (sessionService.user().role !== Role.GUEST && !reportedCommentIds().has(comment.id)) {
 								<div class="comment-actions">
 									<button mat-icon-button class="action-btn"
@@ -116,11 +117,11 @@
 								</button>
 							}
 
-						<!-- Edit mode -->
+							<!-- Edit mode -->
 						} @else {
 							<div class="edit-area">
 								<mat-form-field appearance="outline" class="w-100 edit-field">
-									<textarea matInput [formControl]="editControl" rows="3" maxlength="2000" autofocus
+									<textarea matInput [formControl]="editControl" rows="3" maxlength="2000"
 									          (keydown.escape)="cancelEdit()"
 									          (keydown.control.enter)="onSaveEdit(comment.id)"
 									          (keydown.meta.enter)="onSaveEdit(comment.id)"></textarea>
@@ -128,7 +129,8 @@
 								</mat-form-field>
 								<div class="edit-actions">
 									<button mat-button (click)="cancelEdit()" [disabled]="submitting()"
-									        i18n="@@comments.cancel">Cancel</button>
+									        i18n="@@comments.cancel">Cancel
+									</button>
 									<button mat-raised-button (click)="onSaveEdit(comment.id)"
 									        [disabled]="!editControl.value?.trim() || submitting()">
 										@if (submitting()) {

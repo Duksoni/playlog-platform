@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, inject, OnInit, signal} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
@@ -44,7 +44,7 @@ import {provideNativeDateAdapter} from '@angular/material/core';
 	templateUrl: './my-profile.page.html',
 	styleUrl: './my-profile.page.css',
 })
-export class MyProfilePage {
+export class MyProfilePage implements OnInit {
 	private router = inject(Router);
 	private fb = inject(FormBuilder);
 	private userService = inject(UserService);

@@ -5,7 +5,9 @@
 		<div class="container">
 			<p>
 				<span i18n="@@login.noAccount">Don't have an account? </span>
-				<u class="hover-pointer" (click)="openLoginDialog()" i18n="@@login.signUpLink">Sign up now</u>
+				<u class="hover-pointer" (click)="openLoginDialog()" (keydown.enter)="openLoginDialog()"
+				   (keydown.space)="$event.preventDefault(); openLoginDialog()" tabindex="0" role="button"
+				   i18n="@@login.signUpLink">Sign up now</u>
 			</p>
 			<form [formGroup]="loginForm" class="login-form">
 				<div class="row">
@@ -51,7 +53,8 @@
 							matTooltipShowDelay="300"
 						>
 							<mat-icon
-								fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}</mat-icon>
+								fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}
+							</mat-icon>
 						</button>
 						@if (loginForm.get('password')?.hasError('required')) {
 							<mat-error i18n="@@login.passwordRequired">

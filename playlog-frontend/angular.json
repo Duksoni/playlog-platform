@@ -21,6 +21,11 @@
 					"builder": "@angular/build:application",
 					"options": {
 						"browser": "src/main.ts",
+						"stylePreprocessorOptions": {
+							"sass": {
+								"silenceDeprecations": ["import", "global-builtin"]
+							}
+						},
 						"polyfills": [
 							"src/polyfills.ts",
 							"@angular/localize/init"

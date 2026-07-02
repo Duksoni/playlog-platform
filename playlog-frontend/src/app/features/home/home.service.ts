@@ -15,7 +15,7 @@ export class HomeService {
 	private commentService = inject(CommentService);
 
 	getNewReleases(limit = 8) {
-		return this.gameService.getNewReleases();
+		return this.gameService.getNewReleases(limit);
 	}
 
 	getMostReviewed(limit = 8) {

@@ -27,7 +27,7 @@ export class GameEntityService {
 
 	/** First 20 by name — for dropdowns and autocomplete initial load. */
 	getAllForFilter(entityType: GameEntityType) {
-		let params = new HttpParams().set('limit', this.GET_ALL_LIMIT);
+		const params = new HttpParams().set('limit', this.GET_ALL_LIMIT);
 		return this.http.get<PagedResponse<GameEntitySimple>>(`${environment.apiUrl}/${entityType}`, {params})
 			.pipe(map(
 				response => response.data

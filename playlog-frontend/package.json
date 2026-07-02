@@ -50,7 +50,7 @@
 		"@eslint/js": "^10.0.1",
 		"@ng-bootstrap/ng-bootstrap": "^20.0.0",
 		"angular-eslint": "21.4.0",
-		"eslint": "^10.3.0",
+		"eslint": "^10.6.0",
 		"jsdom": "^29.1.1",
 		"typescript": "^5.9.3",
 		"typescript-eslint": "8.59.2",

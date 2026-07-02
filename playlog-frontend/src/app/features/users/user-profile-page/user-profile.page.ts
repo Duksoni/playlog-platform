@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, inject, OnInit, signal} from '@angular/core';
 import {DatePipe} from "@angular/common";
 import {MatButton} from "@angular/material/button";
 import {MatChip, MatChipSet} from "@angular/material/chips";
@@ -28,7 +28,7 @@ import {LibrarySectionComponent} from '../../../shared/components/library-sectio
 	templateUrl: './user-profile.page.html',
 	styleUrl: './user-profile.page.css',
 })
-export class UserProfilePage {
+export class UserProfilePage implements OnInit {
 	private route = inject(ActivatedRoute);
 	private router = inject(Router);
 	private userService = inject(UserService);

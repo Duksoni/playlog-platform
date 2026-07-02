@@ -33,10 +33,12 @@
 
 			<div class="distribution-bar-combined">
 				@let barTotal = total || 1;
-				<div class="bar-segment highly" [style.width.%]="(ratingStats()!.highlyRecommendedCount / barTotal) * 100"></div>
+				<div class="bar-segment highly"
+				     [style.width.%]="(ratingStats()!.highlyRecommendedCount / barTotal) * 100"></div>
 				<div class="bar-segment good" [style.width.%]="(ratingStats()!.goodCount / barTotal) * 100"></div>
 				<div class="bar-segment okay" [style.width.%]="(ratingStats()!.okayCount / barTotal) * 100"></div>
-				<div class="bar-segment not" [style.width.%]="(ratingStats()!.notRecommendedCount / barTotal) * 100"></div>
+				<div class="bar-segment not"
+				     [style.width.%]="(ratingStats()!.notRecommendedCount / barTotal) * 100"></div>
 			</div>
 		</div>
 	}
@@ -68,7 +70,7 @@
 					}
 					<span class="review-date">
 						{{ ownReview()!.updatedAt | date:'mediumDate' }}
-						@if (ownReview()!.createdAt != ownReview()!.updatedAt) {
+						@if (ownReview()!.createdAt !== ownReview()!.updatedAt) {
 							<span class="review-edited" i18n="@@reviews.edited">(Edited)</span>
 						}
 					</span>
@@ -101,7 +103,8 @@
 		<div class="rating-filter-chips">
 			<button class="filter-chip" [class.active]="selectedRatingFilter() === null"
 			        [disabled]="!totalReviewsExist()" (click)="setRatingFilter(null)"
-			        i18n="@@reviews.filterAll">All</button>
+			        i18n="@@reviews.filterAll">All
+			</button>
 			@for (rating of ratingOrder; track rating) {
 				<button
 					class="filter-chip"
@@ -141,7 +144,8 @@
 						<div class="review-card-header">
 							<button class="reviewer-name hover-pointer"
 							        (click)="navigateToUser(review.username)"
-							        [attr.aria-label]="review.username">{{ review.username }}</button>
+							        [attr.aria-label]="review.username">{{ review.username }}
+							</button>
 							<div class="review-rating-badge" [class]="getRatingColorClass(review.rating)">
 								<mat-icon fontSet="material-symbols-rounded" class="filled badge-icon">
 									{{ ratingIcons[review.rating] }}
@@ -150,7 +154,7 @@
 							</div>
 							<span class="review-date">
 								{{ review.createdAt | date:'mediumDate' }}
-								@if (review.createdAt != review.updatedAt) {
+								@if (review.createdAt !== review.updatedAt) {
 									<span class="review-edited" i18n="@@reviews.edited">(Edited)</span>
 								}
 							</span>

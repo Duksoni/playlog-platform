@@ -55,7 +55,7 @@
 				<div class="credits-row">
 					@if (game()!.developers.length > 0) {
 						<div class="credit-group">
-							@if (game()!.developers.length == 1) {
+							@if (game()!.developers.length === 1) {
 								<span class="credit-label" i18n="@@gameDetail.developer">Developer</span>
 							} @else {
 								<span class="credit-label" i18n="@@gameDetail.developers">Developers</span>
@@ -71,7 +71,7 @@
 					}
 					@if (game()!.publishers.length > 0) {
 						<div class="credit-group">
-							@if (game()!.publishers.length == 1) {
+							@if (game()!.publishers.length === 1) {
 								<span class="credit-label" i18n="@@gameDetail.publisherr">Publisher</span>
 							} @else {
 								<span class="credit-label" i18n="@@gameDetail.publishers">Publishers</span>
@@ -258,7 +258,7 @@
 												     alt="Screenshot thumbnail"
 												     i18n-alt="@@gameDetail.screenshotThumbAlt"
 												     class="screenshot-thumb no-pointer-events"
-												     [class.selected]="selectedScreenshot() === ss.url" />
+												     [class.selected]="selectedScreenshot() === ss.url"/>
 											</div>
 										}
 									</div>
@@ -287,7 +287,8 @@
 				</ng-template>
 				<div class="tab-content">
 					@if (game()) {
-						<app-reviews-section [gameId]="game()!.id" [gameName]="game()!.name" [libraryStatus]="libraryStatus()" />
+						<app-reviews-section [gameId]="game()!.id" [gameName]="game()!.name"
+						                     [libraryStatus]="libraryStatus()"/>
 					}
 				</div>
 			</mat-tab>

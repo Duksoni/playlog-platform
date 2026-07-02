@@ -171,7 +171,11 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 					this.totalReviewsExist.set(data.length > 0);
 				}
 				if (data.length < this.pageSize) this.hasMore = false;
-				replace ? this.reviews.set(data) : this.reviews.update(prev => [...prev, ...data]);
+				if (replace) {
+					this.reviews.set(data);
+				} else {
+					this.reviews.update(prev => [...prev, ...data]);
+				}
 				setTimeout(() => this.checkAllReviewsOverflow(), 50);
 			},
 			error: () => this.loading.set(false),
@@ -276,7 +280,11 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 	protected toggleReviewText(reviewId: string) {
 		this.expandedReviews.update(set => {
 			const next = new Set(set);
-			next.has(reviewId) ? next.delete(reviewId) : next.add(reviewId);
+			if (next.has(reviewId)) {
+				next.delete(reviewId);
+			} else {
+				next.add(reviewId);
+			}
 			return next;
 		});
 	}

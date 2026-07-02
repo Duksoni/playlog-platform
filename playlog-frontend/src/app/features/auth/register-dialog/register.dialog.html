@@ -5,7 +5,9 @@
 		<div class="container">
 			<p>
 				<span i18n="@@register.hasAccount">Already have an account? </span>
-				<u class="hover-pointer" (click)="openLoginDialog()" i18n="@@register.signInLink">Sign in</u>
+				<u class="hover-pointer" (click)="openLoginDialog()" (keydown.enter)="openLoginDialog()"
+				   (keydown.space)="$event.preventDefault(); openLoginDialog()" tabindex="0" role="button"
+				   i18n="@@register.signInLink">Sign in</u>
 			</p>
 			<form [formGroup]="registerForm" class="register-form">
 

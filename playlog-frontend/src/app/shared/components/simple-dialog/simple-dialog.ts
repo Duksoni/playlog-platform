@@ -41,14 +41,12 @@ export class SimpleDialog {
 		this.positiveActionText = text;
 	}
 
-	setNeutralButton(text: string = "Close", action: () => void = () => {
-	}) {
+	setNeutralButton(text = "Close", action?: () => void) {
 		this.neutralAction = action;
 		this.neutralActionText = text;
 	}
 
-	setNegativeButton(text: string, action: () => void = () => {
-	}) {
+	setNegativeButton(text: string, action?: () => void) {
 		this.negativeAction = action;
 		this.negativeActionText = text;
 	}
