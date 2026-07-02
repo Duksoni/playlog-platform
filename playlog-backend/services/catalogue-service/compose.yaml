@@ -12,6 +12,7 @@ services:
     depends_on:
       postgres_catalogue:
         condition: service_healthy
+    restart: always
     networks:
       - playlog_network
 networks:

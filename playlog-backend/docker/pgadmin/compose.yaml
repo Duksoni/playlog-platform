@@ -15,6 +15,7 @@ services:
       interval: 10s
       timeout: 10s
       retries: 5
+    restart: always
     networks:
       - playlog_network
 volumes:

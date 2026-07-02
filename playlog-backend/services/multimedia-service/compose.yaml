@@ -12,6 +12,7 @@ services:
       MONGODB_DATABASE: ${MONGODB_DATABASE}
       MONGODB_COLLECTION: ${MONGODB_COLLECTION}
       MINIO_SERVER_URL: ${MINIO_SERVER_URL}
+      MEDIA_PUBLIC_BASE_URL: ${MEDIA_PUBLIC_BASE_URL}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
       MINIO_BUCKET: ${MINIO_BUCKET}
@@ -23,6 +24,7 @@ services:
         condition: service_healthy
     networks:
       - playlog_network
+    restart: always
 networks:
   playlog_network:
     external: true

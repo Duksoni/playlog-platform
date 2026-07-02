@@ -18,6 +18,7 @@ services:
     depends_on:
       postgres_users:
         condition: service_healthy
+    restart: always
     networks:
       - playlog_network
 networks:

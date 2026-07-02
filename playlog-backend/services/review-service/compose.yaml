@@ -17,6 +17,7 @@ services:
     depends_on:
       mongo_review:
         condition: service_healthy
+    restart: always
     networks:
       - playlog_network
 networks:
