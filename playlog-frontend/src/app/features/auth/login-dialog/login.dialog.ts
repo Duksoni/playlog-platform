@@ -1,4 +1,4 @@
-import {Component, effect, inject} from '@angular/core';
+import {Component, effect, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {
 	MatDialogActions,
 	MatDialogClose,
@@ -41,6 +41,7 @@ import {MatTooltip} from '@angular/material/tooltip';
 	providers: [LoginService],
 	templateUrl: './login.dialog.html',
 	styleUrl: './login.dialog.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginDialog {
 	private fb: FormBuilder = inject(FormBuilder);
@@ -48,7 +49,7 @@ export class LoginDialog {
 	private dialogService = inject(DialogService);
 	protected loginService = inject(LoginService);
 	private sessionService = inject(SessionService);
-	protected hidePassword = true;
+	protected hidePassword = signal(true);
 	protected loginForm: FormGroup = this.fb.group({
 		identifier: ['', [Validators.required, Validators.minLength(3)]],
 		password: ['', [Validators.required, Validators.minLength(8)]]
@@ -63,7 +64,7 @@ export class LoginDialog {
 	}
 
 	togglePasswordVisibility() {
-		this.hidePassword = !this.hidePassword;
+		this.hidePassword.update(v => !v);
 	}
 
 	onLogin() {

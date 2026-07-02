@@ -27,7 +27,7 @@
 							}
 						},
 						"polyfills": [
-							"src/polyfills.ts",
+							"zone.js",
 							"@angular/localize/init"
 						],
 						"tsConfig": "tsconfig.app.json",

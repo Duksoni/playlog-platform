@@ -1,4 +1,4 @@
-import {Component, effect, inject} from '@angular/core';
+import {Component, effect, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {
 	MatDialogActions,
 	MatDialogClose,
@@ -45,6 +45,7 @@ import {MatTooltip} from '@angular/material/tooltip';
 	providers: [RegisterService, provideNativeDateAdapter()],
 	templateUrl: './register.dialog.html',
 	styleUrl: './register.dialog.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegisterDialog {
 	private fb = inject(FormBuilder);
@@ -52,7 +53,7 @@ export class RegisterDialog {
 	private dialogRef = inject(MatDialogRef<RegisterDialog>);
 	private snackbarService = inject(SnackbarService);
 	protected registerService = inject(RegisterService);
-	protected hidePassword = true;
+	protected hidePassword = signal(true);
 	protected minDate = new Date();
 	protected maxDate = new Date();
 
@@ -79,7 +80,7 @@ export class RegisterDialog {
 	}
 
 	protected togglePasswordVisibility() {
-		this.hidePassword = !this.hidePassword;
+		this.hidePassword.update(v => !v);
 	}
 
 	protected onRegister() {

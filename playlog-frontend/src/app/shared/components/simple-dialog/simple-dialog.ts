@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import {
 	MAT_DIALOG_DATA,
 	MatDialogActions,
@@ -20,6 +20,7 @@ import {MatButton} from '@angular/material/button';
 	],
 	templateUrl: './simple-dialog.html',
 	styleUrl: './simple-dialog.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SimpleDialog {
 	data: SimpleDialogData = inject(MAT_DIALOG_DATA);

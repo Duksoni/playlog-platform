@@ -134,10 +134,10 @@
 					}
 
 					<div class="form-actions gap-2">
-						<button mat-button (click)="cancelEditing()" [disabled]="profileSubmitting()">
+						<button matButton (click)="cancelEditing()" [disabled]="profileSubmitting()">
 							<span i18n="@@common.cancel">Cancel</span>
 						</button>
-						<button mat-flat-button (click)="onProfileSubmit()"
+						<button matButton="filled" (click)="onProfileSubmit()"
 						        [disabled]="profileForm.invalid || profileSubmitting()">
 							@if (profileSubmitting()) {
 								<span class="d-flex align-items-center justify-content-center w-100">
@@ -162,14 +162,14 @@
 				<form [formGroup]="passwordForm" class="profile-form">
 					<mat-form-field appearance="outline" class="w-100">
 						<mat-label i18n="@@myProfile.oldPassword">Current Password</mat-label>
-						<input matInput [type]="hideOldPassword ? 'password' : 'text'"
+						<input matInput [type]="hideOldPassword() ? 'password' : 'text'"
 						       formControlName="oldPassword" autocomplete="current-password"/>
-						<button mat-icon-button matSuffix type="button"
-						        (click)="hideOldPassword = !hideOldPassword"
-						        [matTooltip]="hideOldPassword ? 'Show password' : 'Hide password'"
+						<button matIconButton matSuffix type="button"
+						        (click)="toggleOldPasswordVisibility()"
+						        [matTooltip]="hideOldPassword() ? 'Show password' : 'Hide password'"
 						        i18n-matTooltip="@@myProfile.togglePassword">
 							<mat-icon fontSet="material-symbols-rounded">
-								{{ hideOldPassword ? 'visibility_off' : 'visibility' }}
+								{{ hideOldPassword() ? 'visibility_off' : 'visibility' }}
 							</mat-icon>
 						</button>
 						@if (passwordForm.get('oldPassword')?.hasError('required')) {
@@ -179,14 +179,14 @@
 
 					<mat-form-field appearance="outline" class="w-100">
 						<mat-label i18n="@@myProfile.newPassword">New Password</mat-label>
-						<input matInput [type]="hideNewPassword ? 'password' : 'text'"
+						<input matInput [type]="hideNewPassword() ? 'password' : 'text'"
 						       formControlName="newPassword" autocomplete="new-password"/>
-						<button mat-icon-button matSuffix type="button"
-						        (click)="hideNewPassword = !hideNewPassword"
-						        [matTooltip]="hideNewPassword ? 'Show password' : 'Hide password'"
+						<button matIconButton matSuffix type="button"
+						        (click)="toggleNewPasswordVisibility()"
+						        [matTooltip]="hideNewPassword() ? 'Show password' : 'Hide password'"
 						        i18n-matTooltip="@@myProfile.togglePassword">
 							<mat-icon fontSet="material-symbols-rounded">
-								{{ hideNewPassword ? 'visibility_off' : 'visibility' }}
+								{{ hideNewPassword() ? 'visibility_off' : 'visibility' }}
 							</mat-icon>
 						</button>
 						@if (passwordForm.get('newPassword')?.hasError('required')) {
@@ -211,10 +211,10 @@
 					}
 
 					<div class="form-actions gap-2">
-						<button mat-button (click)="cancelChangePassword()" [disabled]="passwordSubmitting()">
+						<button matButton (click)="cancelChangePassword()" [disabled]="passwordSubmitting()">
 							<span i18n="@@common.cancel">Cancel</span>
 						</button>
-						<button mat-flat-button (click)="onPasswordSubmit()"
+						<button matButton="filled" (click)="onPasswordSubmit()"
 						        [disabled]="passwordForm.invalid || passwordSubmitting()">
 							@if (passwordSubmitting()) {
 								<span class="d-flex align-items-center justify-content-center w-100">
@@ -237,7 +237,7 @@
 				Deactivating your account will log you out and make your profile inaccessible.
 				This action cannot be undone.
 			</p>
-			<button mat-stroked-button class="delete-button" (click)="confirmDeactivate()">
+			<button matButton="outlined" class="delete-button" (click)="confirmDeactivate()">
 				<mat-icon fontSet="material-symbols-rounded">person_remove</mat-icon>
 				<span i18n="@@myProfile.deactivateBtn">Deactivate Account</span>
 			</button>

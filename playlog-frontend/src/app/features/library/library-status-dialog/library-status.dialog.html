@@ -36,13 +36,13 @@
 
 	<mat-dialog-actions>
 		@if (data.currentStatus) {
-			<button mat-stroked-button class="delete-button" (click)="onRemove()" [disabled]="submitting()">
+			<button matButton="outlined" class="delete-button" (click)="onRemove()" [disabled]="submitting()">
 				<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
 				<span i18n="@@libraryDialog.remove">Remove</span>
 			</button>
 		}
-		<button mat-stroked-button mat-dialog-close [disabled]="submitting()" i18n="@@libraryDialog.cancel">Cancel</button>
-		<button mat-flat-button (click)="onSave()"
+		<button matButton="outlined" mat-dialog-close [disabled]="submitting()" i18n="@@libraryDialog.cancel">Cancel</button>
+		<button matButton="filled" (click)="onSave()"
 		        [disabled]="!selectedStatus() || submitting()">
 			@if (submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">

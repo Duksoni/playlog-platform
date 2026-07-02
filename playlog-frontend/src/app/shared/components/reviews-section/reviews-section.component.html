@@ -53,7 +53,7 @@
 							<mat-icon fontSet="material-symbols-rounded" class="filled">rate_review</mat-icon>
 							<span i18n="@@reviews.yourReview">Your Review</span>
 						</div>
-						<button mat-icon-button (click)="openReviewDialog()"
+						<button matIconButton (click)="openReviewDialog()"
 						        matTooltip="Edit review" i18n-matTooltip="@@reviews.editTooltip"
 						        aria-label="Edit review" i18n-aria-label="@@reviews.editAria">
 							<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
@@ -81,7 +81,7 @@
 					<div class="write-review-text">
 						<span i18n="@@reviews.writePrompt">You've played this game. Share your thoughts!</span>
 					</div>
-					<button mat-raised-button (click)="openReviewDialog()">
+					<button matButton="elevated" (click)="openReviewDialog()">
 						<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
 						<span i18n="@@reviews.writeBtn">Write a Review</span>
 					</button>
@@ -162,7 +162,7 @@
 							<!-- Report button — shown to logged-in non-owners on hover -->
 							@if (sessionService.user().role !== Role.GUEST && !isOwnReviewCard(review) && !reportedReviewIds().has(review.id)) {
 								<div class="review-actions">
-									<button mat-icon-button class="action-btn"
+									<button matIconButton class="action-btn"
 									        (click)="openReportDialog(review)"
 									        matTooltip="Report review" i18n-matTooltip="@@reviews.reportTooltip"
 									        aria-label="Report review" i18n-aria-label="@@reviews.reportAria">

@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import {SessionService} from '../../../core/services/session.service';
 import {LibrarySectionComponent} from '../../../shared/components/library-section/library-section.component';
 
@@ -8,6 +8,7 @@ import {LibrarySectionComponent} from '../../../shared/components/library-sectio
 	imports: [LibrarySectionComponent],
 	templateUrl: './library.page.html',
 	styleUrl: './library.page.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LibraryPage {
 	protected sessionService = inject(SessionService);

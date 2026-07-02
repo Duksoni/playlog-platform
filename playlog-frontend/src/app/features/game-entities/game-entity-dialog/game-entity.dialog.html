@@ -32,8 +32,8 @@
 		</form>
 	</mat-dialog-content>
 	<mat-dialog-actions>
-		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@gameEntityDialog.cancel">Cancel</button>
-		<button mat-flat-button (click)="onSubmit()" [disabled]="form.invalid || submitting()">
+		<button matButton mat-dialog-close [disabled]="submitting()" i18n="@@gameEntityDialog.cancel">Cancel</button>
+		<button matButton="filled" (click)="onSubmit()" [disabled]="form.invalid || submitting()">
 			@if (submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">
 					<mat-spinner diameter="20" class="me-2"></mat-spinner>

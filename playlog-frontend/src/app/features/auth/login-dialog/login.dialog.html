@@ -38,22 +38,22 @@
 						<mat-label i18n="@@login.passwordLabel">Password</mat-label>
 						<input
 							matInput
-							[type]="hidePassword ? 'password' : 'text'"
+							[type]="hidePassword() ? 'password' : 'text'"
 							formControlName="password"
 							placeholder="Enter your password"
 							i18n-placeholder="@@login.passwordPlaceholder"
 							(keydown.enter)="onLogin()"
 						>
 						<button
-							mat-icon-button
+							matIconButton
 							matSuffix
 							type="button"
 							(click)="togglePasswordVisibility()"
-							[matTooltip]="hidePassword ? 'Show password' : 'Hide password'"
+							[matTooltip]="hidePassword() ? 'Show password' : 'Hide password'"
 							matTooltipShowDelay="300"
 						>
 							<mat-icon
-								fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}
+								fontSet="material-symbols-rounded">{{ hidePassword() ? 'visibility_off' : 'visibility' }}
 							</mat-icon>
 						</button>
 						@if (loginForm.get('password')?.hasError('required')) {
@@ -85,7 +85,7 @@
 
 	<mat-dialog-actions>
 		<button
-			mat-button
+			matButton
 			mat-dialog-close
 			[disabled]="loginService.submitting()"
 			i18n="@@login.cancel"
@@ -93,7 +93,7 @@
 			Cancel
 		</button>
 		<button
-			mat-flat-button
+			matButton="filled"
 			(click)="onLogin()"
 			[disabled]="loginForm.invalid || loginService.submitting()"
 		>

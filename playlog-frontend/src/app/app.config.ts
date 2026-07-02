@@ -2,7 +2,7 @@ import {ApplicationConfig, inject, provideAppInitializer, provideBrowserGlobalEr
 import {provideRouter} from '@angular/router';
 
 import {routes} from './app.routes';
-import {HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi} from '@angular/common/http';
+import {HTTP_INTERCEPTORS, provideHttpClient, withInterceptorsFromDi, withXhr} from '@angular/common/http';
 import {AuthInterceptor} from './core/interceptors/auth.interceptor';
 import {SessionService} from './core/services/session.service';
 import {catchError, firstValueFrom, of} from 'rxjs';
@@ -12,7 +12,7 @@ export const appConfig: ApplicationConfig = {
 	providers: [
 		provideBrowserGlobalErrorListeners(),
 		provideRouter(routes),
-		provideHttpClient(withInterceptorsFromDi()),
+		provideHttpClient(withXhr(), withInterceptorsFromDi()),
 		{
 			provide: HTTP_INTERCEPTORS,
 			useClass: AuthInterceptor,

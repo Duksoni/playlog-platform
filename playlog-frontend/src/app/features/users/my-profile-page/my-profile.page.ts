@@ -1,4 +1,4 @@
-import {Component, inject, OnInit, signal} from '@angular/core';
+import {Component, inject, OnInit, signal, ChangeDetectionStrategy} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {MatButton, MatIconButton} from '@angular/material/button';
 import {MatDatepicker, MatDatepickerInput, MatDatepickerToggle} from '@angular/material/datepicker';
@@ -43,6 +43,7 @@ import {provideNativeDateAdapter} from '@angular/material/core';
 	],
 	templateUrl: './my-profile.page.html',
 	styleUrl: './my-profile.page.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MyProfilePage implements OnInit {
 	private router = inject(Router);
@@ -64,8 +65,8 @@ export class MyProfilePage implements OnInit {
 
 	protected passwordSubmitting = signal(false);
 	protected passwordError = signal<ApiError | null>(null);
-	protected hideOldPassword = true;
-	protected hideNewPassword = true;
+	protected hideOldPassword = signal(true);
+	protected hideNewPassword = signal(true);
 
 	protected profileForm!: FormGroup;
 	protected passwordForm!: FormGroup;
@@ -224,6 +225,14 @@ export class MyProfilePage implements OnInit {
 				this.passwordError.set(err as ApiError);
 			},
 		});
+	}
+
+	protected toggleOldPasswordVisibility() {
+		this.hideOldPassword.update(v => !v);
+	}
+
+	protected toggleNewPasswordVisibility() {
+		this.hideNewPassword.update(v => !v);
 	}
 
 	protected confirmDeactivate() {

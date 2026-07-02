@@ -91,7 +91,7 @@
 				@if (sessionService.user().role !== Role.GUEST) {
 					<div class="library-section">
 						@if (libraryStatus() === null) {
-							<button mat-stroked-button (click)="openLibraryDialog()"
+							<button matButton="outlined" (click)="openLibraryDialog()"
 							        matTooltip="Add this game to your library"
 							        i18n-matTooltip="@@gameDetail.addToLibraryTooltip">
 								<mat-icon fontSet="material-symbols-rounded">collections_bookmark</mat-icon>
@@ -108,7 +108,7 @@
 										{{ statusLabels[libraryStatus()!] }}
 									</mat-chip>
 								</mat-chip-set>
-								<button mat-icon-button (click)="openLibraryDialog()"
+								<button matIconButton (click)="openLibraryDialog()"
 								        matTooltip="Edit library status"
 								        i18n-matTooltip="@@gameDetail.editLibraryTooltip"
 								        class="edit-status-btn">
@@ -122,31 +122,31 @@
 				<!-- Admin actions -->
 				@if (sessionService.user().role === Role.ADMIN) {
 					<div class="admin-actions">
-						<button mat-stroked-button (click)="openEditDialog()"
+						<button matButton="outlined" (click)="openEditDialog()"
 						        matTooltip="Edit game details" i18n-matTooltip="@@gameDetail.editTooltip">
 							<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
 							<span i18n="@@gameDetail.edit">Edit</span>
 						</button>
-						<button mat-stroked-button (click)="openMediaDialog()"
+						<button matButton="outlined" (click)="openMediaDialog()"
 						        matTooltip="Manage cover, screenshots and trailer"
 						        i18n-matTooltip="@@gameDetail.mediaTooltip">
 							<mat-icon fontSet="material-symbols-rounded">photo_library</mat-icon>
 							<span i18n="@@gameDetail.media">Media</span>
 						</button>
 						@if (game()!.draft) {
-							<button mat-stroked-button (click)="togglePublish()"
+							<button matButton="outlined" (click)="togglePublish()"
 							        matTooltip="Publish this game" i18n-matTooltip="@@gameDetail.publishTooltip">
 								<mat-icon fontSet="material-symbols-rounded">publish</mat-icon>
 								<span i18n="@@gameDetail.publish">Publish</span>
 							</button>
 						} @else {
-							<button mat-stroked-button (click)="togglePublish()"
+							<button matButton="outlined" (click)="togglePublish()"
 							        matTooltip="Move back to draft" i18n-matTooltip="@@gameDetail.unpublishTooltip">
 								<mat-icon fontSet="material-symbols-rounded">unpublished</mat-icon>
 								<span i18n="@@gameDetail.unpublish">Unpublish</span>
 							</button>
 						}
-						<button mat-stroked-button class="delete-button" (click)="confirmDelete()"
+						<button matButton="outlined" class="delete-button" (click)="confirmDelete()"
 						        matTooltip="Delete game permanently" i18n-matTooltip="@@gameDetail.deleteTooltip">
 							<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
 							<span i18n="@@gameDetail.delete">Delete</span>

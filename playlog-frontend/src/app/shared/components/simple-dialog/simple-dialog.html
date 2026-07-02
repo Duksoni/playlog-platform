@@ -3,7 +3,7 @@
 <mat-dialog-actions>
 	@if (neutralAction && neutralActionText) {
 		<button
-			mat-button
+			matButton
 			(click)="neutralAction()"
 			[mat-dialog-close]="true"
 			class="me-auto"
@@ -13,7 +13,7 @@
 	}
 	@if (negativeAction && negativeActionText) {
 		<button
-			mat-button
+			matButton
 			mat-dialog-close
 			(click)="negativeAction()"
 		>
@@ -23,7 +23,7 @@
 	}
 	@if (positiveAction && positiveActionText) {
 		<button
-			mat-flat-button
+			matButton="filled"
 			(click)="positiveAction()"
 			[mat-dialog-close]="true">
 			{{ positiveActionText }}
