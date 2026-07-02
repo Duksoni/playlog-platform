@@ -30,12 +30,10 @@ REPORTS_COLLECTION = "reports"
 # --- Report Reasons ---
 
 LEGIT_REASONS = [
-    "Harassment or bullying",
-    "Inappropriate language",
-    "Hate speech",
-    "Spam or misleading",
-    "Encouraging violence",
-    "Self-harm",
+    "Hate speech or harassment",
+    "Spam or advertising",
+    "Unmarked spoilers",
+    "Inappropriate content",
 ]
 
 NONSENSE_REASONS = [
