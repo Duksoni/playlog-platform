@@ -10,7 +10,8 @@ WORKDIR /app
 
 # dependency layer
 COPY package.json bun.lock ./
-RUN bun install --frozen-lockfile
+RUN --mount=type=cache,target=/root/.bun/install/cache/ \
+    bun install --frozen-lockfile
 
 # config layer
 COPY angular.json tsconfig*.json ./
@@ -19,13 +20,14 @@ COPY angular.json tsconfig*.json ./
 COPY src ./src
 COPY public ./public
 
-RUN bun run build
+RUN --mount=type=cache,target=/app/.angular/cache/ \
+    bun run build
 
 # =========================================
 # Stage 2: Nginx to Serve Static Files
 # =========================================
 
-FROM nginxinc/nginx-unprivileged:1.29-alpine AS runner
+FROM nginxinc/nginx-unprivileged:1.31-alpine AS runner
 
 # Set the filter to only substitute BACKEND_URL, preserving Nginx variables like $host
 ENV NGINX_ENVSUBST_FILTER=BACKEND_URL
