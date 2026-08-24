@@ -71,9 +71,9 @@ export class Navbar {
 		const segments = this.location.path().split('/').filter(s => s);
 		// Single-segment top-level paths
 		if (segments.length === 1 && this.topLevelDestinations.includes(segments[0])) return true;
-		// /users/:username — leaf pages
+		// /users/:username - leaf pages
 		if (segments.length === 2 && segments[0] === 'users') return true;
-		// /admin/users — treat as top-level
+		// /admin/users - treat as top-level
 		return segments.length === 2 && segments[0] === 'admin';
 
 	}

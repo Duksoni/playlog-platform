@@ -159,7 +159,7 @@
 								}
 							</span>
 
-							<!-- Report button — shown to logged-in non-owners on hover -->
+							<!-- Report button - shown to logged-in non-owners on hover -->
 							@if (sessionService.user().role !== Role.GUEST && !isOwnReviewCard(review) && !reportedReviewIds().has(review.id)) {
 								<div class="review-actions">
 									<button matIconButton class="action-btn"

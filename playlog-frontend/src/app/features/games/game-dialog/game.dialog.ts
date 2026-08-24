@@ -71,7 +71,7 @@ export class GameDialog implements OnInit {
 		}),
 	});
 
-	// Selected IDs for each entity — driven by SearchableMultiSelect outputs
+	// Selected IDs for each entity - driven by SearchableMultiSelect outputs
 	protected selectedDeveloperIds = signal<number[]>([]);
 	protected selectedPublisherIds = signal<number[]>([]);
 	protected selectedGenreIds = signal<number[]>([]);
