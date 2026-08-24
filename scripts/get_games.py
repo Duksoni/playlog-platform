@@ -126,7 +126,7 @@ def fetch_top_games():
 
 def main():
     # ----------------------
-    # 1. Platforms and genres — not a lot of them, they can be fetched in full
+    # 1. Platforms and genres - not a lot of them, they can be fetched in full
     # ----------------------
     print("\n[1/4] Fetching platforms and genres...")
 
@@ -169,7 +169,7 @@ def main():
     trailers_found = 0
 
     # ----------------------
-    # 3. Process each game — fetch details, collect entities, download media
+    # 3. Process each game - fetch details, collect entities, download media
     # ----------------------
     print(f"\n[3/4] Processing {len(games_list)} games...")
 
@@ -203,13 +203,13 @@ def main():
         for genre in details.get("genres", []):
             game_genre_rel.append((rawg_id, genre["id"]))
 
-        # Platforms — detail response nests platform object under a 'platform' key
+        # Platforms - detail response nests platform object under a 'platform' key
         for platform_entry in details.get("platforms", []):
             platform = platform_entry.get("platform", {})
             if platform:
                 game_platform_rel.append((rawg_id, platform["id"]))
 
-        # Media — stored under internal id so folder name matches games.id
+        # Media - stored under internal id so folder name matches games.id
         game_dir = MEDIA_ROOT / str(internal_id)
         game_dir.mkdir(exist_ok=True)
 
