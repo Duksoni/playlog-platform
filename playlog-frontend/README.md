@@ -1,61 +1,69 @@
-# PlaylogFrontend
+# playlog-frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.0.4.
+_Angular_ 22 aplikacija, stilizovana pomoću [Angular Material](https://material.angular.dev/) i sa
+[Bootstrap](https://ng-bootstrap.github.io/)-om (samo CSS klase za raspored na stranici i veličinu elemenata).
 
-## Development server
+_Package manager_: [bun](https://bun.sh/).
 
-Firstly, generate the environment files via: `ng generate environments`
+Korištena verzija _Node.js_: `24.16.0`
 
-To start a local development server, run:
+## Struktura projekta
 
-```bash
-ng serve
+```
+src/
+└── app/
+    ├── core/               # AuthInterceptor (bearer token + refresh), AuthGuard, SessionService (signali), ApiError, PagedResponse
+    ├── features/           # Stranice i komponente grupisane po funkcionalnostima, DTO i servisi
+    │   ├── auth/
+    │   ├── comments/
+    │   ├── game-entities/
+    │   ├── games/
+    │   ├── home/
+    │   ├── library/
+    │   ├── navbar/
+    │   ├── reports/
+    │   ├── reviews/
+    │   └── users/
+    └── shared/             # Deljene komponente i korisni servisi
+        ├── components/
+        └── services/
 ```
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+Zaštićene rute koriste funkcionalne _guard_-ove (`CanActivateFn`) koji čitaju uloge iz `route.data['roles']`. Stanje
+korisnika/tokena se nalazi u `SessionService` kao _Angular_ signali.
 
-## Code scaffolding
+## Konfiguracija
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+Videti `.env.example` i `.env.production.example` za potrebne promenljive.
 
-```bash
-ng generate component component-name
-```
-
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## _Development server_
 
 ```bash
-ng generate --help
+bun run start
 ```
 
-## Building
+Server je podrazumevano pokrenut na `http://localhost:4200/`. Aplikacija se automatski ponovo učitava kada god se
+bilo koji od fajlova modifikuje.
 
-To build the project run:
+## _Production build_
 
 ```bash
-ng build
+bun run build
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+Ovo kompajlira projekat i čuva _build_ artefakte u `dist/` direktorijumu. Podrazumevano, produkcioni _build_
+optimizuje aplikaciju za performanse i brzinu.
 
-## Running unit tests
+Za _build_ u _Docker_-u, najlakše je pokrenuti komandu `make build-frontend` iz korena repozitorijuma.
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Sa komandom `make start` pokreće se nginx server, koji servira aplikaciju na adresi `http://localhost:8080/`.
+
+Za detalje pogledati nginx konfiguraciju u `nginx.conf`.
+
+## _Lint_
 
 ```bash
-ng test
+bun run lint
 ```
 
-## Running end-to-end tests
-
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+Pokreće ESLint nad TypeScript i HTML izvornim fajlovima.
