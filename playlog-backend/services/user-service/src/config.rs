@@ -1,9 +1,6 @@
 use anyhow::{Context, Result};
 use chrono::Duration;
-use std::{
-    env::var,
-    fs::read
-};
+use std::{env::var, fs::read};
 
 pub struct Environment {
     pub database_url: String,
@@ -16,6 +13,8 @@ pub struct AppConfig {
     pub jwt_public_key: Vec<u8>,
     pub access_token_validity: Duration,
     pub refresh_token_validity: Duration,
+    pub cookie_secure: bool,
+    pub cookie_same_site: cookie::SameSite,
 }
 
 impl AppConfig {
@@ -34,12 +33,37 @@ impl AppConfig {
         let refresh_token_exp = var("REFRESH_TOKEN_VALIDITY_DAYS")
             .map(|val| val.parse::<u8>())
             .unwrap_or(Ok(14))?;
+        let cookie_secure = var("COOKIE_SECURE")
+            .map(|val| val.parse::<bool>())
+            .unwrap_or(Ok(false))?;
+        let cookie_same_site = var("COOKIE_SAME_SITE")
+            .map(|val| parse_same_site(&val))
+            .unwrap_or(Ok(cookie::SameSite::Lax))?;
+        if cookie_same_site == cookie::SameSite::None && !cookie_secure {
+            tracing::warn!(
+                "COOKIE_SAME_SITE=None requires COOKIE_SECURE=true, cookie may be rejected by browsers"
+            );
+        }
         Ok(Self {
             jwt_private_key,
             jwt_public_key,
             access_token_validity: Duration::seconds(access_token_exp as i64),
             refresh_token_validity: Duration::days(refresh_token_exp as i64),
+            cookie_secure,
+            cookie_same_site,
         })
+    }
+}
+
+fn parse_same_site(value: &str) -> Result<cookie::SameSite> {
+    match value.to_ascii_lowercase().as_str() {
+        "lax" => Ok(cookie::SameSite::Lax),
+        "strict" => Ok(cookie::SameSite::Strict),
+        "none" => Ok(cookie::SameSite::None),
+        _ => anyhow::bail!(
+            "invalid COOKIE_SAME_SITE '{}', expected Lax, Strict or None",
+            value
+        ),
     }
 }
 
