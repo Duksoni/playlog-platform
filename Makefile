@@ -1,4 +1,4 @@
-.PHONY: help start start-exposed stop build rebuild logs init-network
+.PHONY: help start start-exposed stop build rebuild logs init-network do-build do-rebuild
 
 ENV_FILE := .env.production
 NETWORK := playlog_network
@@ -47,9 +47,15 @@ start-exposed: init-network start-exposed-catalogue-service start-exposed-user-s
 
 stop: stop-api-gateway stop-user-service stop-multimedia-service stop-catalogue-service stop-library-service stop-review-service stop-frontend
 
-build: build-user-service build-multimedia-service build-catalogue-service build-library-service build-review-service build-api-gateway build-frontend
+do-build: build-user-service build-multimedia-service build-catalogue-service build-library-service build-review-service build-api-gateway build-frontend
 
-rebuild: rebuild-user-service rebuild-multimedia-service rebuild-catalogue-service rebuild-library-service rebuild-review-service rebuild-api-gateway rebuild-frontend
+do-rebuild: rebuild-user-service rebuild-multimedia-service rebuild-catalogue-service rebuild-library-service rebuild-review-service rebuild-api-gateway rebuild-frontend
+
+build:
+	@$(MAKE) -j$$(nproc) do-build
+
+rebuild:
+	@$(MAKE) -j$$(nproc) do-rebuild
 
 define SERVICE_TARGETS
 .PHONY: start-$(1) stop-$(1) restart-$(1) build-$(1) rebuild-$(1) logs-$(1)
