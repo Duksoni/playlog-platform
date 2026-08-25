@@ -1,4 +1,4 @@
-import {Component, inject, signal} from '@angular/core';
+import {Component, inject, signal, ChangeDetectionStrategy} from '@angular/core';
 import {MatButton} from "@angular/material/button";
 import {
 	MAT_DIALOG_DATA,
@@ -29,6 +29,7 @@ import {GameLibraryStatus, LIBRARY_STATUS_ICONS, LIBRARY_STATUS_LABELS, UserGame
 	],
 	templateUrl: './library-status.dialog.html',
 	styleUrl: './library-status.dialog.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LibraryStatusDialog {
 	protected data: LibraryStatusDialogData = inject(MAT_DIALOG_DATA);

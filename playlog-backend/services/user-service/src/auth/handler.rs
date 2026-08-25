@@ -3,11 +3,11 @@ use crate::{
     app::AppState,
     shared::{build_cookie_header, REFRESH_TOKEN_COOKIE_NAME},
 };
-use service_common::error::{ApiError, Result as ApiResult};
 use axum::{extract::State, http::StatusCode, response::IntoResponse, routing::post, Json};
 use axum_extra::extract::cookie::CookieJar;
 use axum_macros::debug_handler;
 use cookie::time::Duration;
+use service_common::error::{ApiError, Result as ApiResult};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use validator::Validate;
@@ -42,7 +42,12 @@ pub async fn login(
     let tokens = state.auth_service.login(request, &state.config).await?;
 
     let cookie_duration = Duration::days(state.config.refresh_token_validity.num_days());
-    let headers = build_cookie_header(&tokens.1, cookie_duration);
+    let headers = build_cookie_header(
+        &tokens.1,
+        cookie_duration,
+        state.config.cookie_secure,
+        state.config.cookie_same_site,
+    );
 
     let mut response = Json(TokenResponse::new(tokens.0)).into_response();
     response.headers_mut().extend(headers);
@@ -52,7 +57,7 @@ pub async fn login(
 
 #[utoipa::path(
        post,
-       path = "/api/auth/register",
+        path = "/api/auth/register",
        request_body = RegisterRequest,
        summary = "Register new user",
        responses(
@@ -94,7 +99,12 @@ pub async fn logout(
         tracing::warn!("Failed to revoke refresh token: {}", err);
     }
 
-    let headers = build_cookie_header("", Duration::seconds(0));
+    let headers = build_cookie_header(
+        "",
+        Duration::seconds(0),
+        state.config.cookie_secure,
+        state.config.cookie_same_site,
+    );
 
     let mut response = StatusCode::NO_CONTENT.into_response();
     response.headers_mut().extend(headers);
@@ -124,7 +134,12 @@ pub async fn refresh_tokens(
         .await?;
 
     let cookie_duration = Duration::days(state.config.refresh_token_validity.num_days());
-    let headers = build_cookie_header(&tokens.1, cookie_duration);
+    let headers = build_cookie_header(
+        &tokens.1,
+        cookie_duration,
+        state.config.cookie_secure,
+        state.config.cookie_same_site,
+    );
 
     let mut response = Json(TokenResponse::new(tokens.0)).into_response();
     response.headers_mut().extend(headers);

@@ -33,10 +33,12 @@
 
 			<div class="distribution-bar-combined">
 				@let barTotal = total || 1;
-				<div class="bar-segment highly" [style.width.%]="(ratingStats()!.highlyRecommendedCount / barTotal) * 100"></div>
+				<div class="bar-segment highly"
+				     [style.width.%]="(ratingStats()!.highlyRecommendedCount / barTotal) * 100"></div>
 				<div class="bar-segment good" [style.width.%]="(ratingStats()!.goodCount / barTotal) * 100"></div>
 				<div class="bar-segment okay" [style.width.%]="(ratingStats()!.okayCount / barTotal) * 100"></div>
-				<div class="bar-segment not" [style.width.%]="(ratingStats()!.notRecommendedCount / barTotal) * 100"></div>
+				<div class="bar-segment not"
+				     [style.width.%]="(ratingStats()!.notRecommendedCount / barTotal) * 100"></div>
 			</div>
 		</div>
 	}
@@ -51,7 +53,7 @@
 							<mat-icon fontSet="material-symbols-rounded" class="filled">rate_review</mat-icon>
 							<span i18n="@@reviews.yourReview">Your Review</span>
 						</div>
-						<button mat-icon-button (click)="openReviewDialog()"
+						<button matIconButton (click)="openReviewDialog()"
 						        matTooltip="Edit review" i18n-matTooltip="@@reviews.editTooltip"
 						        aria-label="Edit review" i18n-aria-label="@@reviews.editAria">
 							<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
@@ -68,7 +70,7 @@
 					}
 					<span class="review-date">
 						{{ ownReview()!.updatedAt | date:'mediumDate' }}
-						@if (ownReview()!.createdAt != ownReview()!.updatedAt) {
+						@if (ownReview()!.createdAt !== ownReview()!.updatedAt) {
 							<span class="review-edited" i18n="@@reviews.edited">(Edited)</span>
 						}
 					</span>
@@ -79,7 +81,7 @@
 					<div class="write-review-text">
 						<span i18n="@@reviews.writePrompt">You've played this game. Share your thoughts!</span>
 					</div>
-					<button mat-raised-button (click)="openReviewDialog()">
+					<button matButton="elevated" (click)="openReviewDialog()">
 						<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
 						<span i18n="@@reviews.writeBtn">Write a Review</span>
 					</button>
@@ -101,7 +103,8 @@
 		<div class="rating-filter-chips">
 			<button class="filter-chip" [class.active]="selectedRatingFilter() === null"
 			        [disabled]="!totalReviewsExist()" (click)="setRatingFilter(null)"
-			        i18n="@@reviews.filterAll">All</button>
+			        i18n="@@reviews.filterAll">All
+			</button>
 			@for (rating of ratingOrder; track rating) {
 				<button
 					class="filter-chip"
@@ -141,7 +144,8 @@
 						<div class="review-card-header">
 							<button class="reviewer-name hover-pointer"
 							        (click)="navigateToUser(review.username)"
-							        [attr.aria-label]="review.username">{{ review.username }}</button>
+							        [attr.aria-label]="review.username">{{ review.username }}
+							</button>
 							<div class="review-rating-badge" [class]="getRatingColorClass(review.rating)">
 								<mat-icon fontSet="material-symbols-rounded" class="filled badge-icon">
 									{{ ratingIcons[review.rating] }}
@@ -150,15 +154,15 @@
 							</div>
 							<span class="review-date">
 								{{ review.createdAt | date:'mediumDate' }}
-								@if (review.createdAt != review.updatedAt) {
+								@if (review.createdAt !== review.updatedAt) {
 									<span class="review-edited" i18n="@@reviews.edited">(Edited)</span>
 								}
 							</span>
 
-							<!-- Report button — shown to logged-in non-owners on hover -->
+							<!-- Report button - shown to logged-in non-owners on hover -->
 							@if (sessionService.user().role !== Role.GUEST && !isOwnReviewCard(review) && !reportedReviewIds().has(review.id)) {
 								<div class="review-actions">
-									<button mat-icon-button class="action-btn"
+									<button matIconButton class="action-btn"
 									        (click)="openReportDialog(review)"
 									        matTooltip="Report review" i18n-matTooltip="@@reviews.reportTooltip"
 									        aria-label="Report review" i18n-aria-label="@@reviews.reportAria">
@@ -199,6 +203,9 @@
 									<span i18n="@@reviews.hideComments">Hide comments</span>
 								} @else {
 									<span i18n="@@reviews.showComments">Comments</span>
+								}
+								@if (review.commentCount > 0) {
+									<span class="comment-count-badge">{{ review.commentCount }}</span>
 								}
 							</button>
 						</div>

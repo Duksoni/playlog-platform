@@ -16,7 +16,7 @@
 						<div class="preview-item">
 							<img [src]="pendingCover()!.previewUrl" alt="Cover preview"
 							     i18n-alt="@@mediaDialog.coverPreviewAlt" class="cover-preview no-pointer-events"/>
-							<button mat-icon-button class="remove-btn"
+							<button matIconButton class="remove-btn"
 							        (click)="removePending(pendingFiles().indexOf(pendingCover()!))"
 							        matTooltip="Remove" i18n-matTooltip="@@mediaDialog.remove">
 								<mat-icon fontSet="material-symbols-rounded">close</mat-icon>
@@ -36,7 +36,7 @@
 					}
 
 					<input #coverInput type="file" accept="image/*" (change)="selectCover($event)" hidden/>
-					<button mat-stroked-button type="button" (click)="coverInput.click()">
+					<button matButton="outlined" type="button" (click)="coverInput.click()">
 						<mat-icon fontSet="material-symbols-rounded">upload</mat-icon>
 						<span i18n="@@mediaDialog.selectCover">Select Cover</span>
 					</button>
@@ -69,7 +69,7 @@
 							<img [src]="pending.previewUrl" alt="Screenshot preview"
 							     i18n-alt="@@mediaDialog.screenshotPreviewAlt"
 							     class="screenshot-preview no-pointer-events"/>
-							<button mat-icon-button class="remove-btn small"
+							<button matIconButton class="remove-btn small"
 							        (click)="removePending(pendingFiles().indexOf(pending))"
 							        matTooltip="Remove" i18n-matTooltip="@@mediaDialog.remove">
 								<mat-icon fontSet="material-symbols-rounded">close</mat-icon>
@@ -80,7 +80,7 @@
 				</div>
 
 				<input #ssInput type="file" accept="image/*" multiple (change)="selectScreenshots($event)" hidden/>
-				<button mat-stroked-button type="button" (click)="ssInput.click()">
+				<button matButton="outlined" type="button" (click)="ssInput.click()">
 					<mat-icon fontSet="material-symbols-rounded">add_photo_alternate</mat-icon>
 					<span i18n="@@mediaDialog.addScreenshots">Add Screenshots</span>
 				</button>
@@ -103,7 +103,7 @@
 						<div class="trailer-meta">
 							<span class="new-badge inline" i18n="@@mediaDialog.new">NEW</span>
 							<span class="file-name">{{ pendingTrailer()!.file.name }}</span>
-							<button mat-stroked-button type="button"
+							<button matButton="outlined" type="button"
 							        (click)="removePending(pendingFiles().indexOf(pendingTrailer()!))">
 								<mat-icon fontSet="material-symbols-rounded">close</mat-icon>
 								<span i18n="@@mediaDialog.removeTrailer">Remove</span>
@@ -120,7 +120,7 @@
 				}
 
 				<input #trailerInput type="file" accept="video/*" (change)="selectTrailer($event)" hidden/>
-				<button mat-stroked-button type="button" (click)="trailerInput.click()">
+				<button matButton="outlined" type="button" (click)="trailerInput.click()">
 					<mat-icon fontSet="material-symbols-rounded">videocam</mat-icon>
 					<span i18n="@@mediaDialog.selectTrailer">Select Trailer</span>
 				</button>
@@ -140,8 +140,8 @@
 	</mat-dialog-content>
 
 	<mat-dialog-actions>
-		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@mediaDialog.cancel">Cancel</button>
-		<button mat-flat-button (click)="onUpload()" [disabled]="!hasPendingChanges || submitting()">
+		<button matButton mat-dialog-close [disabled]="submitting()" i18n="@@mediaDialog.cancel">Cancel</button>
+		<button matButton="filled" (click)="onUpload()" [disabled]="!hasPendingChanges || submitting()">
 			@if (submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">
 					<mat-spinner diameter="20" class="me-2"></mat-spinner>

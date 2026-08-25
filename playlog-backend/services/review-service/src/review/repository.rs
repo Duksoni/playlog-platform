@@ -2,6 +2,7 @@ use super::{
     GameRatingStatsResponse, GameReviewResponse, MostReviewedGameResponse, Rating,
     RecentReviewResponse, Result, Review, ReviewError, TopGameResponse,
 };
+use crate::comment::{Comment, CommentTargetType};
 use anyhow::anyhow;
 use async_trait::async_trait;
 use bson::{serialize_to_bson, Binary, DateTime, Document};
@@ -10,6 +11,7 @@ use mongodb::{
     bson, bson::{doc, oid::ObjectId},
     Collection,
 };
+use std::collections::HashMap;
 use std::str::FromStr;
 use uuid::Uuid;
 
@@ -36,11 +38,12 @@ pub trait ReviewRepository: Send + Sync {
 #[derive(Debug, Clone)]
 pub struct MongoReviewRepository {
     reviews: Collection<Review>,
+    comments: Collection<Comment>,
 }
 
 impl MongoReviewRepository {
-    pub fn new(reviews: Collection<Review>) -> Self {
-        Self { reviews }
+    pub fn new(reviews: Collection<Review>, comments: Collection<Comment>) -> Self {
+        Self { reviews, comments }
     }
 }
 
@@ -64,7 +67,7 @@ impl ReviewRepository for MongoReviewRepository {
         } else {
             doc! { "game_id": game_id, "deleted": false }
         };
-        let mut reviews = vec![];
+        let mut review_docs = vec![];
         let mut cursor = self
             .reviews
             .find(filter)
@@ -73,8 +76,44 @@ impl ReviewRepository for MongoReviewRepository {
             .skip(skip)
             .await?;
         while let Some(review) = cursor.next().await {
-            reviews.push(review?.into());
+            review_docs.push(review?);
         }
+
+        let review_ids: Vec<String> = review_docs
+            .iter()
+            .map(|r| r.id.map(|id| id.to_string()).unwrap_or_default())
+            .collect();
+
+        let mut comment_counts: HashMap<String, u64> = HashMap::new();
+        if !review_ids.is_empty() {
+            let pipeline = vec![
+                doc! {
+                    "$match": {
+                        "target_type": CommentTargetType::Review.as_db_value(),
+                        "target_id": { "$in": &review_ids },
+                        "deleted": false,
+                    }
+                },
+                doc! { "$group": { "_id": "$target_id", "count": { "$sum": 1 } } },
+            ];
+            let mut cursor = self.comments.aggregate(pipeline).await?;
+            while let Some(result) = cursor.next().await {
+                let doc = result?;
+                let id = doc.get_str("_id").map_err(|e| anyhow!(e))?.to_string();
+                let count = doc.get_i32("count").map_err(|e| anyhow!(e))? as u64;
+                comment_counts.insert(id, count);
+            }
+        }
+
+        let reviews: Vec<GameReviewResponse> = review_docs
+            .into_iter()
+            .map(|review| {
+                let mut response: GameReviewResponse = review.into();
+                response.comment_count = comment_counts.get(&response.id).copied().unwrap_or(0);
+                response
+            })
+            .collect();
+
         Ok(reviews)
     }
 

@@ -1,4 +1,4 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, ChangeDetectionStrategy} from '@angular/core';
 import {
 	MAT_DIALOG_DATA,
 	MatDialogActions,
@@ -20,6 +20,7 @@ import {MatButton} from '@angular/material/button';
 	],
 	templateUrl: './simple-dialog.html',
 	styleUrl: './simple-dialog.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SimpleDialog {
 	data: SimpleDialogData = inject(MAT_DIALOG_DATA);
@@ -41,14 +42,12 @@ export class SimpleDialog {
 		this.positiveActionText = text;
 	}
 
-	setNeutralButton(text: string = "Close", action: () => void = () => {
-	}) {
+	setNeutralButton(text = "Close", action?: () => void) {
 		this.neutralAction = action;
 		this.neutralActionText = text;
 	}
 
-	setNegativeButton(text: string, action: () => void = () => {
-	}) {
+	setNegativeButton(text: string, action?: () => void) {
 		this.negativeAction = action;
 		this.negativeActionText = text;
 	}

@@ -154,7 +154,12 @@ async fn deactivate_account(
         .user_service
         .deactivate_account(claims.user_id)
         .await?;
-    let headers = build_cookie_header("", Duration::seconds(0));
+    let headers = build_cookie_header(
+        "",
+        Duration::seconds(0),
+        state.config.cookie_secure,
+        state.config.cookie_same_site,
+    );
 
     let mut response = StatusCode::NO_CONTENT.into_response();
     response.headers_mut().extend(headers);

@@ -5,7 +5,9 @@
 		<div class="container">
 			<p>
 				<span i18n="@@register.hasAccount">Already have an account? </span>
-				<u class="hover-pointer" (click)="openLoginDialog()" i18n="@@register.signInLink">Sign in</u>
+				<u class="hover-pointer" (click)="openLoginDialog()" (keydown.enter)="openLoginDialog()"
+				   (keydown.space)="$event.preventDefault(); openLoginDialog()" tabindex="0" role="button"
+				   i18n="@@register.signInLink">Sign in</u>
 			</p>
 			<form [formGroup]="registerForm" class="register-form">
 
@@ -93,18 +95,18 @@
 					<div class="col-12">
 						<mat-form-field appearance="outline" class="w-100">
 							<mat-label i18n="@@register.passwordLabel">Password</mat-label>
-							<input matInput [type]="hidePassword ? 'password' : 'text'" formControlName="password"
+							<input matInput [type]="hidePassword() ? 'password' : 'text'" formControlName="password"
 							       placeholder="Enter your password" i18n-placeholder="@@register.passwordPlaceholder"
 							       (keydown.enter)="onRegister()">
 							<button
-								mat-icon-button
+								matIconButton
 								matSuffix type="button"
 								(click)="togglePasswordVisibility()"
-								[matTooltip]="hidePassword ? 'Show password' : 'Hide password'"
-								matTooltipShowDelay="300"
+[matTooltip]="hidePassword() ? 'Show password' : 'Hide password'"
+									matTooltipShowDelay="300"
 							>
 								<mat-icon
-									fontSet="material-symbols-rounded">{{ hidePassword ? 'visibility_off' : 'visibility' }}
+									fontSet="material-symbols-rounded">{{ hidePassword() ? 'visibility_off' : 'visibility' }}
 								</mat-icon>
 							</button>
 							@if (registerForm.get('password')?.hasError('required')) {
@@ -115,7 +117,7 @@
 							@if (registerForm.get('password')?.hasError('pattern')) {
 								<mat-error i18n="@@register.passwordPattern">
 									Password must contain at least 8 characters, 1 uppercase letter, 1 lowercase letter,
-									1 special character and 1 digit from: &#64;$!%*?&
+									1 digit and 1 special character from: &#64;$!%*?&
 								</mat-error>
 							}
 						</mat-form-field>
@@ -137,9 +139,9 @@
 	</mat-dialog-content>
 
 	<mat-dialog-actions class="d-flex justify-content-end">
-		<button mat-button mat-dialog-close [disabled]="registerService.submitting()" i18n="@@register.cancel">Cancel
+		<button matButton mat-dialog-close [disabled]="registerService.submitting()" i18n="@@register.cancel">Cancel
 		</button>
-		<button mat-flat-button
+		<button matButton="filled"
 		        (click)="onRegister()"
 		        [disabled]="registerForm.invalid || registerService.submitting()">
 			@if (registerService.submitting()) {

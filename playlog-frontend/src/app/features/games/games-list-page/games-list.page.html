@@ -10,14 +10,14 @@
 		<div class="page-header-actions">
 
 			@if (isStandaloneList() && isAnyFilterActive()) {
-				<button mat-button (click)="clearFilters()">
+				<button matButton (click)="clearFilters()">
 					<mat-icon fontSet="material-symbols-rounded">filter_alt_off</mat-icon>
 					<span i18n="@@games.clearFilters">Clear Filters</span>
 				</button>
 			}
 
 			@if (isStandaloneList() && sessionService.user().role === Role.ADMIN) {
-				<button mat-flat-button (click)="openCreateDialog()">
+				<button matButton="filled" (click)="openCreateDialog()">
 					<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
 					<span i18n="@@games.addGame">Add Game</span>
 				</button>

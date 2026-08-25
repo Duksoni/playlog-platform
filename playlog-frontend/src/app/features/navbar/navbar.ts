@@ -1,10 +1,10 @@
-import {Component, inject} from '@angular/core';
+import {Component, inject, ChangeDetectionStrategy, signal} from '@angular/core';
 import {MatToolbar} from '@angular/material/toolbar';
 import {MatIconButton} from '@angular/material/button';
 import {MatIcon} from '@angular/material/icon';
 import {Location} from '@angular/common';
 import {MatTooltip} from '@angular/material/tooltip';
-import {Router, RouterLink} from '@angular/router';
+import {NavigationEnd, Router, RouterLink} from '@angular/router';
 import {MatDivider} from '@angular/material/list';
 import {MatMenu, MatMenuItem, MatMenuTrigger} from '@angular/material/menu';
 import {SessionService} from '../../core/services/session.service';
@@ -33,6 +33,7 @@ import {MatPrefix, MatSuffix} from '@angular/material/input';
 	],
 	templateUrl: './navbar.html',
 	styleUrl: './navbar.css',
+	changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Navbar {
 	protected sessionService = inject(SessionService);
@@ -41,6 +42,16 @@ export class Navbar {
 	protected location = inject(Location);
 	private router = inject(Router);
 	private http = inject(HttpClient);
+
+	private navTick = signal(0);
+
+	constructor() {
+		this.router.events.subscribe(event => {
+			if (event instanceof NavigationEnd) {
+				this.navTick.update(c => c + 1);
+			}
+		});
+	}
 
 	private topLevelDestinations = [
 		'home',
@@ -56,17 +67,19 @@ export class Navbar {
 	];
 
 	protected get topLevelDestination(): boolean {
+		this.navTick();
 		const segments = this.location.path().split('/').filter(s => s);
 		// Single-segment top-level paths
 		if (segments.length === 1 && this.topLevelDestinations.includes(segments[0])) return true;
-		// /users/:username — leaf pages
+		// /users/:username - leaf pages
 		if (segments.length === 2 && segments[0] === 'users') return true;
-		// /admin/users — treat as top-level
+		// /admin/users - treat as top-level
 		return segments.length === 2 && segments[0] === 'admin';
 
 	}
 
 	protected get gamesActive(): boolean {
+		this.navTick();
 		const segments = this.location.path().split('/').filter(s => s);
 		if (segments.length === 0) return false;
 		if (segments[0] === 'games') return true;
@@ -74,6 +87,7 @@ export class Navbar {
 	}
 
 	protected get gameEntitiesActive(): boolean {
+		this.navTick();
 		const segments = this.location.path().split('/').filter(s => s);
 		if (segments.length === 0) return false;
 		const entityBases = ['genres', 'tags', 'platforms', 'publishers', 'developers'];

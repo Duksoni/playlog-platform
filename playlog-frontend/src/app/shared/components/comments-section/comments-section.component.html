@@ -1,6 +1,6 @@
 <div class="comments-section">
 
-	<!-- Compose box — logged-in users only -->
+	<!-- Compose box - logged-in users only -->
 	@if (sessionService.user().role !== Role.GUEST) {
 		<div class="compose-area">
 			<div class="compose-avatar" aria-hidden="true">
@@ -14,7 +14,7 @@
 					<mat-hint align="end">{{ composeControl.value?.length || 0 }} / 2000</mat-hint>
 				</mat-form-field>
 				<div class="compose-actions">
-					<button mat-raised-button (click)="onSubmit()"
+					<button matButton="elevated" (click)="onSubmit()"
 					        [disabled]="!composeControl.value?.trim() || submitting()">
 						@if (submitting() && !editingId()) {
 							<span class="d-flex align-items-center justify-content-center w-100">
@@ -55,7 +55,8 @@
 						<div class="comment-header">
 							<button class="comment-username hover-pointer"
 							        (click)="navigateToUser(comment.username)"
-							        [attr.aria-label]="comment.username">{{ comment.username }}</button>
+							        [attr.aria-label]="comment.username">{{ comment.username }}
+							</button>
 							<span class="comment-date">
 								{{ comment.createdAt | date:'mediumDate' }} {{ comment.createdAt | date:'shortTime' }}
 							</span>
@@ -67,13 +68,13 @@
 							@if (isOwnComment(comment)) {
 								<div class="comment-actions">
 									@if (editingId() !== comment.id) {
-										<button mat-icon-button class="action-btn"
+										<button matIconButton class="action-btn"
 										        (click)="startEdit(comment)"
 										        matTooltip="Edit" i18n-matTooltip="@@edit"
 										        aria-label="Edit comment" i18n-aria-label="@@comments.editAria">
 											<mat-icon fontSet="material-symbols-rounded">edit</mat-icon>
 										</button>
-										<button mat-icon-button class="action-btn delete-button"
+										<button matIconButton class="action-btn delete-button"
 										        (click)="confirmDelete(comment.id)"
 										        matTooltip="Delete" i18n-matTooltip="@@comments.deleteTooltip"
 										        aria-label="Delete comment" i18n-aria-label="@@comments.deleteAria">
@@ -82,10 +83,10 @@
 									}
 								</div>
 
-							<!-- Other users' comments: report button -->
+								<!-- Other users' comments: report button -->
 							} @else if (sessionService.user().role !== Role.GUEST && !reportedCommentIds().has(comment.id)) {
 								<div class="comment-actions">
-									<button mat-icon-button class="action-btn"
+									<button matIconButton class="action-btn"
 									        (click)="openReportDialog(comment)"
 									        matTooltip="Report comment" i18n-matTooltip="@@comments.reportTooltip"
 									        aria-label="Report comment" i18n-aria-label="@@comments.reportAria">
@@ -116,20 +117,21 @@
 								</button>
 							}
 
-						<!-- Edit mode -->
+							<!-- Edit mode -->
 						} @else {
 							<div class="edit-area">
 								<mat-form-field appearance="outline" class="w-100 edit-field">
-									<textarea matInput [formControl]="editControl" rows="3" maxlength="2000" autofocus
+									<textarea matInput [formControl]="editControl" rows="3" maxlength="2000"
 									          (keydown.escape)="cancelEdit()"
 									          (keydown.control.enter)="onSaveEdit(comment.id)"
 									          (keydown.meta.enter)="onSaveEdit(comment.id)"></textarea>
 									<mat-hint align="end">{{ editControl.value?.length || 0 }} / 2000</mat-hint>
 								</mat-form-field>
 								<div class="edit-actions">
-									<button mat-button (click)="cancelEdit()" [disabled]="submitting()"
-									        i18n="@@comments.cancel">Cancel</button>
-									<button mat-raised-button (click)="onSaveEdit(comment.id)"
+									<button matButton (click)="cancelEdit()" [disabled]="submitting()"
+									        i18n="@@comments.cancel">Cancel
+									</button>
+									<button matButton="elevated" (click)="onSaveEdit(comment.id)"
 									        [disabled]="!editControl.value?.trim() || submitting()">
 										@if (submitting()) {
 											<span class="d-flex align-items-center justify-content-center w-100">

@@ -45,11 +45,10 @@ async fn main() -> anyhow::Result<()> {
     )
     .await?;
 
-    let review_repository = MongoReviewRepository::new(reviews_collection.clone());
+    let review_repository =
+        MongoReviewRepository::new(reviews_collection.clone(), comments_collection.clone());
     let comment_repository = MongoCommentRepository::new(comments_collection.clone());
-    let report_repository = Box::new(MongoReportRepository::new(
-        reports_collection,
-    ));
+    let report_repository = Box::new(MongoReportRepository::new(reports_collection));
 
     let comment_service = CommentService::new(
         Box::new(comment_repository.clone()),

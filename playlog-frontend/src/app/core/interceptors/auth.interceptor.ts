@@ -15,7 +15,7 @@ export class AuthInterceptor implements HttpInterceptor {
 		'/auth/logout'
 	];
 
-	intercept(req: HttpRequest<any>, next: HttpHandler): Observable<HttpEvent<any>> {
+	intercept(req: HttpRequest<unknown>, next: HttpHandler): Observable<HttpEvent<unknown>> {
 		if (
 			this.ignoredRoutes.some((route) => req.url.includes(route))
 		) return next.handle(req);

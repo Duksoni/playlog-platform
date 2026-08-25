@@ -1,5 +1,8 @@
+import {provideHttpClientTesting} from '@angular/common/http/testing';
 import {ComponentFixture, TestBed} from '@angular/core/testing';
-
+import {MatDialogRef} from '@angular/material/dialog';
+import {DialogService} from '../../../shared/services/dialog.service';
+import {SnackbarService} from '../../../shared/services/snackbar.service';
 import {RegisterDialog} from './register.dialog';
 
 describe('Register', () => {
@@ -8,7 +11,13 @@ describe('Register', () => {
 
 	beforeEach(async () => {
 		await TestBed.configureTestingModule({
-			imports: [RegisterDialog]
+      imports: [RegisterDialog],
+      providers: [
+        provideHttpClientTesting(),
+        {provide: MatDialogRef, useValue: {close: vi.fn()}},
+        {provide: DialogService, useValue: {}},
+        {provide: SnackbarService, useValue: {}},
+      ]
 		})
 			.compileComponents();
 

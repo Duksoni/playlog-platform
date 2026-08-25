@@ -1,12 +1,12 @@
 <mat-toolbar>
 	<div class="mobile-nav-trigger">
-		<button mat-icon-button [matMenuTriggerFor]="mobileMenu">
+		<button matIconButton [matMenuTriggerFor]="mobileMenu">
 			<mat-icon fontSet="material-symbols-rounded">menu</mat-icon>
 		</button>
 	</div>
 
 	@if (!topLevelDestination) {
-		<button mat-icon-button (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack"
+		<button matIconButton (click)="location.back()" matTooltip="Go Back" i18n-matTooltip="@@nav.goBack"
 		        class="back-btn">
 			<mat-icon fontSet="material-symbols-rounded">arrow_back</mat-icon>
 		</button>
@@ -42,7 +42,8 @@
 					matIconSuffix
 					fontSet="material-symbols-rounded"
 					[class.rotated]="gameEntitiesTrigger.menuOpen"
-				>expand_more</mat-icon>
+				>expand_more
+				</mat-icon>
 			</a>
 
 			<a class="nav-link-item" routerLink="/admin/users"
@@ -65,20 +66,22 @@
 
 	<span class="toolbar-spacer"></span>
 
-	<button mat-icon-button (click)="changeTheme()">
+	<button matIconButton (click)="changeTheme()">
 		@if (sessionService.theme() === 'light') {
 			<mat-icon fontSet="material-symbols-rounded"
-			          matTooltip="Switch to Dark Theme" i18n-matTooltip="@@nav.switchToDark">dark_mode</mat-icon>
+			          matTooltip="Switch to Dark Theme" i18n-matTooltip="@@nav.switchToDark">dark_mode
+			</mat-icon>
 		} @else {
 			<mat-icon fontSet="material-symbols-rounded"
-			          matTooltip="Switch to Light Theme" i18n-matTooltip="@@nav.switchToLight">light_mode</mat-icon>
+			          matTooltip="Switch to Light Theme" i18n-matTooltip="@@nav.switchToLight">light_mode
+			</mat-icon>
 		}
 	</button>
 
 	<mat-divider vertical class="ps-2"></mat-divider>
 
 	<button
-		mat-icon-button
+		matIconButton
 		[matMenuTriggerFor]="sessionService.user().role === Role.GUEST ? profileMenuGuest : profileMenuUser"
 		class="profile-menu-trigger"
 		matTooltip="Profile"
@@ -92,23 +95,27 @@
 			<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
 			My Account
 		</a>
-		<a mat-menu-item (click)="navigateToLibrary()">
+		<a mat-menu-item (click)="navigateToLibrary()" (keydown.enter)="navigateToLibrary()"
+		   (keydown.space)="$event.preventDefault(); navigateToLibrary()" tabindex="0">
 			<mat-icon fontSet="material-symbols-rounded">videogame_asset</mat-icon>
 			<span i18n="@@nav.myLibrary">My Library</span>
 		</a>
 		<mat-divider></mat-divider>
-		<a mat-menu-item (click)="logout()" routerLink="/home" i18n="@@nav.signOut">
+		<a mat-menu-item (click)="logout()" (keydown.enter)="logout()"
+		   (keydown.space)="$event.preventDefault(); logout()" tabindex="0" routerLink="/home" i18n="@@nav.signOut">
 			<mat-icon fontSet="material-symbols-rounded">logout</mat-icon>
 			Sign Out
 		</a>
 	</mat-menu>
 
 	<mat-menu #profileMenuGuest="matMenu">
-		<a mat-menu-item (click)="openLoginDialog()" i18n="@@nav.signIn">
+		<a mat-menu-item (click)="openLoginDialog()" (keydown.enter)="openLoginDialog()"
+		   (keydown.space)="$event.preventDefault(); openLoginDialog()" tabindex="0" i18n="@@nav.signIn">
 			<mat-icon fontSet="material-symbols-rounded">login</mat-icon>
 			Sign in
 		</a>
-		<a mat-menu-item (click)="openRegisterDialog()" i18n="@@nav.signUp">
+		<a mat-menu-item (click)="openRegisterDialog()" (keydown.enter)="openRegisterDialog()"
+		   (keydown.space)="$event.preventDefault(); openRegisterDialog()" tabindex="0" i18n="@@nav.signUp">
 			<mat-icon fontSet="material-symbols-rounded">person_add</mat-icon>
 			Sign up
 		</a>

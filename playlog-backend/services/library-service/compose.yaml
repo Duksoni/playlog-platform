@@ -13,6 +13,7 @@ services:
     depends_on:
       postgres_library:
         condition: service_healthy
+    restart: always
     networks:
       - playlog_network
 networks:

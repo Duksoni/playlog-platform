@@ -56,6 +56,7 @@ export class AdminUsersPage implements OnInit {
 
 	protected users = signal<SimpleUser[]>([]);
 	protected loading = signal(false);
+	protected hasSearched = signal(false);
 	protected actioningId = signal<string | null>(null);
 	// Cache role per user id so we can show correct promote/demote buttons without re-fetching
 	protected userRoles = signal<Record<string, string>>({});
@@ -77,6 +78,7 @@ export class AdminUsersPage implements OnInit {
 		const query = this.searchControl.value?.trim() ?? '';
 		if (!query) {
 			this.users.set([]);
+			this.hasSearched.set(false);
 			return;
 		}
 		if (query.length === 1) return;
@@ -87,6 +89,7 @@ export class AdminUsersPage implements OnInit {
 		this.userService.findUsers(query, role).subscribe({
 			next: (response) => {
 				this.users.set(response.users);
+				this.hasSearched.set(true);
 				// Seed the role cache with the selected filter role for all results
 				const roleMap: Record<string, string> = {...this.userRoles()};
 				response.users.forEach(u => {

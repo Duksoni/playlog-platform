@@ -115,7 +115,7 @@
 	outline-offset: 1px;
 }
 
-/* 16:9 cover — fixed width, height derived from ratio */
+/* 16:9 cover - fixed width, height derived from ratio */
 .game-card-cover {
 	flex-shrink: 0;
 	width: 160px;

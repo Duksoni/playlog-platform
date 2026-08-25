@@ -14,10 +14,10 @@ services:
       REVIEW_SERVICE_URL: ${REVIEW_SERVICE_URL}
       USER_SERVICE_URL: ${USER_SERVICE_URL}
       RUST_LOG: ${RUST_LOG}
-    ports:
-      - "3000:3000"
+    restart: always
     networks:
       - playlog_network
+
 networks:
   playlog_network:
     external: true

@@ -14,7 +14,7 @@
 		</p>
 
 		<!-- Preset reason chips -->
-		<p class="presets-label" i18n="@@report.presetsLabel">Select a reason or write your own:</p>
+		<p class="presets-label" i18n="@@report.selectReason">Select a reason:</p>
 		<div class="preset-chips">
 			@for (reason of presetReasons; track reason) {
 				<button
@@ -25,27 +25,36 @@
 				>{{ reason }}
 				</button>
 			}
+			<button
+				type="button"
+				class="preset-chip"
+				[class.selected]="selectedPreset() === other"
+				(click)="selectOther()"
+			>{{ other }}
+			</button>
 		</div>
 
-		<!-- Reason textarea -->
-		<mat-form-field appearance="outline" class="w-100 reason-field">
-			<mat-label i18n="@@report.reasonLabel">Reason</mat-label>
-			<textarea
-				matInput
-				[formControl]="reasonControl"
-				rows="3"
-				maxlength="500"
-				placeholder="Describe the issue…"
-				i18n-placeholder="@@report.reasonPlaceholder"
-			></textarea>
-			<mat-hint align="end">{{ reasonControl.value?.length ?? 0 }} / 500</mat-hint>
-			@if (reasonControl.hasError('required') && reasonControl.touched) {
-				<mat-error i18n="@@report.reasonRequired">Reason is required</mat-error>
-			}
-			@if (reasonControl.hasError('minlength') && reasonControl.touched) {
-				<mat-error i18n="@@report.reasonMinLength">Reason must be at least 10 characters</mat-error>
-			}
-		</mat-form-field>
+		<!-- Custom reason textarea (only when Other is selected) -->
+		@if (showCustomReason()) {
+			<mat-form-field appearance="outline" class="w-100 reason-field">
+				<mat-label i18n="@@report.reasonLabel">Reason</mat-label>
+				<textarea
+					matInput
+					[formControl]="reasonControl"
+					rows="3"
+					maxlength="500"
+					placeholder="Describe the issue…"
+					i18n-placeholder="@@report.reasonPlaceholder"
+				></textarea>
+				<mat-hint align="end">{{ reasonControl.value?.length ?? 0 }} / 500</mat-hint>
+				@if (reasonControl.hasError('required') && reasonControl.touched) {
+					<mat-error i18n="@@report.reasonRequired">Reason is required</mat-error>
+				}
+				@if (reasonControl.hasError('minlength') && reasonControl.touched) {
+					<mat-error i18n="@@report.reasonMinLength">Reason must be at least 10 characters</mat-error>
+				}
+			</mat-form-field>
+		}
 
 		@if (error()) {
 			<div class="error-message">
@@ -60,9 +69,9 @@
 	</mat-dialog-content>
 
 	<mat-dialog-actions>
-		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@report.cancel">Cancel</button>
-		<button mat-flat-button (click)="onSubmit()"
-		        [disabled]="reasonControl.invalid || submitting()">
+		<button matButton mat-dialog-close [disabled]="submitting()" i18n="@@report.cancel">Cancel</button>
+		<button matButton="filled" (click)="onSubmit()"
+		        [disabled]="!canSubmit() || submitting()">
 			@if (submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">
 					<mat-spinner diameter="18" class="me-2"></mat-spinner>

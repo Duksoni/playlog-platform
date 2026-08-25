@@ -25,16 +25,16 @@ export class GameEntityService {
 		return this.http.get<PagedResponse<GameEntitySimple>>(`${environment.apiUrl}/${entityType}`, {params});
 	}
 
-	/** First 20 by name — for dropdowns and autocomplete initial load. */
+	/** First 20 by name - for dropdowns and autocomplete initial load. */
 	getAllForFilter(entityType: GameEntityType) {
-		let params = new HttpParams().set('limit', this.GET_ALL_LIMIT);
+		const params = new HttpParams().set('limit', this.GET_ALL_LIMIT);
 		return this.http.get<PagedResponse<GameEntitySimple>>(`${environment.apiUrl}/${entityType}`, {params})
 			.pipe(map(
 				response => response.data
 			));
 	}
 
-	/** Search by partial name — for autocomplete. */
+	/** Search by partial name - for autocomplete. */
 	searchForFilter(entityType: GameEntityType, query: string) {
 		const params = new HttpParams().set('q', query).set('limit', this.GET_ALL_LIMIT);
 		return this.http.get<GameEntitySimple[]>(`${environment.apiUrl}/${entityType}/search`, {params});

@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-ARG RUST_VERSION=1.94
+ARG RUST_VERSION=1.95
 ARG APP_NAME=library-service
 
 ################################################################################
@@ -18,19 +18,21 @@ RUN --mount=type=bind,source=services,target=services \
     --mount=type=bind,source=shared,target=shared \
     --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
     --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
-    --mount=type=cache,target=/app/target/ \
-    --mount=type=cache,target=/usr/local/cargo/git/db \
-    --mount=type=cache,target=/usr/local/cargo/registry/ \
+    --mount=type=cache,id=cargo-target-library-service,target=/app/target,sharing=locked \
+    --mount=type=cache,id=cargo-git,target=/usr/local/cargo/git/db,sharing=locked \
+    --mount=type=cache,id=cargo-registry,target=/usr/local/cargo/registry,sharing=locked \
+    RUSTFLAGS="-C link-arg=-fuse-ld=lld" \
     SQLX_OFFLINE=true \
-cargo build --locked --release -p $APP_NAME && \
-cp ./target/release/$APP_NAME /bin/server
+    cargo build --locked --release -p $APP_NAME && \
+    cp ./target/release/$APP_NAME /bin/server
 
 ################################################################################
 # Create a new stage for running the application that contains the minimal
 # runtime dependencies for the application. This often uses a different base
 # image from the build stage where the necessary files are copied from the build
 # stage.
-FROM alpine:3.18 AS final
+FROM alpine:3.24 AS final
+RUN apk add --no-cache wget
 
 # Create a non-privileged user that the app will run under.
 ARG UID=10001

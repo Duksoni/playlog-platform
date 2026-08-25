@@ -123,7 +123,11 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 			next: (data) => {
 				this.loading.set(false);
 				if (data.length < this.pageSize) this.hasMore = false;
-				replace ? this.comments.set(data) : this.comments.update(prev => [...prev, ...data]);
+				if (replace) {
+					this.comments.set(data);
+				} else {
+					this.comments.update(prev => [...prev, ...data]);
+				}
 				setTimeout(() => this.checkAllCommentsOverflow(), 50);
 			},
 			error: () => this.loading.set(false),
@@ -259,7 +263,11 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 	protected toggleCommentText(commentId: string) {
 		this.expandedComments.update(set => {
 			const next = new Set(set);
-			next.has(commentId) ? next.delete(commentId) : next.add(commentId);
+			if (next.has(commentId)) {
+				next.delete(commentId);
+			} else {
+				next.add(commentId);
+			}
 			return next;
 		});
 	}

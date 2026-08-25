@@ -2,7 +2,7 @@ use super::{
     GameEntity, GameEntityError, GameEntityPagedResponse, GameEntitySimple, GameEntityTable, Result,
 };
 use async_trait::async_trait;
-use sqlx::{query_as, query_scalar, PgPool};
+use sqlx::{query_as, query_scalar, AssertSqlSafe, PgPool};
 
 #[async_trait]
 pub trait GameEntityRepository: Send + Sync {
@@ -38,7 +38,7 @@ impl GameEntityRepository for PostgresGameEntityRepository {
             "SELECT id, name, version FROM {} WHERE id = $1",
             self.table.table_name()
         );
-        let result = query_as::<_, GameEntity>(&query)
+        let result = query_as::<_, GameEntity>(AssertSqlSafe(query))
             .bind(id)
             .fetch_optional(&self.pool)
             .await?;
@@ -51,7 +51,7 @@ impl GameEntityRepository for PostgresGameEntityRepository {
         let offset = (page - 1) as i64 * limit;
 
         let count_query = format!("SELECT COUNT(*) FROM {}", self.table.table_name());
-        let total_items: i64 = query_scalar(&count_query).fetch_one(&self.pool).await?;
+        let total_items: i64 = query_scalar(AssertSqlSafe(count_query)).fetch_one(&self.pool).await?;
 
         let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
 
@@ -59,7 +59,7 @@ impl GameEntityRepository for PostgresGameEntityRepository {
             "SELECT id, name FROM {} ORDER BY name LIMIT $1 OFFSET $2",
             self.table.table_name()
         );
-        let data = query_as::<_, GameEntitySimple>(&query)
+        let data = query_as::<_, GameEntitySimple>(AssertSqlSafe(query))
             .bind(limit)
             .bind(offset)
             .fetch_all(&self.pool)
@@ -80,12 +80,12 @@ impl GameEntityRepository for PostgresGameEntityRepository {
         let query_pattern = format!("%{}%", name);
         let limit = limit.max(10) as i64;
         let query = format!(
-            "SELECT id, name FROM {} WHERE name ILIKE $1 ORDER BY name LIMIT {}",
-            self.table.table_name(),
-            limit
+            "SELECT id, name FROM {} WHERE name ILIKE $1 ORDER BY name LIMIT $2",
+            self.table.table_name()
         );
-        let result = query_as::<_, GameEntitySimple>(&query)
+        let result = query_as::<_, GameEntitySimple>(AssertSqlSafe(query))
             .bind(query_pattern)
+            .bind(limit)
             .fetch_all(&self.pool)
             .await?;
         Ok(result)
@@ -96,7 +96,7 @@ impl GameEntityRepository for PostgresGameEntityRepository {
             "SELECT EXISTS(SELECT 1 FROM {} WHERE id = $1)",
             self.table.table_name()
         );
-        let exists = query_scalar::<_, bool>(&query)
+        let exists = query_scalar::<_, bool>(AssertSqlSafe(query))
             .bind(id)
             .fetch_optional(&self.pool)
             .await?
@@ -116,7 +116,7 @@ impl GameEntityRepository for PostgresGameEntityRepository {
             "INSERT INTO {} (name) VALUES ($1) RETURNING id, name, version",
             self.table.table_name()
         );
-        let result = query_as::<_, GameEntity>(&query)
+        let result = query_as::<_, GameEntity>(AssertSqlSafe(query))
             .bind(name)
             .fetch_one(&self.pool)
             .await?;
@@ -133,7 +133,7 @@ impl GameEntityRepository for PostgresGameEntityRepository {
             "#,
             self.table.table_name()
         );
-        let result = query_as::<_, GameEntity>(&query)
+        let result = query_as::<_, GameEntity>(AssertSqlSafe(query))
             .bind(name)
             .bind(id)
             .bind(version)
@@ -158,7 +158,7 @@ impl DeletableGameEntityRepository for PostgresGameEntityRepository {
     async fn delete(&self, id: i32) -> Result<()> {
         let query = format!("DELETE FROM {} WHERE id = $1", self.table.table_name());
 
-        let result = sqlx::query(&query).bind(id).execute(&self.pool).await?;
+        let result = sqlx::query(AssertSqlSafe(query)).bind(id).execute(&self.pool).await?;
 
         if result.rows_affected() > 0 {
             Ok(())

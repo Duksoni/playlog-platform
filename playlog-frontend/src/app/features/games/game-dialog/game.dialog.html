@@ -144,8 +144,8 @@
 	</mat-dialog-content>
 
 	<mat-dialog-actions>
-		<button mat-button mat-dialog-close [disabled]="submitting()" i18n="@@gameDialog.cancel">Cancel</button>
-		<button mat-flat-button (click)="onSubmit()"
+		<button matButton mat-dialog-close [disabled]="submitting()" i18n="@@gameDialog.cancel">Cancel</button>
+		<button matButton="filled" (click)="onSubmit()"
 				[disabled]="gameForm.invalid || !multiSelectsValid || submitting()">
 			@if (submitting()) {
 				<span class="d-flex align-items-center justify-content-center w-100">

@@ -47,6 +47,11 @@ table {
 	width: 100%;
 }
 
+.mat-column-actions {
+	text-align: right;
+	overflow: visible;
+}
+
 .mat-row:hover {
 	background-color: var(--mat-sys-surface-container-high);
 }

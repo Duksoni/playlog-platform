@@ -34,7 +34,7 @@
 							<mat-icon fontSet="material-symbols-rounded" class="section-icon">sports_esports</mat-icon>
 							<h2 class="section-title" i18n="@@home.currentlyPlaying">Currently Playing</h2>
 						</div>
-						<button mat-button class="see-all-btn" (click)="navigateToLibrary()">
+						<button matButton class="see-all-btn" (click)="navigateToLibrary()">
 							<span i18n="@@home.seeAll">See all</span>
 							<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
 						</button>
@@ -84,7 +84,7 @@
 						<mat-icon fontSet="material-symbols-rounded" class="section-icon">new_releases</mat-icon>
 						<h2 class="section-title" i18n="@@home.newReleases">New Releases</h2>
 					</div>
-					<button mat-button class="see-all-btn" (click)="navigateToCatalogue({sort: 'released', sortDirection: 'desc'})">
+					<button matButton class="see-all-btn" (click)="navigateToCatalogue({sort: 'released', sortDirection: 'desc'})">
 						<span i18n="@@home.seeAll">See all</span>
 						<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
 					</button>
@@ -133,7 +133,7 @@
 						<mat-icon fontSet="material-symbols-rounded" class="section-icon">rate_review</mat-icon>
 						<h2 class="section-title" i18n="@@home.mostReviewed">Most Reviewed</h2>
 					</div>
-					<button mat-button class="see-all-btn" (click)="navigateToCatalogue()">
+					<button matButton class="see-all-btn" (click)="navigateToCatalogue()">
 						<span i18n="@@home.seeAll">See all</span>
 						<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
 					</button>
@@ -182,7 +182,7 @@
 						<mat-icon fontSet="material-symbols-rounded" class="section-icon">thumb_up</mat-icon>
 						<h2 class="section-title" i18n="@@home.topRated">Top Rated</h2>
 					</div>
-					<button mat-button class="see-all-btn" (click)="navigateToCatalogue()">
+					<button matButton class="see-all-btn" (click)="navigateToCatalogue()">
 						<span i18n="@@home.seeAll">See all</span>
 						<mat-icon fontSet="material-symbols-rounded">arrow_forward</mat-icon>
 					</button>
@@ -321,7 +321,7 @@
 					Create a free account to build your game library, write reviews, and join the conversation.
 				</p>
 				<div class="cta-actions">
-					<button mat-raised-button color="primary" (click)="navigateToCatalogue()">
+					<button matButton="elevated" (click)="navigateToCatalogue()">
 						<mat-icon fontSet="material-symbols-rounded">explore</mat-icon>
 						<span i18n="@@home.browseCatalogue">Browse Catalogue</span>
 					</button>

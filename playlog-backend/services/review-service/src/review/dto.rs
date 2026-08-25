@@ -101,6 +101,8 @@ pub struct GameReviewResponse {
     pub created_at: DateTime<Utc>,
     #[serde(rename = "updatedAt")]
     pub updated_at: DateTime<Utc>,
+    #[serde(rename = "commentCount")]
+    pub comment_count: u64,
 }
 
 impl From<Review> for GameReviewResponse {
@@ -113,6 +115,7 @@ impl From<Review> for GameReviewResponse {
             text: value.text,
             created_at: value.created_at.to_chrono(),
             updated_at: value.updated_at.to_chrono(),
+            comment_count: 0,
         }
     }
 }
