@@ -165,6 +165,8 @@ Aplikaciju je najlakše pokrenuti preko komandi iz `Makefile`-a u korenu projekt
   [`playlog-backend/README.md`](playlog-backend/README.md)
 - (obavezno) Popunjeni .env fajlovi kod svakog servisa u `playlog-backend/` i u `playlog-frontend/` (videti primere u
   `.env.example` i `.env.production.example` fajlovima),
+- (obavezno) Popunjeni `environment.ts` i `environment.development.ts` fajlovi u `playlog-frontend/src/environments/` -
+  pogledati [`playlog-frontend/README.md`](playlog-frontend/README.md),
 - (preporučeno) [GNU Make](https://www.gnu.org/software/make/) - podrška za pokretanje komandi iz _Makefile_-ova
   (najverovatnije je već instaliran, na popularnim _Linux_ distribucijama),
 - (opciono) [uv](https://docs.astral.sh/uv/) za ubacivanje demo podataka - pogledati

@@ -36,6 +36,14 @@ korisnika/tokena se nalazi u `SessionService` kao _Angular_ signali.
 
 Videti `.env.example` i `.env.production.example` za potrebne promenljive.
 
+Pokrenuti komandu:
+
+```bash
+ng generate environments
+```
+
+Pogledati fajlove `environment.development.example.ts` i `environment.example.ts` za izgled `environment` promenljive.
+
 ## _Development server_
 
 ```bash
