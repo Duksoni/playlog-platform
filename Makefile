@@ -23,20 +23,22 @@ DEV_REVIEW         := $(COMPOSE_REVIEW) -f ../../docker/mongodb/review/compose.d
 
 help:
 	@echo "Available targets:"
-	@echo "  make start			- Start all services"
-	@echo "  make start-exposed		- Start all services with exposed DB ports"
+	@echo "  make help			- Show this help"
+	@echo "  make start			- Start all services (creates playlog_network if needed, app at http://localhost:8080)"
+	@echo "  make start-exposed		- Start all services with DBs exposed on host ports (5433-5435, 27018-27019, 9000-9001)"
 	@echo "  make stop			- Stop all services"
-	@echo "  make build			- Build all images"
-	@echo "  make rebuild			- Rebuild all images (no cache)"
-	@echo "  make logs [svc]		- Follow logs (optionally for a specific project)"
+	@echo "  make build			- Build all images in parallel"
+	@echo "  make rebuild			- Rebuild all images without cache (no-cache) in parallel"
+	@echo "  make logs			- Follow logs for all services"
 	@echo ""
 	@echo "Service-specific targets ([svc] can be: user-service, multimedia-service, catalogue-service, library-service, review-service, api-gateway, frontend):"
-	@echo "  make start-[svc]"
-	@echo "  make stop-[svc]"
-	@echo "  make restart-[svc]"
-	@echo "  make build-[svc]"
-	@echo "  make rebuild-[svc]"
-	@echo "  make logs-[svc]"
+	@echo "  make start-[svc]		- Start single service (creates network if needed)"
+	@echo "  make stop-[svc]		- Stop single service"
+	@echo "  make restart-[svc]		- Restart single service (down + up)"
+	@echo "  make build-[svc]		- Build image for single service"
+	@echo "  make rebuild-[svc]		- Rebuild image for single service without cache"
+	@echo "  make logs-[svc]		- Follow logs for single service"
+	@echo "  make start-exposed-[svc]	- Start single service with DB exposed on host (only: user-service, catalogue-service, library-service, multimedia-service, review-service)"
 
 start: init-network start-catalogue-service start-user-service start-multimedia-service start-library-service start-review-service start-api-gateway start-frontend
 	@echo "  Access the app at:		http://localhost:8080";
