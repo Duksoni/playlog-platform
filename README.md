@@ -60,12 +60,12 @@ S tim na umu, Playlog je platforma zamišljena da omogući korisnicima da:
 
 _Napomena: svaka naredna uloga ima sve privilegije prethodne_
 
-- Neautentifikovani korisnici - mogu samo da gledaju javno dostupni sadržaj platforme, bez mogućnosti interakcije
+- Gosti - mogu samo da gledaju javno dostupni sadržaj platforme, bez mogućnosti interakcije
 - Registrovani (obični) korisnici - mogu da upravljaju sopstvenim profilom i bibliotekom igara, ostavljaju komentare,
   ocene i recenzije; imaju mogućnost prijave neprimerenog sadržaja
 - Moderatori - registrovani korisnici sa dodatnim ovlašćenjima za pregled i uklanjanje prijavljenog sadržaja
 - Administratori - zaduženi za održavanje sistema, kataloga igara, unapređivanje običnih korisnika u moderatore, kao i
-  moderatora u admine; imaju uvid u sve korisnike i mogu da im blokiraju nalog
+  moderatora u administratore; imaju uvid u sve korisnike i mogu da im blokiraju nalog
 
 ## Arhitektura sistema
 
@@ -120,8 +120,8 @@ Detaljniji opisi organizacije projekta mogu se pročitati u:
 
 **Odgovornosti:**
 
-- Upravljanje slikama (naslovne slike igara, screenshotovi)
-- Upravljanje video sadržajem (traileri igara)
+- Upravljanje slikama (naslovne slike igara, _screenshot_-ovi)
+- Upravljanje video sadržajem (trejleri igara)
 - Skladištenje multimedijalnog sadržaja
 - Čuvanje i obrada metapodataka o multimedijalnom sadržaju
 
@@ -136,7 +136,7 @@ Detaljniji opisi organizacije projekta mogu se pročitati u:
 - Upravljanje korisničkim recenzijama i ocenama igara
 - Upravljanje komentarima nad igrama i recenzijama
 - Evidentiranje prijava neprimerenog sadržaja
-- Omogućavanje pregleda i uklanjanja prijavljenog sadržaja (za moderatore i admine)
+- Omogućavanje pregleda i uklanjanja prijavljenog sadržaja (za moderatore i administratore)
 
 **Baza podataka:** `MongoDB`
 
@@ -148,7 +148,7 @@ Centralna ulazna tačka u sistem.
 
 - Rutiranje zahteva ka odgovarajućim servisima
 - Validacija JWT da bi se sprečio nevažeći zahtev pre nego što prosledi servisu
-    - _Napomena: JWT se validira i u servisima, kako bi endpointovi ostali zaštićeni u slučaju da Api Gateway otkaže_
+  - _Napomena: JWT se validira i u servisima, kako bi endpoint-ovi ostali zaštićeni u slučaju da Api Gateway otkaže_
 - Ograničavanje pristupa funkcionalnostima na osnovu korisničkih uloga
 
 ## Pokretanje aplikacije
