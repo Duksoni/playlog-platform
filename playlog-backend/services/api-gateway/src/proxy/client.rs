@@ -11,21 +11,25 @@ pub struct ProxyClient {
     client: Client,
 }
 
-// List of hop-by-hop headers that should not be forwarded
-// These are headers that are specific to a single connection between two nodes.
-// They are meant for the proxy only.
 const HOP_BY_HOP_HEADERS: &[&str] = &[
     "connection",
     "keep-alive",
     "proxy-authenticate",
     "proxy-authorization",
     "te",
-    "trailers",
+    "trailer",
     "transfer-encoding",
     "upgrade",
-    "host",
-    "content-length",
 ];
+
+const REGENERATED_HEADERS: &[&str] = &["host", "content-length"];
+
+fn should_forward_header(header_name: &str) -> bool {
+    !HOP_BY_HOP_HEADERS
+        .iter()
+        .chain(REGENERATED_HEADERS.iter())
+        .any(|blocked| blocked.eq_ignore_ascii_case(header_name))
+}
 
 impl ProxyClient {
     pub fn new(client: Client) -> Self {
@@ -52,12 +56,11 @@ impl ProxyClient {
         let mut request = self.client.request(method.clone(), &url);
 
         // Forward relevant headers (especially Authorization for double verification)
-        for (name, value) in headers.iter().filter(|(name, _)| {
-            !HOP_BY_HOP_HEADERS
-                .iter()
-                .any(|&header| header.eq_ignore_ascii_case(name.as_str()))
-        }) {
-            request = request.header(name, value);
+        for (header_name, header_value) in headers
+            .iter()
+            .filter(|(header_name, _)| should_forward_header(header_name.as_str()))
+        {
+            request = request.header(header_name, header_value);
         }
 
         // Add body if present - stream it without reading it all into memory
@@ -84,8 +87,11 @@ impl ProxyClient {
         let mut builder = Response::builder().status(status);
 
         // Copy headers from the backend response
-        for (name, value) in headers.iter() {
-            builder = builder.header(name, value);
+        for (header_name, header_value) in headers
+            .iter()
+            .filter(|(header_name, _)| should_forward_header(header_name.as_str()))
+        {
+            builder = builder.header(header_name, header_value);
         }
 
         let response = builder
