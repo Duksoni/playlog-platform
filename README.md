@@ -110,8 +110,8 @@ Detaljniji opisi organizacije projekta mogu se pročitati u:
     - u vlasništvu (podrazumevano)
     - trenutno se igra
     - lista želja (igre koje treba da izađu i koje planira da kupi)
-    - pređena (podložna ocenjivanju)
-    - odustao od igranja (podložna ocenjivanju)
+    - pređena
+    - odustao od igranja
 - Omogućavanje pregleda biblioteka drugih korisnika
 
 **Baza podataka:** `PostgreSQL`
@@ -134,6 +134,7 @@ Detaljniji opisi organizacije projekta mogu se pročitati u:
 **Odgovornosti:**
 
 - Upravljanje korisničkim recenzijama i ocenama igara
+  - Recenzije i ocene se mogu pisati za bilo koju igru iz kataloga, nezavisno da li je u korisnikovoj biblioteci
 - Upravljanje komentarima nad igrama i recenzijama
 - Evidentiranje prijava neprimerenog sadržaja
 - Omogućavanje pregleda i uklanjanja prijavljenog sadržaja (za moderatore i administratore)
