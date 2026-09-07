@@ -89,6 +89,10 @@ impl ReportService {
             return Err(ReportError::IllegalStatus(status.as_db_value()));
         }
 
+        if report.status != ReportStatus::Pending {
+            return Err(ReportError::IllegalStatus(report.status.as_db_value()));
+        }
+
         if let ReportStatus::Resolved = status {
             match report.target_type {
                 ReportTargetType::Review => {

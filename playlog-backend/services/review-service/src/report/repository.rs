@@ -1,4 +1,4 @@
-use super::{Report, ReportResponse, ReportStatus, ReportTargetType, Result};
+use super::{Report, ReportError, ReportResponse, ReportStatus, ReportTargetType, Result};
 use async_trait::async_trait;
 use futures::StreamExt;
 use mongodb::{
@@ -94,17 +94,24 @@ impl ReportRepository for MongoReportRepository {
         status: ReportStatus,
         version: i64,
     ) -> Result<()> {
-        let filter = doc! { "_id": id, "version": version };
+        let filter = doc! {
+            "_id": id,
+            "version": version,
+            "status": ReportStatus::Pending.as_db_value(),
+        };
         let update = doc! {
             "$set": { "status": status.as_db_value() },
             "$inc": { "version": 1 }
         };
         let result = self.reports.update_one(filter, update).await?;
 
-        if result.matched_count == 0 {
-            return Err(super::ReportError::Conflict(id));
+        if result.matched_count == 1 {
+            return Ok(());
         }
 
-        Ok(())
+        match self.reports.find_one(doc! { "_id": id }).await? {
+            None => Err(ReportError::NotFound),
+            Some(_) => Err(ReportError::Conflict(id)),
+        }
     }
 }
