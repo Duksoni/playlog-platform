@@ -1,9 +1,8 @@
 use super::{
-    CreateGameRequest, Game, GameDetails, GameFilterQuery, GameSimple, GetGamesQuery,
-    NewGameReleasesQuery, PublishUnpublishGameRequest, PublsherGamesQuery, UpdateGameRequest,
+    CreateGameRequest, DeleteGameRequest, Game, GameDetails, GameFilterQuery, GameSimple,
+    GetGamesQuery, NewGameReleasesQuery, PublishGameRequest, PublsherGamesQuery, UpdateGameRequest,
 };
 use crate::app::AppState;
-use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, State},
     http::{Extensions, StatusCode},
@@ -15,6 +14,7 @@ use axum::{
 use axum_extra::extract::Query;
 use axum_macros::debug_handler;
 use jwt_common::{auth, middleware::auth_optional, require_admin, AuthClaims, JwtConfig, Role};
+use service_common::error::{ApiError, Result as ApiResult};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use validator::Validate;
@@ -38,7 +38,6 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
         .route("/{id}", put(update))
         .route("/{id}", delete(delete_game))
         .route("/{id}/publish", put(publish))
-        .route("/{id}/unpublish", put(unpublish))
         .route_layer(from_fn(require_admin))
         .route_layer(from_fn_with_state(jwt_config, auth));
 
@@ -285,13 +284,16 @@ async fn update(
 #[utoipa::path(
     delete,
     path = "/api/games/{id}",
-    summary = "Delete a game (Admin only)",
+    summary = "Delete a draft game (Admin only, blocked once published)",
     params(("id" = i32, Path, description = "Game id")),
+    request_body = DeleteGameRequest,
     responses(
         (status = 204, description = "Game deleted"),
+        (status = 400, description = "Already published"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -301,19 +303,22 @@ async fn update(
 async fn delete_game(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
+    Json(request): Json<DeleteGameRequest>,
 ) -> ApiResult<impl IntoResponse> {
-    state.game_service.delete(id).await?;
+    request.validate().map_err(ApiError::from)?;
+    state.game_service.delete(id, request.version).await?;
     Ok(StatusCode::NO_CONTENT)
 }
 
 #[utoipa::path(
     put,
     path = "/api/games/{id}/publish",
-    summary = "Publish a draft game (Admin only)",
+    summary = "Publish a draft game (Admin only, irreversible)",
     params(("id" = i32, Path, description = "Game id")),
-    request_body = PublishUnpublishGameRequest,
+    request_body = PublishGameRequest,
     responses(
         (status = 200, description = "Game published", body = Game),
+        (status = 400, description = "Already published"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
@@ -327,37 +332,9 @@ async fn delete_game(
 async fn publish(
     State(state): State<Arc<AppState>>,
     Path(id): Path<i32>,
-    Json(request): Json<PublishUnpublishGameRequest>,
+    Json(request): Json<PublishGameRequest>,
 ) -> ApiResult<Json<Game>> {
     request.validate().map_err(ApiError::from)?;
     let game = state.game_service.publish(id, request.version).await?;
-    Ok(Json(game))
-}
-
-#[utoipa::path(
-    put,
-    path = "/api/games/{id}/unpublish",
-    summary = "Unpublish a game back to draft (Admin only)",
-    params(("id" = i32, Path, description = "Game id")),
-    request_body = PublishUnpublishGameRequest,
-    responses(
-        (status = 200, description = "Game unpublished", body = Game),
-        (status = 401, description = "Unauthorized"),
-        (status = 403, description = "Forbidden"),
-        (status = 404, description = "Game not found"),
-        (status = 409, description = "Conflict - version mismatch"),
-    ),
-    tag = "games",
-    security(("bearer" = [])),
-    operation_id = "unpublish_game"
-)]
-#[debug_handler]
-async fn unpublish(
-    State(state): State<Arc<AppState>>,
-    Path(id): Path<i32>,
-    Json(request): Json<PublishUnpublishGameRequest>,
-) -> ApiResult<Json<Game>> {
-    request.validate().map_err(ApiError::from)?;
-    let game = state.game_service.unpublish(id, request.version).await?;
     Ok(Json(game))
 }

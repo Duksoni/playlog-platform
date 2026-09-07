@@ -21,8 +21,8 @@ pub trait GameRepository: Send + Sync {
     async fn get_details(&self, id: i32, include_draft: bool) -> Result<Option<GameDetails>>;
     async fn create(&self, data: CreateGameRequest) -> Result<Game>;
     async fn update(&self, id: i32, data: UpdateGameRequest) -> Result<GameDetails>;
-    async fn set_draft(&self, id: i32, draft: bool, version: i64) -> Result<Game>;
-    async fn delete(&self, id: i32) -> Result<()>;
+    async fn publish(&self, id: i32, version: i64) -> Result<Game>;
+    async fn delete(&self, id: i32, version: i64) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -51,7 +51,7 @@ impl GameRepository for PostgresGameRepository {
             r#"
                 SELECT id, name, released, draft
                 FROM games
-                WHERE released <= CURRENT_DATE
+                WHERE released <= CURRENT_DATE AND draft = false
                 ORDER BY released DESC
                 LIMIT $1
             "#,
@@ -70,7 +70,7 @@ impl GameRepository for PostgresGameRepository {
                 SELECT id, name, released, draft
                 FROM games
                 JOIN game_developers gd ON gd.game_id = games.id
-                WHERE gd.developer_id = $1
+                WHERE gd.developer_id = $1 AND games.draft = false
                 ORDER BY name
             "#,
             developer_id
@@ -88,7 +88,7 @@ impl GameRepository for PostgresGameRepository {
             r#"
                 SELECT id, name, released, draft
                 FROM games JOIN game_publishers gp ON gp.game_id = games.id
-                WHERE gp.publisher_id = $1
+                WHERE gp.publisher_id = $1 AND games.draft = false
                 ORDER BY name
                 LIMIT 10
                 OFFSET $2
@@ -329,16 +329,15 @@ impl GameRepository for PostgresGameRepository {
             .ok_or(GameError::NotFound(id))
     }
 
-    async fn set_draft(&self, id: i32, draft: bool, version: i64) -> Result<Game> {
+    async fn publish(&self, id: i32, version: i64) -> Result<Game> {
         let game = query_as!(
             Game,
             r#"
-                UPDATE games 
-                SET draft = $1, version = version + 1
-                WHERE id = $2 AND version = $3
+                UPDATE games
+                SET draft = false, version = version + 1
+                WHERE id = $1 AND version = $2 AND draft = true
                 RETURNING id, name, description, released, website, draft, version
              "#,
-            draft,
             id,
             version
         )
@@ -346,31 +345,41 @@ impl GameRepository for PostgresGameRepository {
         .await?;
 
         match game {
-            Some(g) => Ok(g),
+            Some(game) => Ok(game),
             None => {
-                let exists = query_scalar!("SELECT EXISTS(SELECT 1 FROM games WHERE id = $1)", id)
-                    .fetch_one(&self.pool)
-                    .await?
-                    .unwrap_or(false);
-                if exists {
-                    Err(GameError::Conflict(id))
-                } else {
-                    Err(GameError::NotFound(id))
+                let state = query!("SELECT draft FROM games WHERE id = $1", id)
+                    .fetch_optional(&self.pool)
+                    .await?;
+                match state {
+                    None => Err(GameError::NotFound(id)),
+                    Some(row) if !row.draft => Err(GameError::AlreadyPublished(id)),
+                    Some(_) => Err(GameError::Conflict(id)),
                 }
             }
         }
     }
 
-    async fn delete(&self, id: i32) -> Result<()> {
-        let result = query!("DELETE FROM games WHERE id = $1", id)
-            .execute(&self.pool)
-            .await?;
+    async fn delete(&self, id: i32, version: i64) -> Result<()> {
+        let result = query!(
+            "DELETE FROM games WHERE id = $1 AND version = $2 AND draft = true",
+            id,
+            version
+        )
+        .execute(&self.pool)
+        .await?;
 
-        if result.rows_affected() == 0 {
-            return Err(GameError::NotFound(id));
+        if result.rows_affected() == 1 {
+            return Ok(());
         }
 
-        Ok(())
+        let state = query!("SELECT draft FROM games WHERE id = $1", id)
+            .fetch_optional(&self.pool)
+            .await?;
+        match state {
+            None => Err(GameError::NotFound(id)),
+            Some(row) if !row.draft => Err(GameError::AlreadyPublished(id)),
+            Some(_) => Err(GameError::Conflict(id)),
+        }
     }
 }
 

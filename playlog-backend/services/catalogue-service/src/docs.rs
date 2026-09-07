@@ -19,7 +19,6 @@ use utoipa::OpenApi;
         crate::games::handler::update,
         crate::games::handler::delete_game,
         crate::games::handler::publish,
-        crate::games::handler::unpublish,
         crate::developers::handler::get_all_paged,
         crate::developers::handler::get_by_id,
         crate::developers::handler::search,

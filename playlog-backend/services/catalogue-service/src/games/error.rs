@@ -1,6 +1,6 @@
 use crate::entity::GameEntityError;
-use service_common::error::ApiError;
 use axum::http::StatusCode;
+use service_common::error::ApiError;
 use thiserror::Error;
 use tracing::error;
 
@@ -11,6 +11,9 @@ pub enum GameError {
 
     #[error("Conflict: Version mismatch for game with id {0}")]
     Conflict(i32),
+
+    #[error("Game with id {0} is already published and cannot be modified or deleted")]
+    AlreadyPublished(i32),
 
     #[error("No ids provided for field {0}")]
     NoIdsProvided(String),
@@ -29,10 +32,12 @@ impl From<GameError> for ApiError {
         let status_code = match error {
             GameError::NotFound(_) => StatusCode::NOT_FOUND,
             GameError::Conflict(_) => StatusCode::CONFLICT,
-            GameError::NoIdsProvided(_) | GameError::EntityError(_) => StatusCode::BAD_REQUEST,
+            GameError::NoIdsProvided(_)
+            | GameError::EntityError(_)
+            | GameError::AlreadyPublished(_) => StatusCode::BAD_REQUEST,
             GameError::DatabaseError(db_err) => {
                 error!(error = %db_err, "database error");
-                return ApiError::internal_error()
+                return ApiError::internal_error();
             }
         };
         ApiError::new(status_code, error.to_string())

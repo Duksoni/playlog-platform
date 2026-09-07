@@ -48,7 +48,13 @@ pub struct UpdateGameRequest {
 }
 
 #[derive(Validate, Deserialize, ToSchema)]
-pub struct PublishUnpublishGameRequest {
+pub struct PublishGameRequest {
+    #[validate(range(min = 0))]
+    pub version: i64,
+}
+
+#[derive(Validate, Deserialize, ToSchema)]
+pub struct DeleteGameRequest {
     #[validate(range(min = 0))]
     pub version: i64,
 }

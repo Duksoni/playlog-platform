@@ -6,8 +6,8 @@ pub mod repository;
 pub mod service;
 
 pub use dto::{
-    CreateGameRequest, GameFilterQuery, GameSortField, GetGamesQuery, NewGameReleasesQuery,
-    PublishUnpublishGameRequest, PublsherGamesQuery, SortDirection, UpdateGameRequest,
+    CreateGameRequest, DeleteGameRequest, GameFilterQuery, GameSortField, GetGamesQuery,
+    NewGameReleasesQuery, PublishGameRequest, PublsherGamesQuery, SortDirection, UpdateGameRequest,
 };
 pub use error::{GameError, Result};
 pub use model::{Game, GameDetails, GameSimple};

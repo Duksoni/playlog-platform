@@ -6,22 +6,46 @@
       {
         "ordinal": 0,
         "name": "id",
-        "type_info": "Int4"
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "id"
+          }
+        }
       },
       {
         "ordinal": 1,
         "name": "name",
-        "type_info": "Varchar"
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "name"
+          }
+        }
       },
       {
         "ordinal": 2,
         "name": "released",
-        "type_info": "Date"
+        "type_info": "Date",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "released"
+          }
+        }
       },
       {
         "ordinal": 3,
         "name": "draft",
-        "type_info": "Bool"
+        "type_info": "Bool",
+        "origin": {
+          "Table": {
+            "table": "games",
+            "name": "draft"
+          }
+        }
       }
     ],
     "parameters": {

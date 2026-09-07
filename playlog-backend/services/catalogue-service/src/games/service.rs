@@ -67,9 +67,7 @@ impl GameService {
     }
 
     pub async fn get_by_ids(&self, ids: &[i32]) -> Result<Vec<GameSimple>> {
-        self.game_repository
-            .find_published_by_ids(ids)
-            .await
+        self.game_repository.find_published_by_ids(ids).await
     }
 
     pub async fn get_details(&self, id: i32, include_draft: bool) -> Result<GameDetails> {
@@ -134,20 +132,12 @@ impl GameService {
         self.game_repository.update(id, request).await
     }
 
-    pub async fn delete(&self, id: i32) -> Result<()> {
-        self.game_repository.delete(id).await
+    pub async fn delete(&self, id: i32, version: i64) -> Result<()> {
+        self.game_repository.delete(id, version).await
     }
 
     pub async fn publish(&self, id: i32, version: i64) -> Result<Game> {
-        self.change_draft(id, false, version).await
-    }
-
-    pub async fn unpublish(&self, id: i32, version: i64) -> Result<Game> {
-        self.change_draft(id, true, version).await
-    }
-
-    async fn change_draft(&self, id: i32, draft: bool, version: i64) -> Result<Game> {
-        self.game_repository.set_draft(id, draft, version).await
+        self.game_repository.publish(id, version).await
     }
 }
 

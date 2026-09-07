@@ -25,7 +25,6 @@ pub fn router(state: Arc<ServiceAppState>) -> Router<Arc<ServiceAppState>> {
         .route("/{id}", put(proxy_handler))
         .route("/{id}", delete(proxy_handler))
         .route("/{id}/publish", put(proxy_handler))
-        .route("/{id}/unpublish", put(proxy_handler))
         .route_layer(from_fn(require_admin))
         .route_layer(from_fn_with_state(jwt_config, auth));
 
