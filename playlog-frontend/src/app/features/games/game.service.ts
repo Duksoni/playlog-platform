@@ -3,13 +3,15 @@ import {HttpClient, HttpParams} from '@angular/common/http';
 import {environment} from '../../../environments/environment';
 import {
 	CreateGameRequest,
+	DeleteGameMediaRequest,
+	DeleteGameRequest,
 	Game,
 	GameDetails,
 	GameFilterParams,
 	GameMediaResponse,
 	GameSimple,
 	GetGameCoversResponse,
-	PublishUnpublishGameRequest,
+	PublishGameRequest,
 	UpdateGameRequest,
 } from './game.dto';
 import {Observable} from 'rxjs';
@@ -113,16 +115,12 @@ export class GameService {
 		return this.http.put<GameDetails>(`${this.gamesBase}/${id}`, body);
 	}
 
-	publishGame(id: number, body: PublishUnpublishGameRequest) {
+	publishGame(id: number, body: PublishGameRequest) {
 		return this.http.put<Game>(`${this.gamesBase}/${id}/publish`, body);
 	}
 
-	unpublishGame(id: number, body: PublishUnpublishGameRequest) {
-		return this.http.put<Game>(`${this.gamesBase}/${id}/unpublish`, body);
-	}
-
-	deleteGame(id: number) {
-		return this.http.delete<void>(`${this.gamesBase}/${id}`);
+	deleteGame(id: number, body: DeleteGameRequest) {
+		return this.http.delete<void>(`${this.gamesBase}/${id}`, {body});
 	}
 
 	uploadGameMedia(gameId: number, formData: FormData) {
@@ -132,7 +130,7 @@ export class GameService {
 		);
 	}
 
-	deleteGameMedia(gameId: number) {
-		return this.http.delete<void>(`${this.mediaBase}/${gameId}`);
+	deleteGameMedia(gameId: number, body: DeleteGameMediaRequest) {
+		return this.http.delete<void>(`${this.mediaBase}/${gameId}`, {body});
 	}
 }

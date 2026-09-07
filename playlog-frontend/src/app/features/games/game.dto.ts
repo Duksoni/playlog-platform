@@ -72,7 +72,15 @@ export interface UpdateGameRequest {
 	tags?: number[] | null;
 }
 
-export interface PublishUnpublishGameRequest {
+export interface PublishGameRequest {
+	version: number;
+}
+
+export interface DeleteGameRequest {
+	version: number;
+}
+
+export interface DeleteGameMediaRequest {
 	version: number;
 }
 

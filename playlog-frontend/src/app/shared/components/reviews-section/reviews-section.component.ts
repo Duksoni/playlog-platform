@@ -78,6 +78,7 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 	private cd = inject(ChangeDetectorRef);
 
 	protected readonly Role = Role;
+	protected readonly GameLibraryStatus = GameLibraryStatus;
 	protected readonly CommentTargetType = CommentTargetType;
 	protected readonly ratingOrder = RATING_ORDER;
 	protected readonly ratingLabels = RATING_LABELS;
@@ -86,7 +87,7 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 	protected reviews = signal<GameReviewResponse[]>([]);
 	protected loading = signal(false);
 	protected ownReview = signal<ReviewSimpleResponse | null>(null);
-	protected canReview = signal(false);
+	protected showRecommendationHint = signal(false);
 	protected totalReviewsExist = signal(false);
 	protected ratingStats = signal<GameRatingStatsResponse | null>(null);
 	protected reportedReviewIds = signal<Set<string>>(new Set());
@@ -115,8 +116,8 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 
 		effect(() => {
 			const status = this.libraryStatus();
-			const eligible = [GameLibraryStatus.COMPLETED, GameLibraryStatus.DROPPED];
-			this.canReview.set(status !== null && eligible.includes(status));
+			const reviewed = [GameLibraryStatus.COMPLETED, GameLibraryStatus.DROPPED];
+			this.showRecommendationHint.set(status === null || !reviewed.includes(status));
 		});
 	}
 

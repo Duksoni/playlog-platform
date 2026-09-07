@@ -166,10 +166,6 @@ export class LibrarySectionComponent implements OnInit {
 		});
 	}
 
-	protected canReviewStatus(status: GameLibraryStatus): boolean {
-		return status === GameLibraryStatus.COMPLETED || status === GameLibraryStatus.DROPPED;
-	}
-
 	protected hasExistingReview(gameId: number): boolean {
 		return this.existingReviews().has(gameId);
 	}

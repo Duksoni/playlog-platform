@@ -10,7 +10,8 @@ import {
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {DatePipe} from '@angular/common';
-import {concatMap} from 'rxjs';
+import {catchError, concatMap, defer, of, tap, throwError} from 'rxjs';
+import type {Observable} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatChipsModule} from '@angular/material/chips';
@@ -183,42 +184,32 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		});
 	}
 
-	protected togglePublish() {
+	protected publishGame() {
 		const game = this.game();
-		if (!game) return;
+		if (!game || !game.draft) return;
 
-		const isPublishing = game.draft;
 		const dialogRef = this.dialogService.openSimpleDialog({
 			width: '420px',
 			disableClose: true,
 			autoFocus: false,
 			data: {
-				title: isPublishing
-					? $localize`:@@gameDetail.publishTitle:Publish Game`
-					: $localize`:@@gameDetail.unpublishTitle:Unpublish Game`,
-				content: isPublishing
-					? $localize`:@@gameDetail.publishContent:Are you sure you want to publish "${game.name}"? It will be visible to all users.`
-					: $localize`:@@gameDetail.unpublishContent:Are you sure you want to move "${game.name}" back to draft? It will be hidden from regular users.`,
+				title: $localize`:@@gameDetail.publishTitle:Publish Game`,
+				content: $localize`:@@gameDetail.publishContent:Are you sure you want to publish "${game.name}"? It will be visible to all users and cannot be unpublished or deleted afterwards.`,
 			},
 		});
 
 		dialogRef.componentInstance.setPositiveButton(
-			isPublishing ? $localize`:@@gameDetail.publish:Publish` : $localize`:@@gameDetail.unpublish:Unpublish`,
+			$localize`:@@gameDetail.publish:Publish`,
 			() => {
-				const action = isPublishing
-					? this.gameService.publishGame(game.id, {version: game.version})
-					: this.gameService.unpublishGame(game.id, {version: game.version});
-
-				action.subscribe({
+				this.gameService.publishGame(game.id, {version: game.version}).subscribe({
 					next: (updated) => {
 						this.game.update(g => g ? {...g, draft: updated.draft, version: updated.version} : g);
-						this.snackbarService.createSnackbar(updated.draft
-							? $localize`:@@games.unpublished:Game moved back to draft.`
-							: $localize`:@@games.published:Game published successfully.`);
+						this.snackbarService.createSnackbar($localize`:@@games.published:Game published successfully.`);
 						dialogRef.close();
 					},
 					error: (err) => {
-						if (err.status === 409) this.snackbarService.createSnackbar($localize`:@@games.versionConflict:This game was modified by someone else. Please refresh.`);
+						if (err.status === 400) this.snackbarService.createSnackbar($localize`:@@games.alreadyPublished:Published games cannot be unpublished or deleted.`);
+						else if (err.status === 409) this.snackbarService.createSnackbar($localize`:@@games.versionConflict:This game was modified by someone else. Please refresh.`);
 						dialogRef.close();
 					},
 				});
@@ -242,21 +233,48 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		});
 
 		dialogRef.componentInstance.setPositiveButton($localize`:@@common.delete:Delete`, () => {
-			this.gameService.deleteGameMedia(game.id).pipe(
-				concatMap(() => this.gameService.deleteGame(game.id))
+			let gameDeleted = false;
+			this.gameService.deleteGame(game.id, {version: game.version}).pipe(
+				tap(() => { gameDeleted = true; }),
+				concatMap(() => this.deleteMediaWithRetry(game.id, 2)),
 			).subscribe({
 				next: () => {
 					this.snackbarService.createSnackbar($localize`:@@games.deleted:Game deleted successfully.`);
 					this.router.navigate(['/games']);
 					dialogRef.close();
 				},
-				error: () => {
-					this.snackbarService.createSnackbar($localize`:@@games.deleteFailed:Failed to delete game.`);
+				error: (err) => {
+					if (!gameDeleted && err.status === 400) this.snackbarService.createSnackbar($localize`:@@games.alreadyPublished:Published games cannot be unpublished or deleted.`);
+					else if (!gameDeleted && err.status === 409) this.snackbarService.createSnackbar($localize`:@@games.versionConflict:This game was modified by someone else. Please refresh.`);
+					else if (gameDeleted) this.snackbarService.createSnackbar($localize`:@@games.mediaCleanupFailed:Game deleted, but media cleanup did not complete and may need manual removal.`);
+					else this.snackbarService.createSnackbar($localize`:@@games.deleteFailed:Failed to delete game.`);
+					if (gameDeleted) this.router.navigate(['/games']);
 					dialogRef.close();
 				},
 			});
 		});
 		dialogRef.componentInstance.setNegativeButton($localize`:@@common.cancel:Cancel`);
+	}
+
+	private deleteMediaWithRetry(gameId: number, retriesLeft: number): Observable<void> {
+		return defer(() => this.gameService.getGameMedia(gameId)).pipe(
+			catchError((err) => {
+				if (err.status === 404) return of(null);
+				return throwError(() => err);
+			}),
+			concatMap((media) => {
+				if (!media) return of(undefined);
+				return this.gameService.deleteGameMedia(gameId, {version: media.version}).pipe(
+					catchError((err) => {
+						if (err.status === 404) return of(undefined);
+						if (err.status === 409 && retriesLeft > 0) {
+							return this.deleteMediaWithRetry(gameId, retriesLeft - 1);
+						}
+						return throwError(() => err);
+					}),
+				);
+			}),
+		);
 	}
 
 	protected selectScreenshot(url: string) {

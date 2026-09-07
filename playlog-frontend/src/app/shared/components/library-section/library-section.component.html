@@ -92,19 +92,17 @@
 
 							<!-- Own library: action buttons -->
 							@if (isOwnLibrary) {
-								@if (canReviewStatus(card.status)) {
-									<button
-										matIconButton
-										class="action-btn rate-btn"
-										(click)="$event.stopPropagation(); openReviewDialog(card)"
-										[matTooltip]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
-										[attr.aria-label]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
-										i18n-matTooltip="@@library.writeReview"
-										i18n-aria-label="@@library.writeReviewAria"
-									>
-										<mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
-									</button>
-								}
+								<button
+									matIconButton
+									class="action-btn rate-btn"
+									(click)="$event.stopPropagation(); openReviewDialog(card)"
+									[matTooltip]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
+									[attr.aria-label]="hasExistingReview(card.gameId) ? 'Edit review' : 'Write a review'"
+									i18n-matTooltip="@@library.writeReview"
+									i18n-aria-label="@@library.writeReviewAria"
+								>
+									<mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
+								</button>
 								<button
 									matIconButton
 									class="action-btn edit-btn"

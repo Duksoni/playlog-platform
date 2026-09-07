@@ -134,23 +134,17 @@
 							<span i18n="@@gameDetail.media">Media</span>
 						</button>
 						@if (game()!.draft) {
-							<button matButton="outlined" (click)="togglePublish()"
+							<button matButton="outlined" (click)="publishGame()"
 							        matTooltip="Publish this game" i18n-matTooltip="@@gameDetail.publishTooltip">
 								<mat-icon fontSet="material-symbols-rounded">publish</mat-icon>
 								<span i18n="@@gameDetail.publish">Publish</span>
 							</button>
-						} @else {
-							<button matButton="outlined" (click)="togglePublish()"
-							        matTooltip="Move back to draft" i18n-matTooltip="@@gameDetail.unpublishTooltip">
-								<mat-icon fontSet="material-symbols-rounded">unpublished</mat-icon>
-								<span i18n="@@gameDetail.unpublish">Unpublish</span>
+							<button matButton="outlined" class="delete-button" (click)="confirmDelete()"
+							        matTooltip="Delete game permanently" i18n-matTooltip="@@gameDetail.deleteTooltip">
+								<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
+								<span i18n="@@gameDetail.delete">Delete</span>
 							</button>
 						}
-						<button matButton="outlined" class="delete-button" (click)="confirmDelete()"
-						        matTooltip="Delete game permanently" i18n-matTooltip="@@gameDetail.deleteTooltip">
-							<mat-icon fontSet="material-symbols-rounded">delete</mat-icon>
-							<span i18n="@@gameDetail.delete">Delete</span>
-						</button>
 					</div>
 				}
 			</div>

@@ -75,22 +75,26 @@
 						}
 					</span>
 				</div>
-			} @else if (canReview()) {
+			} @else {
 				<div class="write-review-prompt">
 					<mat-icon fontSet="material-symbols-rounded">rate_review</mat-icon>
 					<div class="write-review-text">
-						<span i18n="@@reviews.writePrompt">You've played this game. Share your thoughts!</span>
+						@if (libraryStatus() === GameLibraryStatus.COMPLETED || libraryStatus() === GameLibraryStatus.DROPPED) {
+							<span i18n="@@reviews.writePrompt">You've played this game. Share your thoughts!</span>
+						} @else {
+							<span i18n="@@reviews.writePromptNeutral">Played this game? Share your thoughts!</span>
+						}
 					</div>
 					<button matButton="elevated" (click)="openReviewDialog()">
 						<mat-icon fontSet="material-symbols-rounded">add</mat-icon>
 						<span i18n="@@reviews.writeBtn">Write a Review</span>
 					</button>
 				</div>
-			} @else {
-				<p class="eligibility-hint" i18n="@@reviews.eligibilityHint">
-					Mark this game as <strong>Completed</strong> or <strong>Dropped</strong> in your library to write a
-					review.
-				</p>
+				@if (showRecommendationHint()) {
+					<p class="eligibility-hint" i18n="@@reviews.recommendationHint">
+						It is recommended to write your review after you completed or stopped playing the game.
+					</p>
+				}
 			}
 		</div>
 
