@@ -4,7 +4,7 @@ use mongodb::bson::{oid::ObjectId, DateTime};
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GameMedia {
     #[serde(rename = "_id", skip_serializing_if = "Option::is_none")]
     pub id: Option<ObjectId>,
@@ -36,6 +36,22 @@ impl GameMedia {
 
     pub fn new_for_game(game_id: i32) -> Self {
         Self::new(None, game_id, None, vec![], None, 0)
+    }
+
+    pub fn object_keys(&self) -> Vec<String> {
+        let mut keys = Vec::new();
+        if let Some(cover) = &self.cover {
+            keys.push(cover.object_key.clone());
+        }
+        keys.extend(
+            self.screenshots
+                .iter()
+                .map(|screenshot| screenshot.object_key.clone()),
+        );
+        if let Some(trailer) = &self.trailer {
+            keys.push(trailer.object_key.clone());
+        }
+        keys
     }
 }
 

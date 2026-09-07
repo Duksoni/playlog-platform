@@ -1,9 +1,11 @@
+use crate::model::GameMedia;
 use anyhow::Context;
 use minio::s3::{
     client::{Client as MinioClient, ClientBuilder},
     creds::StaticProvider,
     http::BaseUrl,
 };
+use mongodb::{bson::doc, options::IndexOptions, Collection, IndexModel};
 
 pub fn init_minio(
     endpoint: &str,
@@ -20,4 +22,13 @@ pub fn init_minio(
         .context("Failed to build MinIO client")?;
 
     Ok(client)
+}
+
+pub async fn create_indexes(collection: &Collection<GameMedia>) -> anyhow::Result<()> {
+    let game_id_unique = IndexModel::builder()
+        .keys(doc! { "game_id": 1 })
+        .options(IndexOptions::builder().unique(true).build())
+        .build();
+    collection.create_index(game_id_unique).await?;
+    Ok(())
 }

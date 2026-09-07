@@ -1,12 +1,11 @@
 use crate::{
     app::AppState,
     dto::GameMediaResponse,
-    dto::{GetGameCoversQuery, GetGameCoversResponse},
+    dto::{DeleteGameMediaRequest, GetGameCoversQuery, GetGameCoversResponse},
     error::MediaError,
     model::FieldName,
     model::UploadedFile,
 };
-use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, State},
     http::StatusCode,
@@ -18,6 +17,7 @@ use axum::{
 use axum_extra::extract::{Multipart, Query};
 use axum_macros::debug_handler;
 use jwt_common::{auth, require_admin, JwtConfig};
+use service_common::error::{ApiError, Result as ApiResult};
 use std::str::FromStr;
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
@@ -99,12 +99,12 @@ async fn get_game_media(
     description = r#"
 Accepts a `multipart/form-data` body with any combination of the following named fields:
 
-| Field name   | Type   | Limit  | Notes                                      |
-|--------------|--------|--------|--------------------------------------------|
-| `cover`      | image  | 10 MB  | Replaces the existing cover                |
-| `screenshot` | image  | 10 MB  | Repeat for multiple; replaces all existing |
-| `trailer`    | video  | 500 MB | Replaces the existing trailer              |
-| `version`    | i64    | -      | Current version of the game data           |
+| Field name   | Type   | Limit  | Notes                                                        |
+|--------------|--------|--------|--------------------------------------------------------------|
+| `cover`      | image  | 10 MB  | Replaces the existing cover                                  |
+| `screenshot` | image  | 10 MB  | Repeat for multiple; replaces all existing                   |
+| `trailer`    | video  | 500 MB | Replaces the existing trailer                                |
+| `version`    | i64    | -      | Current version of the game media (independent of the catalogue game version) |
 
 All fields are optional, but at least one must be provided.
 Files must include a `Content-Type` header on their part.
@@ -157,11 +157,13 @@ async fn upload_game_media(
     params(
         ("game_id" = i32, Path)
     ),
+    request_body = DeleteGameMediaRequest,
     responses(
         (status = 204, description = "Media deleted"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
         (status = 404, description = "No media found for this game"),
+        (status = 409, description = "Conflict - version mismatch"),
     ),
     tag = "multimedia",
     security(("bearer" = []))
@@ -170,8 +172,12 @@ async fn upload_game_media(
 async fn delete_game_media(
     State(state): State<Arc<AppState>>,
     Path(game_id): Path<i32>,
+    Json(request): Json<DeleteGameMediaRequest>,
 ) -> ApiResult<impl IntoResponse> {
-    state.media_service.delete_game_media(game_id).await?;
+    state
+        .media_service
+        .delete_game_media(game_id, request.version)
+        .await?;
     Ok(StatusCode::NO_CONTENT)
 }
 

@@ -1,13 +1,16 @@
 mod app;
+mod catalogue;
 mod config;
 mod docs;
 mod dto;
 mod error;
 mod handler;
+mod media_keys;
 mod model;
 mod repository;
 mod service;
 mod setup;
+mod storage;
 
 use dotenvy::dotenv;
 use service_common::setup::{init_mongodb, init_tracing, shutdown_signal};
@@ -16,9 +19,11 @@ use std::sync::Arc;
 use tracing::info;
 
 use app::{build_app, AppState};
+use catalogue::CatalogueClient;
 use repository::MongoMediaRepository;
 use service::MediaService;
-use setup::init_minio;
+use setup::{create_indexes, init_minio};
+use storage::MinioMediaStorage;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -32,6 +37,7 @@ async fn main() -> anyhow::Result<()> {
     let collection = mongodb_client
         .database(&env.mongodb_database)
         .collection(&env.mongodb_collection);
+    create_indexes(&collection).await?;
 
     let minio = init_minio(
         &env.minio_server_url,
@@ -45,13 +51,9 @@ async fn main() -> anyhow::Result<()> {
         .expect("Failed to create HTTP client");
 
     let repository = Box::new(MongoMediaRepository::new(collection));
-    let media_service = MediaService::new(
-        repository,
-        minio,
-        env.minio_bucket,
-        http_client,
-        env.app_config.catalogue_service_url.clone(),
-    );
+    let storage = Arc::new(MinioMediaStorage::new(minio, env.minio_bucket));
+    let catalogue = CatalogueClient::new(http_client, env.app_config.catalogue_service_url.clone());
+    let media_service = MediaService::new(repository, storage, catalogue);
 
     let state = Arc::new(AppState::new(env.app_config, media_service));
     let app = build_app(state);

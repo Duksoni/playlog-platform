@@ -1,5 +1,6 @@
-use service_common::error::ApiError;
 use axum::http::StatusCode;
+use mongodb::error::{ErrorKind, WriteFailure};
+use service_common::error::ApiError;
 use thiserror::Error;
 use tracing::error;
 
@@ -36,6 +37,13 @@ pub enum MediaError {
     Conflict(i32),
 }
 
+pub fn is_duplicate_key(error: &mongodb::error::Error) -> bool {
+    matches!(
+        error.kind.as_ref(),
+        ErrorKind::Write(WriteFailure::WriteError(write_error)) if write_error.code == 11000
+    )
+}
+
 pub type Result<T> = std::result::Result<T, MediaError>;
 
 impl From<MediaError> for ApiError {
@@ -49,11 +57,11 @@ impl From<MediaError> for ApiError {
             | MediaError::MissingContentType(_) => StatusCode::BAD_REQUEST,
             MediaError::DatabaseError(db_err) => {
                 error!(error = %db_err, "database error");
-                return ApiError::internal_error()
+                return ApiError::internal_error();
             }
             MediaError::StorageError(err) => {
                 error!(error = %err, "storage error");
-                return ApiError::internal_error()
+                return ApiError::internal_error();
             }
             MediaError::CatalogueServiceError(_) => StatusCode::INTERNAL_SERVER_ERROR,
             MediaError::Conflict(_) => StatusCode::CONFLICT,

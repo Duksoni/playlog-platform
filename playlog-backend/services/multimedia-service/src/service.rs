@@ -1,50 +1,35 @@
 use crate::{
+    catalogue::CatalogueClient,
     dto::{GameMediaResponse, MediaFileResponse},
     error::{MediaError, Result},
-    model::{
-        FieldName::{self, *},
-        GameMedia, MediaFile, UploadedFile,
-    },
+    media_keys,
+    model::{FieldName::*, GameMedia, MediaFile, UploadedFile},
     repository::MediaRepository,
-};
-use axum::http::Method;
-use bytes::Bytes;
-use futures::{stream, StreamExt, TryStreamExt};
-use minio::s3::{
-    client::Client as MinioClient,
-    multimap::{Multimap, MultimapExt},
-    segmented_bytes::SegmentedBytes,
-    types::S3Api,
+    storage::MediaStorage,
 };
 use mongodb::bson::DateTime;
-use reqwest::Client as HttpClient;
-use std::{collections::HashMap, time::SystemTime};
+use std::{collections::HashMap, sync::Arc};
+use tracing::warn;
 
-const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024; // 10 MB
-const MAX_VIDEO_BYTES: usize = 500 * 1024 * 1024; // 500 MB
+const MAX_IMAGE_BYTES: usize = 10 * 1024 * 1024;
+const MAX_VIDEO_BYTES: usize = 500 * 1024 * 1024;
 
 pub struct MediaService {
     repository: Box<dyn MediaRepository>,
-    minio: MinioClient,
-    bucket: String,
-    http: HttpClient,
-    catalogue_url: String,
+    storage: Arc<dyn MediaStorage>,
+    catalogue: CatalogueClient,
 }
 
 impl MediaService {
     pub fn new(
         repository: Box<dyn MediaRepository>,
-        minio: MinioClient,
-        bucket: String,
-        http: HttpClient,
-        catalogue_url: String,
+        storage: Arc<dyn MediaStorage>,
+        catalogue: CatalogueClient,
     ) -> Self {
         Self {
             repository,
-            minio,
-            bucket,
-            http,
-            catalogue_url,
+            storage,
+            catalogue,
         }
     }
 
@@ -57,40 +42,22 @@ impl MediaService {
         &self,
         game_ids: &[i32],
     ) -> Result<HashMap<i32, Option<String>>> {
-        let game_ids = game_ids.to_vec();
-        let covers = self.repository.find_covers(&game_ids).await?;
+        let covers = self.repository.find_covers(game_ids).await?;
+        let mut presigned = HashMap::with_capacity(covers.len());
 
-        stream::iter(covers)
-            .then(|(game_id, cover)| async move {
-                let cover = match cover {
-                    Some(cover) => Some(self.presign(&cover.object_key).await?),
-                    None => None,
-                };
+        for (game_id, cover) in covers {
+            let url = match cover {
+                Some(cover) => Some(self.storage.presign(&cover.object_key).await?),
+                None => None,
+            };
+            presigned.insert(game_id, url);
+        }
 
-                Ok((game_id, cover))
-            })
-            .try_collect()
-            .await
+        Ok(presigned)
     }
 
     pub async fn ensure_game_exists(&self, game_id: i32) -> Result<()> {
-        let url = format!("{}/api/games/{}", self.catalogue_url, game_id);
-
-        let response = self
-            .http
-            .get(url)
-            .send()
-            .await
-            .map_err(|e| MediaError::CatalogueServiceError(e.to_string()))?;
-
-        match response.status() {
-            reqwest::StatusCode::OK => Ok(()),
-            reqwest::StatusCode::NOT_FOUND => Err(MediaError::InvalidGameId(game_id)),
-            _ => Err(MediaError::CatalogueServiceError(format!(
-                "Unexpected status from catalogue service: {}",
-                response.status()
-            ))),
-        }
+        self.catalogue.ensure_game_exists(game_id).await
     }
 
     pub async fn upload_game_media(
@@ -114,6 +81,10 @@ impl MediaService {
         let (new_cover, new_screenshots, new_trailer) =
             self.process_and_upload_files(game_id, files).await?;
 
+        let uploaded_keys = media_keys::uploaded_keys(&new_cover, &new_screenshots, &new_trailer);
+        let replaced_keys =
+            media_keys::replaced_keys(&existing, &new_cover, &new_screenshots, &new_trailer);
+
         let media = GameMedia::new(
             existing.id,
             game_id,
@@ -123,10 +94,54 @@ impl MediaService {
             existing.version + 1,
         );
 
-        self.repository.upsert(media, version).await?;
+        if let Err(error) = self.repository.upsert(media, version).await {
+            self.storage.delete_keys(&uploaded_keys).await;
+            return Err(error);
+        }
+
+        self.storage.delete_keys(&replaced_keys).await;
 
         let saved = self.find_by_game_id(game_id).await?;
         self.to_response(saved).await
+    }
+
+    pub async fn delete_game_media(&self, game_id: i32, version: i64) -> Result<()> {
+        let media = self.find_by_game_id(game_id).await?;
+        if media.version != version {
+            return Err(MediaError::Conflict(game_id));
+        }
+        let keys = media.object_keys();
+
+        self.repository.delete_by_game_id(game_id, version).await?;
+        self.storage.delete_keys(&keys).await;
+        self.sweep_leftover_keys(game_id, &keys).await;
+
+        if self.repository.find_by_game_id(game_id).await?.is_some() {
+            self.sweep_leftover_keys(game_id, &keys).await;
+        }
+
+        Ok(())
+    }
+
+    async fn sweep_leftover_keys(&self, game_id: i32, known_keys: &[String]) {
+        let mut known: Vec<String> = known_keys.to_vec();
+        if let Ok(Some(current)) = self.repository.find_by_game_id(game_id).await {
+            known.extend(current.object_keys());
+        }
+
+        match self
+            .storage
+            .list_prefix_keys(&media_keys::game_prefix(game_id))
+            .await
+        {
+            Ok(listed_keys) => {
+                let leftovers = media_keys::filter_unknown_keys(&known, listed_keys);
+                self.storage.delete_keys(&leftovers).await;
+            }
+            Err(error) => {
+                warn!(game_id, error = %error, "failed to list leftover media objects");
+            }
+        }
     }
 
     fn validate_upload_limits(&self, files: &[UploadedFile]) -> Result<()> {
@@ -156,11 +171,13 @@ impl MediaService {
         files: Vec<UploadedFile>,
     ) -> Result<(Option<MediaFile>, Option<Vec<MediaFile>>, Option<MediaFile>)> {
         let now = DateTime::now();
+        let attempt = media_keys::unique_attempt_suffix();
         let mut cover = None;
         let mut trailer = None;
         let mut incoming_screenshots = vec![];
         let mut has_screenshots = false;
         let mut screenshot_index = 0;
+        let mut uploaded_keys: Vec<String> = Vec::new();
 
         for file in files {
             let screenshot_seq = if file.field_name == Screenshot {
@@ -170,13 +187,25 @@ impl MediaService {
                 None
             };
 
-            let object_key =
-                Self::object_key(game_id, file.field_name, &file.file_name, screenshot_seq);
+            let object_key = media_keys::staged_object_key(
+                game_id,
+                file.field_name,
+                &file.file_name,
+                screenshot_seq,
+                &attempt,
+            );
             let size_bytes = file.data.len();
             let mime_type = file.content_type.clone();
 
-            self.upload_bytes(&object_key, file.content_type, file.data)
-                .await?;
+            if let Err(error) = self
+                .storage
+                .put_object(&object_key, file.content_type, file.data)
+                .await
+            {
+                self.storage.delete_keys(&uploaded_keys).await;
+                return Err(error);
+            }
+            uploaded_keys.push(object_key.clone());
 
             match file.field_name {
                 Cover => {
@@ -201,60 +230,6 @@ impl MediaService {
         Ok((cover, screenshots, trailer))
     }
 
-    pub async fn delete_game_media(&self, game_id: i32) -> Result<()> {
-        self.find_by_game_id(game_id).await?;
-
-        self.minio
-            .delete_object(&self.bucket, game_id.to_string())
-            .send()
-            .await
-            .map_err(|e| MediaError::StorageError(e.to_string()))?;
-        self.repository.delete_by_game_id(game_id).await
-    }
-
-    fn object_key(
-        game_id: i32,
-        field: FieldName,
-        file_name: &str,
-        screenshot_index: Option<usize>,
-    ) -> String {
-        let ext = file_name.rsplit('.').next().unwrap_or("bin");
-
-        match field {
-            Cover => format!("games/{game_id}/cover.{ext}"),
-            Trailer => format!("games/{game_id}/trailer.{ext}"),
-            Screenshot => {
-                let seq = screenshot_index.unwrap_or_else(|| {
-                    SystemTime::now()
-                        .duration_since(std::time::UNIX_EPOCH)
-                        .unwrap_or_default()
-                        .as_millis() as usize
-                });
-                format!("games/{game_id}/screenshot_{seq}.{ext}")
-            }
-        }
-    }
-
-    async fn upload_bytes(
-        &self,
-        object_key: &str,
-        content_type: String,
-        data: Bytes,
-    ) -> Result<()> {
-        let segmented = SegmentedBytes::from(data);
-        let mut extra_headers = Multimap::new();
-        extra_headers.add("Content-Type", content_type);
-
-        self.minio
-            .put_object(&self.bucket, object_key, segmented)
-            .extra_headers(Some(extra_headers))
-            .send()
-            .await
-            .map_err(|e| MediaError::StorageError(e.to_string()))?;
-
-        Ok(())
-    }
-
     async fn find_by_game_id(&self, game_id: i32) -> Result<GameMedia> {
         self.repository
             .find_by_game_id(game_id)
@@ -262,18 +237,8 @@ impl MediaService {
             .ok_or(MediaError::NotFound(game_id))
     }
 
-    async fn presign(&self, object_key: &str) -> Result<String> {
-        self.minio
-            .get_presigned_object_url(&self.bucket, object_key, Method::GET)
-            .expiry_seconds(60 * 60)
-            .send()
-            .await
-            .map(|r| r.url)
-            .map_err(|e| MediaError::StorageError(e.to_string()))
-    }
-
     async fn media_file_to_response(&self, file: MediaFile) -> Result<MediaFileResponse> {
-        let url = self.presign(&file.object_key).await?;
+        let url = self.storage.presign(&file.object_key).await?;
         Ok(MediaFileResponse::new(url, file.mime_type, file.size_bytes))
     }
 

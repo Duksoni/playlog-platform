@@ -1,11 +1,11 @@
 use crate::{
-    error::{MediaError, Result},
+    error::{is_duplicate_key, MediaError, Result},
     model::GameMedia,
     model::MediaFile,
 };
 use async_trait::async_trait;
 use futures::TryStreamExt;
-use mongodb::{bson::doc, options::ReplaceOptions, Collection};
+use mongodb::{bson::doc, Collection};
 use std::collections::HashMap;
 
 #[async_trait]
@@ -13,7 +13,7 @@ pub trait MediaRepository: Send + Sync {
     async fn find_by_game_id(&self, game_id: i32) -> Result<Option<GameMedia>>;
     async fn find_covers(&self, game_ids: &[i32]) -> Result<HashMap<i32, Option<MediaFile>>>;
     async fn upsert(&self, media: GameMedia, version: i64) -> Result<()>;
-    async fn delete_by_game_id(&self, game_id: i32) -> Result<()>;
+    async fn delete_by_game_id(&self, game_id: i32, version: i64) -> Result<()>;
 }
 
 #[derive(Debug, Clone)]
@@ -64,26 +64,39 @@ impl MediaRepository for MongoMediaRepository {
     }
 
     async fn upsert(&self, media: GameMedia, version: i64) -> Result<()> {
-        let filter = doc! { "game_id": media.game_id, "version": version };
-        let options = ReplaceOptions::builder().upsert(media.id.is_none()).build();
-
-        let result = self
-            .collection
-            .replace_one(filter, &media)
-            .with_options(options)
-            .await?;
-
-        if result.matched_count == 0 && result.upserted_id.is_none() {
-            return Err(MediaError::Conflict(media.game_id));
+        if let Some(id) = media.id {
+            let filter = doc! { "_id": id, "game_id": media.game_id, "version": version };
+            let result = self.collection.replace_one(filter, &media).await?;
+            if result.matched_count == 0 {
+                return Err(MediaError::Conflict(media.game_id));
+            }
+            return Ok(());
         }
-        Ok(())
+
+        match self.collection.insert_one(&media).await {
+            Ok(_) => Ok(()),
+            Err(error) if is_duplicate_key(&error) => Err(MediaError::Conflict(media.game_id)),
+            Err(error) => Err(MediaError::DatabaseError(error)),
+        }
     }
 
-    async fn delete_by_game_id(&self, game_id: i32) -> Result<()> {
-        self.collection
-            .delete_one(doc! { "game_id": game_id })
+    async fn delete_by_game_id(&self, game_id: i32, version: i64) -> Result<()> {
+        let result = self
+            .collection
+            .delete_one(doc! { "game_id": game_id, "version": version })
             .await?;
 
-        Ok(())
+        if result.deleted_count == 1 {
+            return Ok(());
+        }
+
+        match self
+            .collection
+            .find_one(doc! { "game_id": game_id })
+            .await?
+        {
+            None => Err(MediaError::NotFound(game_id)),
+            Some(_) => Err(MediaError::Conflict(game_id)),
+        }
     }
 }

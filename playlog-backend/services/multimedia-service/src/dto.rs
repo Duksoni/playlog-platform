@@ -49,6 +49,11 @@ impl MediaFileResponse {
     }
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct DeleteGameMediaRequest {
+    pub version: i64,
+}
+
 #[derive(Debug, Deserialize, IntoParams)]
 pub struct GetGameCoversQuery {
     #[serde(rename = "gameIds")]
@@ -67,6 +72,8 @@ impl GetGameCoversResponse {
     }
 
     pub fn empty() -> Self {
-        Self { game_covers: Default::default() }
+        Self {
+            game_covers: Default::default(),
+        }
     }
 }
