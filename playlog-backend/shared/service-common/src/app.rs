@@ -6,7 +6,10 @@ use axum::{
     response::Redirect,
 };
 use std::time::Duration;
-use tower_http::{cors::CorsLayer, timeout::TimeoutLayer};
+use tower_http::{
+    cors::{AllowOrigin, CorsLayer},
+    timeout::TimeoutLayer,
+};
 
 pub fn cors_layer(allow_put: bool) -> CorsLayer {
     let mut methods = vec![Method::GET, Method::POST, Method::DELETE];
@@ -14,8 +17,10 @@ pub fn cors_layer(allow_put: bool) -> CorsLayer {
         methods.push(Method::PUT);
     }
     CorsLayer::new()
-        .allow_origin("http://localhost:4200".parse::<HeaderValue>().unwrap())
-        .allow_origin("http://localhost:8080".parse::<HeaderValue>().unwrap())
+        .allow_origin(AllowOrigin::list([
+            "http://localhost:4200".parse::<HeaderValue>().unwrap(),
+            "http://localhost:8080".parse::<HeaderValue>().unwrap(),
+        ]))
         .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
         .allow_credentials(true)
         .allow_methods(methods)
