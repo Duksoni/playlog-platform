@@ -3,6 +3,7 @@ use crate::model::{
     FieldName::{Cover, Screenshot, Trailer},
     GameMedia, MediaFile,
 };
+use service_common::validation::sanitize_ext;
 use std::{collections::HashSet, time::SystemTime};
 
 pub fn game_prefix(game_id: i32) -> String {
@@ -16,7 +17,8 @@ pub fn staged_object_key(
     screenshot_index: Option<usize>,
     attempt: &str,
 ) -> String {
-    let ext = file_name.rsplit('.').next().unwrap_or("bin");
+    let raw_ext = file_name.rsplit('.').next().unwrap_or("bin");
+    let ext = sanitize_ext(raw_ext);
 
     match field {
         Cover => format!("games/{game_id}/cover_{attempt}.{ext}"),

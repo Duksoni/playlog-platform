@@ -25,3 +25,4 @@ tracing.workspace = true
 utoipa-axum.workspace = true
 utoipa-swagger-ui.workspace = true
 utoipa.workspace = true
+validator.workspace = true

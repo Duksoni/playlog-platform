@@ -1,6 +1,6 @@
 use axum::http::StatusCode;
 use mongodb::error::{ErrorKind, WriteFailure};
-use service_common::error::ApiError;
+use service_common::error::{is_mongo_duplicate_key, ApiError};
 use thiserror::Error;
 use tracing::error;
 
@@ -27,6 +27,15 @@ pub enum MediaError {
     #[error("Missing content-type on field '{0}'")]
     MissingContentType(String),
 
+    #[error("Invalid content-type '{mime_type}' for field '{field}'")]
+    InvalidContentType { field: String, mime_type: String },
+
+    #[error("Duplicate '{0}' field - only one file per cover/trailer is allowed")]
+    DuplicateField(String),
+
+    #[error("Too many files: {0}")]
+    TooManyFiles(String),
+
     #[error("Database error: {0}")]
     DatabaseError(#[from] mongodb::error::Error),
 
@@ -49,13 +58,18 @@ pub type Result<T> = std::result::Result<T, MediaError>;
 impl From<MediaError> for ApiError {
     fn from(error: MediaError) -> Self {
         let status = match &error {
-            MediaError::NotFound(_) => StatusCode::NOT_FOUND,
-            MediaError::InvalidGameId(_) => StatusCode::BAD_REQUEST,
+            MediaError::NotFound(_) | MediaError::InvalidGameId(_) => StatusCode::NOT_FOUND,
             MediaError::NoFilesProvided
             | MediaError::UnknownField(_)
             | MediaError::FileTooLarge { .. }
-            | MediaError::MissingContentType(_) => StatusCode::BAD_REQUEST,
+            | MediaError::MissingContentType(_)
+            | MediaError::InvalidContentType { .. }
+            | MediaError::DuplicateField(_)
+            | MediaError::TooManyFiles(_) => StatusCode::BAD_REQUEST,
             MediaError::DatabaseError(db_err) => {
+                if is_mongo_duplicate_key(db_err) {
+                    return ApiError::new(StatusCode::CONFLICT, db_err.to_string());
+                }
                 error!(error = %db_err, "database error");
                 return ApiError::internal_error();
             }
@@ -63,7 +77,7 @@ impl From<MediaError> for ApiError {
                 error!(error = %err, "storage error");
                 return ApiError::internal_error();
             }
-            MediaError::CatalogueServiceError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            MediaError::CatalogueServiceError(_) => StatusCode::BAD_GATEWAY,
             MediaError::Conflict(_) => StatusCode::CONFLICT,
         };
         ApiError::new(status, error.to_string())

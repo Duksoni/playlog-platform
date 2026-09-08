@@ -4,7 +4,7 @@ use axum::{
 };
 use service_common::app::{cors_layer, root_redirect};
 use std::{sync::Arc, time::Duration};
-use tower_http::{timeout::TimeoutLayer, trace::TraceLayer};
+use tower_http::{normalize_path::NormalizePathLayer, timeout::TimeoutLayer, trace::TraceLayer};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
@@ -41,6 +41,7 @@ pub fn build_app(state: Arc<AppState>) -> Router {
         .route("/", get(root_redirect))
         .nest("/api", router)
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", api))
+        .layer(NormalizePathLayer::trim_trailing_slash())
 }
 
 #[utoipa::path(

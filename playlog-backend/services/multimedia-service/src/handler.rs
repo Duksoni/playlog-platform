@@ -17,10 +17,14 @@ use axum::{
 use axum_extra::extract::{Multipart, Query};
 use axum_macros::debug_handler;
 use jwt_common::{auth, require_admin, JwtConfig};
-use service_common::error::{ApiError, Result as ApiResult};
+use service_common::{
+    error::{ApiError, Result as ApiResult},
+    validation::is_allowed_mime,
+};
 use std::str::FromStr;
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
+use validator::Validate;
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
@@ -45,12 +49,15 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     path = "/api/media/games/covers",
     summary = "Get presigned URLs for game covers",
     description = r#"
-Accepts an array of game IDs.
+Accepts an array of game IDs (max 100).
 Returns a object mapping game IDs to presigned URLs for the game cover image.
-If no game covers are found, an empty object is returned.
+If no game covers are found, an empty object is returned. Missing ids map to null.
     "#,
     responses(
         (status = 200, body = GetGameCoversResponse),
+        (status = 400, description = "Validation error"),
+        (status = 413, description = "Too many ids (max 100)"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     params(GetGameCoversQuery),
     tag = "multimedia"
@@ -60,8 +67,12 @@ async fn get_game_covers(
     State(state): State<Arc<AppState>>,
     Query(params): Query<GetGameCoversQuery>,
 ) -> ApiResult<Json<GetGameCoversResponse>> {
+    params.validate().map_err(ApiError::from)?;
     if params.game_ids.is_empty() {
         return Ok(Json(GetGameCoversResponse::empty()));
+    }
+    if params.game_ids.len() > 100 {
+        return Err(ApiError::payload_too_large("Too many game ids (max 100)"));
     }
     let cover_map = state
         .media_service
@@ -80,6 +91,7 @@ async fn get_game_covers(
     responses(
         (status = 200, description = "Game media with presigned URLs", body = GameMediaResponse),
         (status = 404, description = "No media found for this game"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "multimedia"
 )]
@@ -119,10 +131,13 @@ Files must include a `Content-Type` header on their part.
     ),
     responses(
         (status = 200, description = "Upload successful, returns updated media with presigned URLs", body = GameMediaResponse),
-        (status = 400, description = "No files provided, unknown field, file too large, missing content-type, or missing version"),
+        (status = 400, description = "No files provided, unknown field, file too large, missing content-type, invalid content-type, duplicate field, too many files, or missing version"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
+        (status = 404, description = "Game does not exist in catalogue"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
+        (status = 502, description = "Catalogue service unavailable"),
     ),
     tag = "multimedia",
     security(("bearer" = []))
@@ -160,10 +175,12 @@ async fn upload_game_media(
     request_body = DeleteGameMediaRequest,
     responses(
         (status = 204, description = "Media deleted"),
+        (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden - requires admin role"),
         (status = 404, description = "No media found for this game"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "multimedia",
     security(("bearer" = []))
@@ -186,14 +203,18 @@ async fn parse_multipart_request(
     files: &mut Vec<UploadedFile>,
     version: &mut Option<i64>,
 ) -> ApiResult<()> {
+    let mut seen_cover = false;
+    let mut seen_trailer = false;
+    let mut screenshot_count = 0usize;
     while let Some(field) = multipart
         .next_field()
         .await
         .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?
     {
-        let field_name = field.name().ok_or_else(|| {
-            ApiError::new(StatusCode::BAD_REQUEST, "Multipart field missing name")
-        })?;
+        let field_name = field
+            .name()
+            .ok_or_else(|| ApiError::new(StatusCode::BAD_REQUEST, "Multipart field missing name"))?
+            .to_string();
 
         if field_name == "version" {
             let game_version: i64 = field
@@ -207,7 +228,44 @@ async fn parse_multipart_request(
             continue;
         }
 
-        let field_name_enum = FieldName::from_str(field_name)?;
+        let field_name_enum = FieldName::from_str(&field_name)?;
+
+        match field_name_enum {
+            FieldName::Cover => {
+                if seen_cover {
+                    return Err(ApiError::new(
+                        StatusCode::BAD_REQUEST,
+                        "Duplicate 'cover' field - only one file per cover/trailer is allowed",
+                    ));
+                }
+                seen_cover = true;
+            }
+            FieldName::Trailer => {
+                if seen_trailer {
+                    return Err(ApiError::new(
+                        StatusCode::BAD_REQUEST,
+                        "Duplicate 'trailer' field - only one file per cover/trailer is allowed",
+                    ));
+                }
+                seen_trailer = true;
+            }
+            FieldName::Screenshot => {
+                screenshot_count += 1;
+                if screenshot_count > 20 {
+                    return Err(ApiError::new(
+                        StatusCode::BAD_REQUEST,
+                        "Too many screenshots (max 20)",
+                    ));
+                }
+            }
+        }
+
+        if files.len() >= 22 {
+            return Err(ApiError::new(
+                StatusCode::BAD_REQUEST,
+                "Too many files (max 22)",
+            ));
+        }
 
         let file_name = field.file_name().unwrap_or("upload").to_string();
 
@@ -216,10 +274,24 @@ async fn parse_multipart_request(
             .ok_or_else(|| MediaError::MissingContentType(field_name_enum.as_string()))?
             .to_string();
 
+        if !is_allowed_mime(&field_name, &content_type) {
+            return Err(ApiError::from(MediaError::InvalidContentType {
+                field: field_name.to_string(),
+                mime_type: content_type,
+            }));
+        }
+
         let data = field
             .bytes()
             .await
             .map_err(|e| ApiError::new(StatusCode::BAD_REQUEST, e.to_string()))?;
+
+        if data.is_empty() {
+            return Err(ApiError::new(
+                StatusCode::BAD_REQUEST,
+                format!("Empty file in field '{field_name}'"),
+            ));
+        }
 
         files.push(UploadedFile::new(
             field_name_enum,

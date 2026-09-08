@@ -1,5 +1,4 @@
 mod app;
-mod catalogue;
 mod config;
 mod docs;
 mod dto;
@@ -13,13 +12,15 @@ mod setup;
 mod storage;
 
 use dotenvy::dotenv;
-use service_common::setup::{init_mongodb, init_tracing, shutdown_signal};
+use service_common::{
+    http_client::{CatalogueClient, build_client},
+    setup::{init_mongodb, init_tracing, shutdown_signal},
+};
 use std::net::SocketAddr;
 use std::sync::Arc;
 use tracing::info;
 
 use app::{build_app, AppState};
-use catalogue::CatalogueClient;
 use repository::MongoMediaRepository;
 use service::MediaService;
 use setup::{create_indexes, init_minio};
@@ -45,14 +46,12 @@ async fn main() -> anyhow::Result<()> {
         &env.minio_secret_key,
     )?;
 
-    let http_client = reqwest::Client::builder()
-        .timeout(std::time::Duration::from_secs(30))
-        .build()
-        .expect("Failed to create HTTP client");
-
     let repository = Box::new(MongoMediaRepository::new(collection));
     let storage = Arc::new(MinioMediaStorage::new(minio, env.minio_bucket));
-    let catalogue = CatalogueClient::new(http_client, env.app_config.catalogue_service_url.clone());
+    let catalogue = CatalogueClient::new(
+        build_client(),
+        env.app_config.catalogue_service_url.clone(),
+    );
     let media_service = MediaService::new(repository, storage, catalogue);
 
     let state = Arc::new(AppState::new(env.app_config, media_service));

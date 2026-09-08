@@ -1,5 +1,4 @@
 use crate::{
-    catalogue::CatalogueClient,
     dto::{GameMediaResponse, MediaFileResponse},
     error::{MediaError, Result},
     media_keys,
@@ -8,6 +7,7 @@ use crate::{
     storage::MediaStorage,
 };
 use mongodb::bson::DateTime;
+use service_common::http_client::{CatalogueClient, CatalogueError};
 use std::{collections::HashMap, sync::Arc};
 use tracing::warn;
 
@@ -57,7 +57,15 @@ impl MediaService {
     }
 
     pub async fn ensure_game_exists(&self, game_id: i32) -> Result<()> {
-        self.catalogue.ensure_game_exists(game_id).await
+        self.catalogue
+            .ensure_game_exists(game_id)
+            .await
+            .map_err(|error| match error {
+                CatalogueError::NotFound(game_id) => MediaError::InvalidGameId(game_id),
+                CatalogueError::Unavailable(message) => {
+                    MediaError::CatalogueServiceError(message)
+                }
+            })
     }
 
     pub async fn upload_game_media(
@@ -114,15 +122,11 @@ impl MediaService {
 
         self.repository.delete_by_game_id(game_id, version).await?;
         self.storage.delete_keys(&keys).await;
-        self.sweep_leftover_keys(game_id, &keys).await;
-
-        if self.repository.find_by_game_id(game_id).await?.is_some() {
-            self.sweep_leftover_keys(game_id, &keys).await;
-        }
 
         Ok(())
     }
 
+    #[allow(dead_code)]
     async fn sweep_leftover_keys(&self, game_id: i32, known_keys: &[String]) {
         let mut known: Vec<String> = known_keys.to_vec();
         if let Ok(Some(current)) = self.repository.find_by_game_id(game_id).await {
@@ -149,12 +153,38 @@ impl MediaService {
             return Err(MediaError::NoFilesProvided);
         }
 
+        if files.len() > 22 {
+            return Err(MediaError::TooManyFiles(String::from(
+                "Too many files (max 22: 1 cover + 20 screenshots + 1 trailer)",
+            )));
+        }
+
+        let screenshot_count = files
+            .iter()
+            .filter(|file| file.field_name == Screenshot)
+            .count();
+        if screenshot_count > 20 {
+            return Err(MediaError::TooManyFiles(String::from(
+                "Too many screenshots (max 20)",
+            )));
+        }
+
+        let total_bytes: usize = files.iter().map(|file| file.data.len()).sum();
+        if total_bytes > MAX_VIDEO_BYTES + 20 * MAX_IMAGE_BYTES + MAX_IMAGE_BYTES {
+            return Err(MediaError::TooManyFiles(String::from(
+                "Total upload size exceeds the allowed limit",
+            )));
+        }
+
         for file in files {
             let limit = if file.field_name == Trailer {
                 MAX_VIDEO_BYTES
             } else {
                 MAX_IMAGE_BYTES
             };
+            if file.data.is_empty() {
+                return Err(MediaError::NoFilesProvided);
+            }
             if file.data.len() > limit {
                 return Err(MediaError::FileTooLarge {
                     field: file.field_name.as_string(),

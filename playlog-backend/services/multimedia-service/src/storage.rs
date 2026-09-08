@@ -80,7 +80,11 @@ impl MediaStorage for MinioMediaStorage {
                     .filter(|entry| !entry.is_prefix)
                     .map(|entry| entry.name),
             );
+            if keys.len() >= 1000 {
+                break;
+            }
         }
+        keys.truncate(1000);
         Ok(keys)
     }
 

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::{IntoParams, ToSchema};
+use validator::Validate;
 
 #[derive(Debug, Serialize, ToSchema)]
 pub struct GameMediaResponse {
@@ -54,9 +55,10 @@ pub struct DeleteGameMediaRequest {
     pub version: i64,
 }
 
-#[derive(Debug, Deserialize, IntoParams)]
+#[derive(Debug, Validate, Deserialize, IntoParams)]
 pub struct GetGameCoversQuery {
-    #[serde(rename = "gameIds")]
+    #[serde(default, rename = "gameIds")]
+    #[validate(length(max = 100))]
     pub game_ids: Vec<i32>,
 }
 
