@@ -1,27 +1,18 @@
-import {
-	AfterViewInit,
-	ChangeDetectionStrategy,
-	Component,
-	ElementRef,
-	inject,
-	NgZone,
-	OnDestroy,
-	OnInit,
-	signal,
-	ViewChild,
-} from '@angular/core';
+import {ChangeDetectionStrategy, Component, inject, OnInit, signal} from '@angular/core';
 import {DatePipe} from '@angular/common';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {MatChipsModule} from '@angular/material/chips';
-import {MatDividerModule} from '@angular/material/divider';
+import {MatTableModule} from '@angular/material/table';
+import {MatPaginatorIntl, MatPaginatorModule, PageEvent} from '@angular/material/paginator';
 import {ReportService} from '../report.service';
 import {ReportResponse, ReportStatus, ReportTargetType} from '../report.dto';
 import {SnackbarService} from '../../../shared/services/snackbar.service';
 import {DialogService} from '../../../shared/services/dialog.service';
 import {ViewReportedContentDialog} from '../view-reported-content-dialog/view-reported-content.dialog';
+import {PRESET_REASONS} from '../report-dialog/report.dialog';
+import {UnknownTotalCountPaginatorIntl} from '../../../shared/unknown-total-count.paginator';
 
 @Component({
 	selector: 'app-reports-page',
@@ -31,90 +22,73 @@ import {ViewReportedContentDialog} from '../view-reported-content-dialog/view-re
 		MatIconModule,
 		MatProgressSpinnerModule,
 		MatTooltipModule,
-		MatChipsModule,
-		MatDividerModule,
+		MatTableModule,
+		MatPaginatorModule,
+	],
+	providers: [
+		{provide: MatPaginatorIntl, useClass: UnknownTotalCountPaginatorIntl},
 	],
 	templateUrl: './reports.page.html',
 	styleUrl: './reports.page.css',
 	changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ReportsPage implements OnInit, AfterViewInit, OnDestroy {
-	@ViewChild('scrollSentinel') set sentinel(el: ElementRef<HTMLElement> | undefined) {
-		if (el && this.observer) {
-			this.observer.disconnect();
-			this.observer.observe(el.nativeElement);
-		}
-	}
-
+export class ReportsPage implements OnInit {
 	private reportService = inject(ReportService);
 	private snackbarService = inject(SnackbarService);
 	private dialogService = inject(DialogService);
-	private zone = inject(NgZone);
 
 	protected readonly ReportTargetType = ReportTargetType;
+	protected readonly presetReasons = PRESET_REASONS;
+	protected readonly displayedColumns = ['type', 'reporter', 'reason', 'createdAt', 'actions'];
+	protected readonly detailColumn = ['expandedDetail'];
+	protected readonly pageSize = 10;
 
 	protected reports = signal<ReportResponse[]>([]);
 	protected loading = signal(false);
-	protected hasMore = signal(true);
+	protected pageIndex = signal(0);
+	protected totalItems = signal(0);
+	protected expandedId = signal<string | null>(null);
 	// Tracks which report id is currently being actioned
 	protected actioningId = signal<string | null>(null);
 
-	private page = 0;
-	private observer: IntersectionObserver | null = null;
-	private readonly pageSize = 10;
-
 	ngOnInit() {
-		this.loadFirst();
+		this.loadPage();
 	}
 
-	ngAfterViewInit() {
-		this.setupObserver();
+	protected handlePageEvent(event: PageEvent) {
+		this.pageIndex.set(event.pageIndex);
+		this.expandedId.set(null);
+		this.loadPage();
 	}
 
-	ngOnDestroy() {
-		this.observer?.disconnect();
+	protected toggleExpand(report: ReportResponse) {
+		if (this.presetReasons.includes(report.reason)) return;
+		this.expandedId.update(current => current === report.id ? null : report.id);
 	}
 
-	private setupObserver() {
-		this.zone.runOutsideAngular(() => {
-			this.observer = new IntersectionObserver(
-				(entries) => {
-					if (entries[0].isIntersecting && !this.loading() && this.hasMore()) {
-						this.zone.run(() => this.loadNextPage());
-					}
-				},
-				{rootMargin: '100px'},
-			);
-		});
+	protected isCustomReason(report: ReportResponse): boolean {
+		return !this.presetReasons.includes(report.reason);
 	}
 
-	private loadFirst() {
-		this.page = 0;
-		this.hasMore.set(true);
-		this.reports.set([]);
-		this.loadPage(true);
-	}
-
-	private loadPage(replace: boolean) {
+	private loadPage() {
 		this.loading.set(true);
-		this.reportService.getPendingReports(this.page).subscribe({
+		this.reportService.getPendingReports(this.pageIndex()).subscribe({
 			next: (data) => {
-				this.loading.set(false);
-				if (data.length < this.pageSize) this.hasMore.set(false);
-				if (replace) {
-					this.reports.set(data);
-				} else {
-					this.reports.update(prev => [...prev, ...data]);
+				if (data.length === 0 && this.pageIndex() > 0) {
+					this.pageIndex.update(index => index - 1);
+					this.loadPage();
+					return;
 				}
+				this.reports.set(data);
+				if (data.length < this.pageSize) {
+					this.totalItems.set(this.pageIndex() * this.pageSize + data.length);
+				} else {
+					this.totalItems.set(Number.MAX_SAFE_INTEGER);
+				}
+				this.loading.set(false);
 			},
 			error: () => this.loading.set(false),
 		});
-	}
-
-	private loadNextPage() {
-		if (!this.hasMore() || this.loading()) return;
-		this.page++;
-		this.loadPage(false);
 	}
 
 	protected viewContent(report: ReportResponse) {
@@ -168,8 +142,9 @@ export class ReportsPage implements OnInit, AfterViewInit, OnDestroy {
 		this.reportService.resolveReport(report.id, {status, version: report.version}).subscribe({
 			next: () => {
 				this.actioningId.set(null);
-				this.reports.update(prev => prev.filter(r => r.id !== report.id));
+				if (this.expandedId() === report.id) this.expandedId.set(null);
 				this.snackbarService.createSnackbar(successMsg);
+				this.loadPage();
 			},
 			error: (err) => {
 				this.actioningId.set(null);
@@ -177,7 +152,7 @@ export class ReportsPage implements OnInit, AfterViewInit, OnDestroy {
 					this.snackbarService.createSnackbar(
 						$localize`:@@reports.conflict:This report was already actioned. Refreshing.`
 					);
-					this.loadFirst();
+					this.loadPage();
 				} else {
 					this.snackbarService.createSnackbar(
 						$localize`:@@reports.actionFailed:Failed to update report.`
@@ -187,4 +162,3 @@ export class ReportsPage implements OnInit, AfterViewInit, OnDestroy {
 		});
 	}
 }
-
