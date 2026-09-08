@@ -27,7 +27,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
         .route_layer(from_fn(require_user));
 
     let moderator_routes = OpenApiRouter::new()
-        .route("/", get(get_report))
+        .route("/{id}", get(get_report))
         .route("/pending", get(get_pending_reports))
         .route("/{id}/status", put(resolve_report))
         .route_layer(from_fn(require_moderator));
