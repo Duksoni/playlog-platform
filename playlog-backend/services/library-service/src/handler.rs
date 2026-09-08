@@ -1,9 +1,9 @@
 use crate::{
     app::AppState,
-    dto::{AddUpdateGameRequest, LibraryFilterQuery},
-    model::{LibraryGame, UserGame},
+    dto::{AddUpdateGameRequest, LibraryFilterQuery, LibraryPagedResponse},
+    model::UserGame,
 };
-use service_common::error::Result as ApiResult;
+use service_common::error::{ApiError, Result as ApiResult};
 use axum::{
     extract::{Path, Query, State}, http::StatusCode,
     middleware::{from_fn, from_fn_with_state},
@@ -17,6 +17,7 @@ use jwt_common::{auth, require_user, AuthClaims, JwtConfig};
 use std::sync::Arc;
 use utoipa_axum::router::OpenApiRouter;
 use uuid::Uuid;
+use validator::Validate;
 
 pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     let jwt_config = JwtConfig::new(state.config.jwt_public_key.clone());
@@ -41,8 +42,9 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
         LibraryFilterQuery
     ),
     responses(
-        (status = 200, description = "List of games in user's library", body = Vec<LibraryGame>),
-        (status = 400, description = "Invalid UUID"),
+        (status = 200, description = "Paged library; totals reflect status filter. Empty data if none; unknown user returns empty page", body = LibraryPagedResponse),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "library",
     operation_id = "get_user_library"
@@ -52,10 +54,11 @@ pub async fn get_user_library(
     State(state): State<Arc<AppState>>,
     Path(user_id): Path<Uuid>,
     Query(filter): Query<LibraryFilterQuery>,
-) -> ApiResult<Json<Vec<LibraryGame>>> {
+) -> ApiResult<Json<LibraryPagedResponse>> {
+    filter.validate().map_err(ApiError::from)?;
     let games = state
         .library_service
-        .get_user_library(user_id, filter.status)
+        .get_user_library(user_id, filter.status, filter.page, filter.limit)
         .await?;
     Ok(Json(games))
 }
@@ -67,8 +70,11 @@ pub async fn get_user_library(
     request_body = AddUpdateGameRequest,
     responses(
         (status = 200, description = "Game added or updated", body = UserGame),
-        (status = 400, description = "Invalid game ID or request"),
+        (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Game does not exist in catalogue"),
+        (status = 422, description = "Invalid path/query/body"),
+        (status = 502, description = "Catalogue service unavailable"),
     ),
     tag = "library",
     security(("bearer" = [])),
@@ -80,6 +86,7 @@ pub async fn add_or_update_game(
     Extension(claims): Extension<AuthClaims>,
     Json(request): Json<AddUpdateGameRequest>,
 ) -> ApiResult<Json<UserGame>> {
+    request.validate().map_err(ApiError::from)?;
     let game = state
         .library_service
         .add_or_update_game(claims.user_id, request.game_id, request.status)
@@ -96,6 +103,7 @@ pub async fn add_or_update_game(
         (status = 204, description = "Game removed from library"),
         (status = 401, description = "Unauthorized"),
         (status = 404, description = "Game not found in library"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "library",
     security(("bearer" = [])),

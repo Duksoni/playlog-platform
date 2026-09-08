@@ -1,5 +1,7 @@
-use service_common::error::ApiError;
 use axum::http::StatusCode;
+use service_common::error::{
+    is_foreign_key_violation, is_row_not_found, is_unique_violation, ApiError,
+};
 use thiserror::Error;
 use tracing::error;
 
@@ -23,13 +25,18 @@ pub type Result<T> = std::result::Result<T, LibraryError>;
 impl From<LibraryError> for ApiError {
     fn from(error: LibraryError) -> Self {
         let status = match &error {
-            LibraryError::NotFound => StatusCode::NOT_FOUND,
-            LibraryError::InvalidGameId(_) => StatusCode::BAD_REQUEST,
+            LibraryError::NotFound | LibraryError::InvalidGameId(_) => StatusCode::NOT_FOUND,
             LibraryError::DatabaseError(db_err) => {
+                if is_row_not_found(db_err) {
+                    return ApiError::new(StatusCode::NOT_FOUND, "Resource not found");
+                }
+                if is_unique_violation(db_err) || is_foreign_key_violation(db_err) {
+                    return ApiError::new(StatusCode::CONFLICT, db_err.to_string());
+                }
                 error!(error = %db_err, "database error");
-                return ApiError::internal_error()
+                return ApiError::internal_error();
             }
-            LibraryError::CatalogueServiceError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+            LibraryError::CatalogueServiceError(_) => StatusCode::BAD_GATEWAY,
         };
         ApiError::new(status, error.to_string())
     }

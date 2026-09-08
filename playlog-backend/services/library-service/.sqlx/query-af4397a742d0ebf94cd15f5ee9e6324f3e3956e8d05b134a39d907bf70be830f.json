@@ -1,0 +1,37 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            SELECT COUNT(*) as \"count!\"\n            FROM user_games\n            WHERE user_id = $1 AND ($2::game_library_status IS NULL OR status = $2)\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "count!",
+        "type_info": "Int8",
+        "origin": "Expression"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Uuid",
+        {
+          "Custom": {
+            "name": "game_library_status",
+            "kind": {
+              "Enum": [
+                "OWNED",
+                "PLAYING",
+                "WISHLIST",
+                "COMPLETED",
+                "DROPPED"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    "nullable": [
+      null
+    ]
+  },
+  "hash": "af4397a742d0ebf94cd15f5ee9e6324f3e3956e8d05b134a39d907bf70be830f"
+}

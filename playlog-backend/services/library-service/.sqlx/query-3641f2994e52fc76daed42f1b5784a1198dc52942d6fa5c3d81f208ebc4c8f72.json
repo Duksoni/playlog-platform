@@ -1,12 +1,18 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n            SELECT game_id, status AS \"status: GameLibraryStatus\", added_at, last_updated\n            FROM user_games\n            WHERE user_id = $1 AND ($2::game_library_status IS NULL OR status = $2)\n            ORDER BY last_updated DESC\n            ",
+  "query": "\n            SELECT game_id, status AS \"status: GameLibraryStatus\", added_at, last_updated\n            FROM user_games\n            WHERE user_id = $1 AND ($2::game_library_status IS NULL OR status = $2)\n            ORDER BY last_updated DESC\n            LIMIT $3 OFFSET $4\n            ",
   "describe": {
     "columns": [
       {
         "ordinal": 0,
         "name": "game_id",
-        "type_info": "Int4"
+        "type_info": "Int4",
+        "origin": {
+          "Table": {
+            "table": "user_games",
+            "name": "game_id"
+          }
+        }
       },
       {
         "ordinal": 1,
@@ -24,17 +30,35 @@
               ]
             }
           }
+        },
+        "origin": {
+          "Table": {
+            "table": "user_games",
+            "name": "status"
+          }
         }
       },
       {
         "ordinal": 2,
         "name": "added_at",
-        "type_info": "Timestamptz"
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "user_games",
+            "name": "added_at"
+          }
+        }
       },
       {
         "ordinal": 3,
         "name": "last_updated",
-        "type_info": "Timestamptz"
+        "type_info": "Timestamptz",
+        "origin": {
+          "Table": {
+            "table": "user_games",
+            "name": "last_updated"
+          }
+        }
       }
     ],
     "parameters": {
@@ -53,7 +77,9 @@
               ]
             }
           }
-        }
+        },
+        "Int8",
+        "Int8"
       ]
     },
     "nullable": [
@@ -63,5 +89,5 @@
       false
     ]
   },
-  "hash": "a46a67342ac70444bec4c75e581309ea9740073150856a22274ab0bde319702d"
+  "hash": "3641f2994e52fc76daed42f1b5784a1198dc52942d6fa5c3d81f208ebc4c8f72"
 }

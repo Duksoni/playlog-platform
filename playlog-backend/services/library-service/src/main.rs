@@ -11,7 +11,7 @@ mod service;
 use anyhow::Context;
 use dotenvy::dotenv;
 use service_common::{
-    http_client::build_client,
+    http_client::{CatalogueClient, build_client},
     setup::{init_sqlx_db, init_tracing, shutdown_signal},
 };
 use std::{net::SocketAddr, sync::Arc};
@@ -39,14 +39,12 @@ async fn main() -> anyhow::Result<()> {
         .await
         .context("Migrations failed")?;
 
-    let http_client = build_client();
-
     let repository = Box::new(PostgresLibraryRepository::new(pool));
-    let library_service = LibraryService::new(
-        repository,
-        http_client,
+    let catalogue = CatalogueClient::new(
+        build_client(),
         env.app_config.catalogue_service_url.clone(),
     );
+    let library_service = LibraryService::new(repository, catalogue);
 
     let state = Arc::new(AppState {
         config: env.app_config,

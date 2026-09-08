@@ -1,4 +1,5 @@
 use crate::{
+    dto::LibraryPagedResponse,
     error::{LibraryError, Result},
     model::{GameLibraryStatus, LibraryGame, UserGame},
 };
@@ -12,7 +13,9 @@ pub trait LibraryRepository: Send + Sync {
         &self,
         user_id: Uuid,
         status: Option<GameLibraryStatus>,
-    ) -> Result<Vec<LibraryGame>>;
+        page: u64,
+        limit: u64,
+    ) -> Result<LibraryPagedResponse>;
     async fn upsert_game(
         &self,
         user_id: Uuid,
@@ -38,7 +41,25 @@ impl LibraryRepository for PostgresLibraryRepository {
         &self,
         user_id: Uuid,
         status: Option<GameLibraryStatus>,
-    ) -> Result<Vec<LibraryGame>> {
+        page: u64,
+        limit: u64,
+    ) -> Result<LibraryPagedResponse> {
+        let page = page.clamp(1, 1000);
+        let limit = limit.clamp(1, 100);
+        let offset = (page.saturating_sub(1).saturating_mul(limit)) as i64;
+        let total_items: i64 = query!(
+            r#"
+            SELECT COUNT(*) as "count!"
+            FROM user_games
+            WHERE user_id = $1 AND ($2::game_library_status IS NULL OR status = $2)
+            "#,
+            user_id,
+            status as _
+        )
+        .fetch_one(&self.pool)
+        .await?
+        .count;
+        let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
         let games = query_as!(
             LibraryGame,
             r#"
@@ -46,13 +67,24 @@ impl LibraryRepository for PostgresLibraryRepository {
             FROM user_games
             WHERE user_id = $1 AND ($2::game_library_status IS NULL OR status = $2)
             ORDER BY last_updated DESC
+            LIMIT $3 OFFSET $4
             "#,
             user_id,
-            status as _
+            status as _,
+            limit as i64,
+            offset
         )
         .fetch_all(&self.pool)
         .await?;
-        Ok(games)
+        Ok(LibraryPagedResponse(
+            service_common::dto::PagedResponse::new(
+                games,
+                total_items,
+                total_pages,
+                page as i64,
+                limit as i64,
+            ),
+        ))
     }
 
     async fn upsert_game(
