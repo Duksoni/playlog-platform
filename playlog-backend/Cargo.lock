@@ -2261,6 +2261,7 @@ dependencies = [
  "utoipa-axum",
  "utoipa-swagger-ui",
  "uuid",
+ "validator",
 ]
 
 [[package]]
@@ -2626,6 +2627,7 @@ dependencies = [
  "utoipa",
  "utoipa-axum",
  "utoipa-swagger-ui",
+ "validator",
 ]
 
 [[package]]
@@ -3694,6 +3696,7 @@ dependencies = [
  "reqwest 0.13.4",
  "serde",
  "sqlx",
+ "thiserror",
  "tokio",
  "tower-http",
  "tracing-subscriber",
