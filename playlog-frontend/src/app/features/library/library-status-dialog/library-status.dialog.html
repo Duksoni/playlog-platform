@@ -41,7 +41,7 @@
 				<span i18n="@@libraryDialog.remove">Remove</span>
 			</button>
 		}
-		<button matButton="outlined" mat-dialog-close [disabled]="submitting()" i18n="@@libraryDialog.cancel">Cancel</button>
+		<button matButton mat-dialog-close [disabled]="submitting()" i18n="@@libraryDialog.cancel">Cancel</button>
 		<button matButton="filled" (click)="onSave()"
 		        [disabled]="!selectedStatus() || submitting()">
 			@if (submitting()) {

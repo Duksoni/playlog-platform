@@ -68,7 +68,7 @@
 				<span i18n="@@reviewDialog.delete">Delete</span>
 			</button>
 		}
-		<button matButton="outlined" mat-dialog-close [disabled]="submitting()" i18n="@@reviewDialog.cancel">Cancel</button>
+		<button matButton mat-dialog-close [disabled]="submitting()" i18n="@@reviewDialog.cancel">Cancel</button>
 		<button matButton="filled" (click)="onSubmit()"
 		        [disabled]="!selectedRating() || submitting()">
 			@if (submitting()) {
