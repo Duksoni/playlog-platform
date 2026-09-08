@@ -21,6 +21,13 @@ impl ApiError {
         }
     }
 
+    pub fn payload_too_large(error_message: impl Into<String>) -> Self {
+        Self {
+            code: StatusCode::PAYLOAD_TOO_LARGE,
+            errors: vec![error_message.into()],
+        }
+    }
+
     pub fn internal_error() -> Self {
         Self {
             code: StatusCode::INTERNAL_SERVER_ERROR,
@@ -45,6 +52,34 @@ impl From<ValidationErrors> for ApiError {
         collect_validation_errors(None, &errors, &mut error_messages);
         Self::with_errors(StatusCode::BAD_REQUEST, error_messages)
     }
+}
+
+pub fn is_row_not_found(error: &sqlx::Error) -> bool {
+    matches!(error, sqlx::Error::RowNotFound)
+}
+
+pub fn sqlx_error_code(error: &sqlx::Error) -> Option<String> {
+    if let sqlx::Error::Database(db_error) = error {
+        db_error.code().map(|code| code.to_string())
+    } else {
+        None
+    }
+}
+
+pub fn is_unique_violation(error: &sqlx::Error) -> bool {
+    sqlx_error_code(error).as_deref() == Some("23505")
+}
+
+pub fn is_foreign_key_violation(error: &sqlx::Error) -> bool {
+    sqlx_error_code(error).as_deref() == Some("23503")
+}
+
+pub fn is_mongo_duplicate_key(error: &mongodb::error::Error) -> bool {
+    matches!(
+        error.kind.as_ref(),
+        mongodb::error::ErrorKind::Write(mongodb::error::WriteFailure::WriteError(write_error))
+            if write_error.code == 11000
+    )
 }
 
 fn collect_validation_errors(
