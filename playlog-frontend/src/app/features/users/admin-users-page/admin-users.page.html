@@ -12,7 +12,7 @@
 	<div class="search-row">
 		<mat-form-field appearance="outline" class="search-field">
 			<mat-label i18n="@@adminUsers.searchLabel">Search by username</mat-label>
-			<input matInput [formControl]="searchControl" autocomplete="off" />
+			<input matInput [formControl]="searchControl" autocomplete="off"/>
 			<mat-icon matSuffix fontSet="material-symbols-rounded">search</mat-icon>
 			@if (!searchQuery()?.trim()) {
 				<mat-hint i18n="@@adminUsers.searchHint">Start typing to see the results</mat-hint>
@@ -30,120 +30,95 @@
 	</div>
 
 	<!-- Results -->
-	<div class="results-container mat-elevation-z1">
+	<div class="table-container mat-elevation-z2">
 		@if (loading()) {
-			<div class="loading-overlay">
+			<div class="loading-shade">
 				<mat-spinner diameter="40"></mat-spinner>
 			</div>
 		}
 
-		@if (!loading() && users().length === 0) {
-			<div class="empty-state">
-				<mat-icon fontSet="material-symbols-rounded">person_search</mat-icon>
-				@if (hasSearched()) {
-					<p i18n="@@adminUsers.noResultsQuery">No users found matching "{{ searchQuery() }}".</p>
-				} @else {
-					<p i18n="@@adminUsers.typeToSearch">Type a username to search the users.</p>
-				}
-			</div>
-		} @else {
-			<table mat-table [dataSource]="users()" class="users-table">
+		<table mat-table [dataSource]="users()">
 
-				<!-- Username column -->
-				<ng-container matColumnDef="username">
-					<th mat-header-cell *matHeaderCellDef i18n="@@adminUsers.columnUsername">Username</th>
-					<td mat-cell *matCellDef="let user">
-						<div class="user-cell">
-							<div class="user-avatar" aria-hidden="true">
-								<mat-icon fontSet="material-symbols-rounded">person</mat-icon>
-							</div>
-							<div class="user-info">
-								<span class="username-text">{{ user.username }}</span>
-								<span class="role-badge" [class]="roleBadgeClass(userRoles()[user.id])">
-									{{ roleLabel(userRoles()[user.id]) }}
-								</span>
-							</div>
-						</div>
-					</td>
-				</ng-container>
+			<!-- Username column -->
+			<ng-container matColumnDef="username">
+				<th mat-header-cell *matHeaderCellDef i18n="@@adminUsers.columnUsername">Username</th>
+				<td mat-cell *matCellDef="let user">{{ user.username }}</td>
+			</ng-container>
 
-				<!-- Actions column -->
-				<ng-container matColumnDef="actions">
-					<th mat-header-cell *matHeaderCellDef i18n="@@adminUsers.columnActions">Actions</th>
-					<td mat-cell *matCellDef="let user">
-						<div class="action-buttons">
-							<!-- Promote -->
-							@if (canPromote(user.id)) {
-								<button
-									matButton="outlined"
-									(click)="promote(user)"
-									[disabled]="actioningId() !== null"
-									matTooltip="Promote to next role"
-									i18n-matTooltip="@@adminUsers.promoteTooltip"
-									matTooltipShowDelay="300"
-								>
-									@if (actioningId() === user.id) {
-										<mat-spinner diameter="16"></mat-spinner>
-									} @else {
-										<mat-icon fontSet="material-symbols-rounded">arrow_upward</mat-icon>
-									}
-									<span i18n="@@adminUsers.promote">Promote</span>
-								</button>
-							}
-
-							<!-- Demote -->
-							@if (canDemote(user.id)) {
-								<button
-									matButton="outlined"
-									(click)="demote(user)"
-									[disabled]="actioningId() !== null"
-									matTooltip="Demote to previous role"
-									i18n-matTooltip="@@adminUsers.demoteTooltip"
-									matTooltipShowDelay="300"
-								>
-									@if (actioningId() === user.id) {
-										<mat-spinner diameter="16"></mat-spinner>
-									} @else {
-										<mat-icon fontSet="material-symbols-rounded">arrow_downward</mat-icon>
-									}
-									<span i18n="@@adminUsers.demote">Demote</span>
-								</button>
-							}
-
-							<!-- Block -->
+			<!-- Actions column -->
+			<ng-container matColumnDef="actions">
+				<th mat-header-cell *matHeaderCellDef i18n="@@adminUsers.columnActions">Actions</th>
+				<td mat-cell *matCellDef="let user">
+					<div class="action-buttons">
+						@if (canPromote(user.id)) {
 							<button
-								matButton="outlined"
-								class="delete-button"
-								(click)="block(user)"
+								matIconButton
+								(click)="promote(user)"
 								[disabled]="actioningId() !== null"
-								matTooltip="Block this user"
-								i18n-matTooltip="@@adminUsers.blockTooltip"
+								matTooltip="Promote to next role"
+								i18n-matTooltip="@@adminUsers.promoteTooltip"
 								matTooltipShowDelay="300"
 							>
 								@if (actioningId() === user.id) {
-									<mat-spinner diameter="16"></mat-spinner>
+									<mat-spinner diameter="18"></mat-spinner>
 								} @else {
-									<mat-icon fontSet="material-symbols-rounded">block</mat-icon>
+									<mat-icon fontSet="material-symbols-rounded">arrow_upward</mat-icon>
 								}
-								<span i18n="@@adminUsers.block">Block</span>
 							</button>
-						</div>
-					</td>
-				</ng-container>
-
-				<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-				<tr mat-row *matRowDef="let row; columns: displayedColumns;"
-				    class="user-row"></tr>
-
-				<tr class="mat-row" *matNoDataRow>
-					<td class="mat-cell no-data-cell" colspan="2">
-						@if (!loading()) {
-							<span i18n="@@adminUsers.noResults">No users found.</span>
 						}
-					</td>
-				</tr>
 
-			</table>
-		}
+						@if (canDemote(user.id)) {
+							<button
+								matIconButton
+								(click)="demote(user)"
+								[disabled]="actioningId() !== null"
+								matTooltip="Demote to previous role"
+								i18n-matTooltip="@@adminUsers.demoteTooltip"
+								matTooltipShowDelay="300"
+							>
+								@if (actioningId() === user.id) {
+									<mat-spinner diameter="18"></mat-spinner>
+								} @else {
+									<mat-icon fontSet="material-symbols-rounded">arrow_downward</mat-icon>
+								}
+							</button>
+						}
+
+						<button
+							matIconButton
+							class="delete-button"
+							(click)="block(user)"
+							[disabled]="actioningId() !== null"
+							matTooltip="Block this user"
+							i18n-matTooltip="@@adminUsers.blockTooltip"
+							matTooltipShowDelay="300"
+						>
+							@if (actioningId() === user.id) {
+								<mat-spinner diameter="18"></mat-spinner>
+							} @else {
+								<mat-icon fontSet="material-symbols-rounded">block</mat-icon>
+							}
+						</button>
+					</div>
+				</td>
+			</ng-container>
+
+			<tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+			<tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+
+			<tr class="mat-row" *matNoDataRow>
+				<td class="mat-cell no-data-cell" colspan="2">
+					@if (!loading()) {
+						@if (hasSearched()) {
+							<span i18n="@@adminUsers.noResultsQuery">No users found matching "{{ searchQuery() }}
+								".</span>
+						} @else {
+							<span i18n="@@adminUsers.typeToSearch">Type a username to search the users.</span>
+						}
+					}
+				</td>
+			</tr>
+
+		</table>
 	</div>
 </div>

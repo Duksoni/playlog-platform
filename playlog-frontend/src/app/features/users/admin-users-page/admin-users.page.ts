@@ -9,8 +9,6 @@ import {MatInputModule} from '@angular/material/input';
 import {MatSelectModule} from '@angular/material/select';
 import {MatProgressSpinnerModule} from '@angular/material/progress-spinner';
 import {MatTooltipModule} from '@angular/material/tooltip';
-import {MatChipsModule} from '@angular/material/chips';
-import {MatDividerModule} from '@angular/material/divider';
 import {MatTableModule} from '@angular/material/table';
 import {UserService} from '../user.service';
 import {SimpleUser, UserRoleChangeResponse} from '../user.dto';
@@ -29,8 +27,6 @@ import {SnackbarService} from '../../../shared/services/snackbar.service';
 		MatSelectModule,
 		MatProgressSpinnerModule,
 		MatTooltipModule,
-		MatChipsModule,
-		MatDividerModule,
 		MatTableModule,
 	],
 	templateUrl: './admin-users.page.html',
@@ -239,17 +235,6 @@ export class AdminUsersPage implements OnInit {
 				return $localize`:@@role.moderator:Moderator`;
 			default:
 				return $localize`:@@role.user:User`;
-		}
-	}
-
-	protected roleBadgeClass(role: Role | string): string {
-		switch (role) {
-			case Role.ADMIN:
-				return 'role-admin';
-			case Role.MODERATOR:
-				return 'role-moderator';
-			default:
-				return 'role-user';
 		}
 	}
 
