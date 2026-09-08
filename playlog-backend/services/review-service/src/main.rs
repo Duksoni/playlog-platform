@@ -5,11 +5,10 @@ mod docs;
 mod report;
 mod review;
 mod setup;
-mod shared;
 
 use dotenvy::dotenv;
 use service_common::{
-    http_client::build_client,
+    http_client::{CatalogueClient, build_client},
     setup::{init_mongodb, init_tracing, shutdown_signal},
 };
 use std::{net::SocketAddr, sync::Arc};
@@ -53,8 +52,10 @@ async fn main() -> anyhow::Result<()> {
     let comment_service = CommentService::new(
         Box::new(comment_repository.clone()),
         Box::new(review_repository.clone()),
-        http_client.clone(),
-        env.app_config.catalogue_service_url.clone(),
+        CatalogueClient::new(
+            http_client.clone(),
+            env.app_config.catalogue_service_url.clone(),
+        ),
     );
 
     let report_service = ReportService::new(
@@ -65,8 +66,10 @@ async fn main() -> anyhow::Result<()> {
 
     let review_service = ReviewService::new(
         Box::new(review_repository.clone()),
-        http_client.clone(),
-        env.app_config.catalogue_service_url.clone(),
+        CatalogueClient::new(
+            http_client.clone(),
+            env.app_config.catalogue_service_url.clone(),
+        ),
     );
 
     let state = Arc::new(AppState::new(

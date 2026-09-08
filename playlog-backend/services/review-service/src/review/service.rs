@@ -3,28 +3,21 @@ use super::{
     MostReviewedGameResponse, Rating, RecentReviewResponse, Result, Review, ReviewDetailedResponse,
     ReviewError, ReviewRepository, ReviewSimpleResponse, TopGameResponse,
 };
-use crate::shared::ensure_game_exists;
 use bson::DateTime;
 use mongodb::bson::oid::ObjectId;
-use reqwest::Client as HttpClient;
+use service_common::http_client::{CatalogueClient, CatalogueError};
 use uuid::Uuid;
 
 pub struct ReviewService {
     repository: Box<dyn ReviewRepository>,
-    client: HttpClient,
-    catalogue_service_url: String,
+    catalogue: CatalogueClient,
 }
 
 impl ReviewService {
-    pub fn new(
-        repository: Box<dyn ReviewRepository>,
-        client: HttpClient,
-        catalogue_service_url: String,
-    ) -> Self {
+    pub fn new(repository: Box<dyn ReviewRepository>, catalogue: CatalogueClient) -> Self {
         Self {
             repository,
-            client,
-            catalogue_service_url,
+            catalogue,
         }
     }
 
@@ -85,7 +78,15 @@ impl ReviewService {
         username: String,
         request: CreateUpdateReviewRequest,
     ) -> Result<ReviewDetailedResponse> {
-        ensure_game_exists(&self.client, &self.catalogue_service_url, request.game_id).await?;
+        match self.catalogue.ensure_game_exists(request.game_id).await {
+            Ok(()) => {}
+            Err(CatalogueError::NotFound(game_id)) => {
+                return Err(ReviewError::InvalidGameId(game_id));
+            }
+            Err(CatalogueError::Unavailable(message)) => {
+                return Err(ReviewError::CatalogueServiceError(message));
+            }
+        }
 
         let now = DateTime::now();
         let existing = self

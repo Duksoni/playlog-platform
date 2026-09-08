@@ -47,7 +47,8 @@ impl CommentRepository for MongoCommentRepository {
         target_id: &str,
         page: u64,
     ) -> Result<Vec<SimpleCommentResponse>> {
-        let skip = (page.max(1) - 1) * PAGE_SIZE as u64;
+        let page = page.clamp(1, 1000);
+        let skip = (page - 1) * PAGE_SIZE as u64;
         let filter = doc! {
             "target_type": target_type.as_db_value(),
             "target_id": target_id,
@@ -68,6 +69,7 @@ impl CommentRepository for MongoCommentRepository {
     }
 
     async fn find_recent_game_comments(&self, limit: u64) -> Result<Vec<RecentGameCommentResponse>> {
+        let limit = limit.clamp(1, 50) as i64;
         let filter = doc! {
             "target_type": CommentTargetType::Game.as_db_value(),
             "deleted": false
@@ -76,7 +78,7 @@ impl CommentRepository for MongoCommentRepository {
             .comments
             .find(filter)
             .sort(doc! { "created_at": -1 })
-            .limit(limit as i64)
+            .limit(limit)
             .await?;
         let mut comments = vec![];
         while let Some(comment) = cursor.next().await {
@@ -118,7 +120,11 @@ impl CommentRepository for MongoCommentRepository {
             }
             None => {
                 let result = self.comments.insert_one(comment.clone()).await?;
-                comment.id = Some(result.inserted_id.as_object_id().unwrap());
+                let object_id = result
+                    .inserted_id
+                    .as_object_id()
+                    .ok_or_else(|| CommentError::Conflict(ObjectId::new()))?;
+                comment.id = Some(object_id);
                 Ok(comment)
             }
         }
@@ -134,9 +140,18 @@ impl CommentRepository for MongoCommentRepository {
             "$inc": { "version": 1 }
         };
         let result = self.comments.update_one(filter, update).await?;
-        if result.matched_count == 0 {
-            return Err(CommentError::Conflict(id));
+        if result.matched_count == 1 {
+            return Ok(());
         }
-        Ok(())
+        match self.comments.find_one(doc! { "_id": id }).await? {
+            None => Err(CommentError::NotFound),
+            Some(existing) => {
+                if existing.deleted {
+                    Err(CommentError::NotFound)
+                } else {
+                    Err(CommentError::Conflict(id))
+                }
+            }
+        }
     }
 }

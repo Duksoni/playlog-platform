@@ -1,6 +1,6 @@
-use service_common::error::ApiError;
 use axum::http::StatusCode;
 use mongodb::bson::oid::ObjectId;
+use service_common::error::{is_mongo_duplicate_key, ApiError};
 use thiserror::Error;
 use tracing::error;
 
@@ -11,6 +11,9 @@ pub enum ReviewError {
 
     #[error("Game with ID {0} does not exist")]
     InvalidGameId(i32),
+
+    #[error("Catalogue service error: {0}")]
+    CatalogueServiceError(String),
 
     #[error("Database error: {0}")]
     DatabaseError(#[from] mongodb::error::Error),
@@ -30,11 +33,16 @@ pub type Result<T> = std::result::Result<T, ReviewError>;
 impl From<ReviewError> for ApiError {
     fn from(error: ReviewError) -> Self {
         let status = match &error {
-            ReviewError::InvalidGameId(_) | ReviewError::AnyhowError(_) => StatusCode::BAD_REQUEST,
+            ReviewError::InvalidGameId(_) => StatusCode::NOT_FOUND,
+            ReviewError::CatalogueServiceError(_) => StatusCode::BAD_GATEWAY,
+            ReviewError::AnyhowError(_) => StatusCode::BAD_REQUEST,
             ReviewError::Unauthorized => StatusCode::FORBIDDEN,
             ReviewError::Conflict(_) => StatusCode::CONFLICT,
             ReviewError::NotFound => StatusCode::NOT_FOUND,
             ReviewError::DatabaseError(db_err) => {
+                if is_mongo_duplicate_key(db_err) {
+                    return ApiError::new(StatusCode::CONFLICT, db_err.to_string());
+                }
                 error!(error = %db_err, "database error");
                 return ApiError::internal_error();
             }

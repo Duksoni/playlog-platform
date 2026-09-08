@@ -9,33 +9,45 @@ use validator::Validate;
 pub struct CreateCommentRequest {
     #[serde(rename = "targetType")]
     pub target_type: CommentTargetType,
-    #[validate(length(min = 1))]
+    #[validate(length(min = 1, max = 100))]
     #[serde(rename = "targetId")]
     pub target_id: String,
-    #[validate(length(min = 10))]
+    #[validate(length(min = 10, max = 5000))]
     pub text: String,
 }
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct UpdateCommentRequest {
-    #[validate(length(min = 10))]
+    #[validate(length(min = 10, max = 5000))]
     pub text: String,
+}
+
+fn default_page() -> u64 {
+    1
+}
+
+fn default_limit() -> u64 {
+    10
 }
 
 #[derive(Debug, Validate, Deserialize, IntoParams)]
 pub struct CommentQuery {
     #[serde(rename = "targetType")]
     pub target_type: CommentTargetType,
-    #[validate(length(min = 1))]
+    #[validate(length(min = 1, max = 100))]
     #[serde(rename = "targetId")]
     pub target_id: String,
+    #[serde(default = "default_page")]
+    #[validate(range(min = 1, max = 1000))]
     #[param(required = false, example = "1")]
     pub page: u64,
 }
 
 #[derive(Debug, Validate, Deserialize, IntoParams)]
 pub struct RecentGameCommentsQuery {
-    #[param(required = true, example = "5")]
+    #[serde(default = "default_limit")]
+    #[validate(range(min = 1, max = 50))]
+    #[param(required = false, example = "5")]
     pub limit: u64,
 }
 
@@ -55,8 +67,8 @@ pub struct RecentGameCommentResponse {
 impl From<Comment> for RecentGameCommentResponse {
     fn from(value: Comment) -> Self {
         Self {
-            id: value.id.unwrap().to_string(),
-            game_id: value.target_id.parse().unwrap(),
+            id: value.id.map(|id| id.to_string()).unwrap_or_default(),
+            game_id: value.target_id.parse().unwrap_or(0),
             username: value.username,
             text: value.text,
             created_at: value.created_at.to_chrono(),
@@ -81,7 +93,7 @@ pub struct SimpleCommentResponse {
 impl From<Comment> for SimpleCommentResponse {
     fn from(value: Comment) -> Self {
         Self {
-            id: value.id.unwrap().to_string(),
+            id: value.id.map(|id| id.to_string()).unwrap_or_default(),
             user_id: value.user_id,
             username: value.username,
             text: value.text,
@@ -111,7 +123,7 @@ pub struct DetailedCommentResponse {
 impl From<Comment> for DetailedCommentResponse {
     fn from(value: Comment) -> Self {
         Self {
-            id: value.id.unwrap().to_string(),
+            id: value.id.map(|id| id.to_string()).unwrap_or_default(),
             target_type: value.target_type,
             target_id: value.target_id,
             user_id: value.user_id,

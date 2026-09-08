@@ -9,10 +9,10 @@ use validator::Validate;
 pub struct CreateReportRequest {
     #[serde(rename = "targetType")]
     pub target_type: ReportTargetType,
-    #[validate(length(min = 1))]
+    #[validate(length(min = 1, max = 100))]
     #[serde(rename = "targetId")]
     pub target_id: String,
-    #[validate(length(min = 10))]
+    #[validate(length(min = 10, max = 5000))]
     pub reason: String,
 }
 
@@ -22,8 +22,14 @@ pub struct UpdateReportStatusRequest {
     pub version: i64,
 }
 
-#[derive(Debug, Deserialize, IntoParams)]
+fn default_page() -> u64 {
+    1
+}
+
+#[derive(Debug, Validate, Deserialize, IntoParams)]
 pub struct ReportQuery {
+    #[serde(default = "default_page")]
+    #[validate(range(min = 1, max = 1000))]
     #[param(required = false, example = "1")]
     pub page: u64,
 }
@@ -48,7 +54,7 @@ pub struct ReportResponse {
 impl From<Report> for ReportResponse {
     fn from(value: Report) -> Self {
         Self {
-            id: value.id.unwrap().to_string(),
+            id: value.id.map(|id| id.to_string()).unwrap_or_default(),
             target_type: value.target_type,
             target_id: value.target_id.to_string(),
             reporter_id: value.reporter_id,

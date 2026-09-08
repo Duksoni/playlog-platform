@@ -42,7 +42,11 @@ impl MongoReportRepository {
 impl ReportRepository for MongoReportRepository {
     async fn create_report(&self, mut report: Report) -> Result<Report> {
         let result = self.reports.insert_one(report.clone()).await?;
-        report.id = Some(result.inserted_id.as_object_id().unwrap());
+        let object_id = result
+            .inserted_id
+            .as_object_id()
+            .ok_or_else(|| ReportError::Conflict(ObjectId::new()))?;
+        report.id = Some(object_id);
         Ok(report)
     }
 
@@ -73,7 +77,8 @@ impl ReportRepository for MongoReportRepository {
     }
 
     async fn find_pending_reports(&self, page: u64) -> Result<Vec<ReportResponse>> {
-        let skip = (page.max(1) - 1) * PAGE_SIZE as u64;
+        let page = page.clamp(1, 1000);
+        let skip = (page - 1) * PAGE_SIZE as u64;
         let mut cursor = self
             .reports
             .find(doc! { "status": ReportStatus::Pending.as_db_value() })

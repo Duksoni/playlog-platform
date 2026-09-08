@@ -47,6 +47,8 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "Report created", body = ReportResponse),
         (status = 400, description = "Invalid request"),
         (status = 401, description = "Unauthorized"),
+        (status = 409, description = "Already reported"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reports",
     security(("bearer" = [])),
@@ -59,6 +61,12 @@ async fn report_content(
     Json(request): Json<CreateReportRequest>,
 ) -> ApiResult<Json<ReportResponse>> {
     request.validate().map_err(ApiError::from)?;
+    if request.reason.trim().len() < 10 {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "reason: must contain at least 10 non-whitespace characters",
+        ));
+    }
     let target_id = parse_object_id(&request.target_id, "Invalid target ID")?;
     let report = state
         .report_service
@@ -80,8 +88,10 @@ async fn report_content(
     params(ReportQuery),
     responses(
         (status = 200, description = "List of pending reports", body = Vec<ReportResponse>),
+        (status = 400, description = "Invalid request"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reports",
     security(("bearer" = [])),
@@ -92,6 +102,7 @@ async fn get_pending_reports(
     State(state): State<Arc<AppState>>,
     Query(query): Query<ReportQuery>,
 ) -> ApiResult<Json<Vec<ReportResponse>>> {
+    query.validate().map_err(ApiError::from)?;
     let reports = state.report_service.get_pending_reports(query.page).await?;
     Ok(Json(reports))
 }
@@ -106,6 +117,7 @@ async fn get_pending_reports(
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Report not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
 )]
 #[debug_handler]
@@ -131,6 +143,7 @@ async fn get_report(
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Report not found"),
         (status = 409, description = "Conflict (already modified)"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reports",
     security(("bearer" = [])),

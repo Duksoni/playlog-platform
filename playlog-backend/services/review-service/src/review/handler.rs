@@ -54,6 +54,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
         (status = 200, description = "Review found", body = ReviewDetailedResponse),
         (status = 404, description = "Review not found"),
         (status = 400, description = "Invalid ID"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     operation_id = "get_review"
@@ -75,7 +76,9 @@ async fn get_review(
     summary = "Get recent reviews",
     params(TopReviewsQuery),
     responses(
-        (status = 200, description = "List of recent reviews", body = Vec<RecentReviewResponse>),
+        (status = 200, description = "List of recent reviews. Empty list if none", body = Vec<RecentReviewResponse>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     operation_id = "get_recent_reviews"
@@ -85,6 +88,7 @@ async fn get_recent_reviews(
     State(state): State<Arc<AppState>>,
     Query(query): Query<TopReviewsQuery>,
 ) -> ApiResult<Json<Vec<RecentReviewResponse>>> {
+    query.validate().map_err(ApiError::from)?;
     let reviews = state.review_service.get_recent(query.limit).await?;
     Ok(Json(reviews))
 }
@@ -95,7 +99,9 @@ get,
     summary = "Get top rated games",
     params(TopReviewsQuery),
     responses(
-        (status = 200, description = "List of top rated games", body = Vec<TopGameResponse>),
+        (status = 200, description = "List of top rated games. Empty list if none", body = Vec<TopGameResponse>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     operation_id = "get_top_rated_games"
@@ -105,6 +111,7 @@ async fn get_top_rated_games(
     State(state): State<Arc<AppState>>,
     Query(query): Query<TopReviewsQuery>,
 ) -> ApiResult<Json<Vec<TopGameResponse>>> {
+    query.validate().map_err(ApiError::from)?;
     let games = state
         .review_service
         .get_top_rated_games(query.limit)
@@ -118,7 +125,9 @@ async fn get_top_rated_games(
     summary = "Get most reviewed games",
     params(TopReviewsQuery),
     responses(
-        (status = 200, description = "List of most reviewed games", body = Vec<MostReviewedGameResponse>),
+        (status = 200, description = "List of most reviewed games. Empty list if none", body = Vec<MostReviewedGameResponse>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     operation_id = "get_most_reviewed_games"
@@ -128,6 +137,7 @@ async fn get_most_reviewed_games(
     State(state): State<Arc<AppState>>,
     Query(query): Query<TopReviewsQuery>,
 ) -> ApiResult<Json<Vec<MostReviewedGameResponse>>> {
+    query.validate().map_err(ApiError::from)?;
     let games = state
         .review_service
         .get_most_reviewed_games(query.limit)
@@ -144,7 +154,9 @@ async fn get_most_reviewed_games(
         ReviewQuery
     ),
     responses(
-        (status = 200, description = "List of reviews", body = Vec<GameReviewResponse>),
+        (status = 200, description = "List of reviews. Empty list if none; parent existence not verified", body = Vec<GameReviewResponse>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     operation_id = "get_reviews_for_game"
@@ -155,6 +167,7 @@ async fn get_reviews_for_game(
     Path(game_id): Path<i32>,
     Query(query): Query<ReviewQuery>,
 ) -> ApiResult<Json<Vec<GameReviewResponse>>> {
+    query.validate().map_err(ApiError::from)?;
     let reviews = state
         .review_service
         .get_for_game(game_id, query.rating, query.page)
@@ -168,7 +181,8 @@ async fn get_reviews_for_game(
     summary = "Get total rating count per rating type for a game",
     params(("game_id" = i32, Path, description = "Game ID")),
     responses(
-        (status = 200, description = "Stats for the game", body = GameRatingStatsResponse),
+        (status = 200, description = "Stats for the game. Zeros if none", body = GameRatingStatsResponse),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     operation_id = "get_rating_stats_for_game"
@@ -196,6 +210,7 @@ async fn get_rating_stats_for_game(
     responses(
         (status = 200, description = "Review found", body = ReviewSimpleResponse),
         (status = 404, description = "Review not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     operation_id = "get_review_for_user_and_game"
@@ -219,9 +234,12 @@ async fn get_review_for_user_and_game(
     request_body = CreateUpdateReviewRequest,
     responses(
         (status = 200, description = "Review created or updated", body = ReviewDetailedResponse),
-        (status = 400, description = "Invalid request or game not found"),
+        (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Game not found"),
         (status = 409, description = "Conflict (already modified)"),
+        (status = 422, description = "Invalid path/query/body"),
+        (status = 502, description = "Catalogue unavailable"),
     ),
     tag = "reviews",
     security(("bearer" = [])),
@@ -234,6 +252,14 @@ async fn upsert_review(
     Json(request): Json<CreateUpdateReviewRequest>,
 ) -> ApiResult<Json<ReviewDetailedResponse>> {
     request.validate().map_err(ApiError::from)?;
+    if let Some(text) = &request.text
+        && text.trim().len() < 10
+    {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "text: must contain at least 10 non-whitespace characters",
+        ));
+    }
     let review = state
         .review_service
         .upsert(claims.user_id, claims.username, request)
@@ -252,6 +278,7 @@ async fn upsert_review(
         (status = 403, description = "Unauthorized (not your review)"),
         (status = 404, description = "Review not found"),
         (status = 409, description = "Conflict (already modified)"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "reviews",
     security(("bearer" = [])),

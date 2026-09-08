@@ -3,31 +3,28 @@ use super::{
     DetailedCommentResponse, RecentGameCommentResponse, Result, SimpleCommentResponse,
     UpdateCommentRequest,
 };
-use crate::{review::ReviewRepository, shared::ensure_game_exists};
+use crate::review::ReviewRepository;
 use bson::DateTime;
 use mongodb::bson::oid::ObjectId;
-use reqwest::Client as HttpClient;
+use service_common::http_client::{CatalogueClient, CatalogueError};
 use uuid::Uuid;
 
 pub struct CommentService {
     comment_repository: Box<dyn CommentRepository>,
     review_repository: Box<dyn ReviewRepository>,
-    http_client: HttpClient,
-    catalogue_service_url: String,
+    catalogue: CatalogueClient,
 }
 
 impl CommentService {
     pub fn new(
         comment_repository: Box<dyn CommentRepository>,
         review_repository: Box<dyn ReviewRepository>,
-        http_client: HttpClient,
-        catalogue_service_url: String,
+        catalogue: CatalogueClient,
     ) -> Self {
         Self {
             comment_repository,
             review_repository,
-            http_client,
-            catalogue_service_url,
+            catalogue,
         }
     }
 
@@ -81,15 +78,27 @@ impl CommentService {
                     .target_id
                     .parse::<i32>()
                     .map_err(|_| CommentError::InvalidGameId(request.target_id.clone()))?;
-                ensure_game_exists(&self.http_client, &self.catalogue_service_url, game_id).await?;
+                match self.catalogue.ensure_game_exists(game_id).await {
+                    Ok(()) => {}
+                    Err(CatalogueError::NotFound(_)) => {
+                        return Err(CommentError::InvalidGameId(request.target_id.clone()));
+                    }
+                    Err(CatalogueError::Unavailable(message)) => {
+                        return Err(CommentError::CatalogueServiceError(message));
+                    }
+                }
             }
             CommentTargetType::Review => {
                 let review_id = ObjectId::parse_str(&request.target_id)
                     .map_err(|_| CommentError::InvalidReviewId(request.target_id.clone()))?;
-                self.review_repository
+                let existing = self
+                    .review_repository
                     .find_by_id(review_id)
                     .await
                     .map_err(|_| CommentError::InvalidReviewId(review_id.to_string()))?;
+                if existing.is_none() {
+                    return Err(CommentError::InvalidReviewId(review_id.to_string()));
+                }
             }
         }
 

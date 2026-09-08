@@ -55,7 +55,8 @@ impl ReviewRepository for MongoReviewRepository {
         rating: Option<Rating>,
         page: u64,
     ) -> Result<Vec<GameReviewResponse>> {
-        let skip = (page.max(1) - 1) * PAGE_SIZE as u64;
+        let page = page.clamp(1, 1000);
+        let skip = (page - 1) * PAGE_SIZE as u64;
 
         let filter = if let Some(rating) = rating {
             let rating_bson = serialize_to_bson(&rating).map_err(|e| anyhow!(e))?;
@@ -118,6 +119,7 @@ impl ReviewRepository for MongoReviewRepository {
     }
 
     async fn find_recent(&self, limit: u64) -> Result<Vec<RecentReviewResponse>> {
+        let limit = limit.clamp(1, 50) as i64;
         let filter = doc! {
             "deleted": false
         };
@@ -125,7 +127,7 @@ impl ReviewRepository for MongoReviewRepository {
             .reviews
             .find(filter)
             .sort(doc! { "created_at": -1 })
-            .limit(limit as i64)
+            .limit(limit)
             .await?;
         let mut reviews = vec![];
         while let Some(review) = cursor.next().await {
@@ -249,7 +251,11 @@ impl ReviewRepository for MongoReviewRepository {
             }
             None => {
                 let result = self.reviews.insert_one(review.clone()).await?;
-                review.id = Some(result.inserted_id.as_object_id().unwrap());
+                let object_id = result
+                    .inserted_id
+                    .as_object_id()
+                    .ok_or_else(|| ReviewError::Conflict(ObjectId::new()))?;
+                review.id = Some(object_id);
                 Ok(review)
             }
         }
@@ -265,15 +271,29 @@ impl ReviewRepository for MongoReviewRepository {
             "$inc": { "version": 1 }
         };
         let result = self.reviews.update_one(filter, update).await?;
-        if result.matched_count == 0 {
-            return Err(ReviewError::Conflict(id));
+        if result.matched_count == 1 {
+            return Ok(());
         }
-        Ok(())
+        match self
+            .reviews
+            .find_one(doc! { "_id": id })
+            .await?
+        {
+            None => Err(ReviewError::NotFound),
+            Some(existing) => {
+                if existing.deleted {
+                    Err(ReviewError::NotFound)
+                } else {
+                    Err(ReviewError::Conflict(id))
+                }
+            }
+        }
     }
 }
 
 impl MongoReviewRepository {
     fn make_top_rated_games_pipeline(limit: u64) -> Vec<Document> {
+        let limit = limit.clamp(1, 50) as i64;
         vec![
             doc! {
                 "$match": {
@@ -311,12 +331,13 @@ impl MongoReviewRepository {
                 }
             },
             doc! {
-                "$limit": limit as i64
+                "$limit": limit
             },
         ]
     }
 
     fn make_most_reviewed_games_pipeline(limit: u64) -> Vec<Document> {
+        let limit = limit.clamp(1, 50) as i64;
         vec![
             doc! {
                 "$match": {
@@ -335,7 +356,7 @@ impl MongoReviewRepository {
                 }
             },
             doc! {
-                "$limit": limit as i64
+                "$limit": limit
             },
         ]
     }

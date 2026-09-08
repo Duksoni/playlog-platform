@@ -47,7 +47,9 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     summary = "Get comments for a game or review",
     params(CommentQuery),
     responses(
-        (status = 200, description = "List of comments", body = Vec<SimpleCommentResponse>),
+        (status = 200, description = "List of comments, empty if none exist. Parent existence is not verified", body = Vec<SimpleCommentResponse>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "comments",
     operation_id = "get_comments"
@@ -72,6 +74,8 @@ async fn get_comments(
     params(RecentGameCommentsQuery),
     responses(
         (status = 200, description = "List of recent comments", body = Vec<RecentGameCommentResponse>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "comments",
     operation_id = "get_recent_game_comments"
@@ -81,6 +85,7 @@ async fn get_recent_game_comments(
     State(state): State<Arc<AppState>>,
     Query(query): Query<RecentGameCommentsQuery>,
 ) -> ApiResult<Json<Vec<RecentGameCommentResponse>>> {
+    query.validate().map_err(ApiError::from)?;
     let comments = state
         .comment_service
         .get_recent_game_comments(query.limit)
@@ -97,6 +102,7 @@ async fn get_recent_game_comments(
         (status = 200, description = "Comment found", body = DetailedCommentResponse),
         (status = 400, description = "Invalid ID"),
         (status = 404, description = "Comment not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "comments",
     operation_id = "get_comment"
@@ -122,6 +128,7 @@ async fn get_comment(
         (status = 401, description = "Unauthorized"),
         (status = 404, description = "Comment not found"),
         (status = 400, description = "Invalid ID"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "comments",
     security(("bearer" = [])),
@@ -151,7 +158,10 @@ async fn get_own_comment(
         (status = 200, description = "Comment added", body = DetailedCommentResponse),
         (status = 400, description = "Invalid request or target not found"),
         (status = 401, description = "Unauthorized"),
+        (status = 404, description = "Target not found"),
         (status = 409, description = "Conflict (already modified)"),
+        (status = 422, description = "Invalid path/query/body"),
+        (status = 502, description = "Catalogue service unavailable"),
     ),
     tag = "comments",
     security(("bearer" = [])),
@@ -164,6 +174,18 @@ async fn add_comment(
     Json(request): Json<CreateCommentRequest>,
 ) -> ApiResult<Json<DetailedCommentResponse>> {
     request.validate().map_err(ApiError::from)?;
+    if request.text.trim().len() < 10 {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "text: must contain at least 10 non-whitespace characters",
+        ));
+    }
+    if request.target_id.trim().is_empty() {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "targetId must not be blank",
+        ));
+    }
     let comment = state
         .comment_service
         .create(claims.user_id, claims.username, request)
@@ -184,6 +206,7 @@ async fn add_comment(
         (status = 403, description = "Forbidden (not your comment)"),
         (status = 404, description = "Comment not found"),
         (status = 409, description = "Conflict (already modified)"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "comments",
     security(("bearer" = [])),
@@ -197,6 +220,12 @@ async fn update_comment(
     Json(request): Json<UpdateCommentRequest>,
 ) -> ApiResult<Json<DetailedCommentResponse>> {
     request.validate().map_err(ApiError::from)?;
+    if request.text.trim().len() < 10 {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "text: must contain at least 10 non-whitespace characters",
+        ));
+    }
     let object_id = ObjectId::parse_str(&id)
         .map_err(|_| ApiError::new(StatusCode::BAD_REQUEST, "Invalid Comment ID"))?;
     let comment = state
@@ -217,6 +246,7 @@ async fn update_comment(
         (status = 403, description = "Unauthorized (not your comment)"),
         (status = 404, description = "Comment not found"),
         (status = 409, description = "Conflict (already modified)"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "comments",
     security(("bearer" = [])),
