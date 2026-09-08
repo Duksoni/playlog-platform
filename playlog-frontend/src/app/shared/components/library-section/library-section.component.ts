@@ -5,6 +5,7 @@ import {MatIcon} from "@angular/material/icon";
 import {MatIconButton} from "@angular/material/button";
 import {MatProgressSpinner} from "@angular/material/progress-spinner";
 import {MatTooltip} from "@angular/material/tooltip";
+import {MatPaginator, PageEvent} from "@angular/material/paginator";
 import {Router} from '@angular/router';
 import {LibraryService} from '../../../features/library/library.service';
 import {GameService} from '../../../features/games/game.service';
@@ -13,15 +14,23 @@ import {
 	GameLibraryStatus,
 	LIBRARY_STATUS_ICONS,
 	LIBRARY_STATUS_LABELS,
-	LibraryGame,
 	LibraryGameCard
 } from '../../../features/library/library.dto';
-import {forkJoin, map, of, switchMap, catchError} from 'rxjs';
+import {catchError, forkJoin, map, of, switchMap} from 'rxjs';
 import {LibraryStatusDialog} from '../../../features/library/library-status-dialog/library-status.dialog';
 import {DialogService} from '../../services/dialog.service';
 import {ReviewDialog} from '../../../features/reviews/review-dialog/review.dialog';
 import {ReviewService} from '../../../features/reviews/review.service';
 import {ReviewSimpleResponse} from '../../../features/reviews/review.dto';
+
+interface LibraryPageInfo {
+	currentPage: number;
+	totalPages: number;
+	totalItems: number;
+	limit: number;
+}
+
+const DEFAULT_LIMIT = 10;
 
 @Component({
 	selector: 'app-library-section',
@@ -34,6 +43,7 @@ import {ReviewSimpleResponse} from '../../../features/reviews/review.dto';
 		MatIconButton,
 		MatProgressSpinner,
 		MatTooltip,
+		MatPaginator,
 		SlicePipe
 	],
 	templateUrl: './library-section.component.html',
@@ -57,7 +67,20 @@ export class LibrarySectionComponent implements OnInit {
 
 	protected loading = signal(true);
 	protected activeStatus = signal<GameLibraryStatus>(GameLibraryStatus.PLAYING);
-	protected gamesByStatus = signal<Partial<Record<GameLibraryStatus, LibraryGameCard[]>>>({});
+	protected cardsByStatus = signal<Record<GameLibraryStatus, LibraryGameCard[]>>({
+		[GameLibraryStatus.OWNED]: [],
+		[GameLibraryStatus.PLAYING]: [],
+		[GameLibraryStatus.WISHLIST]: [],
+		[GameLibraryStatus.COMPLETED]: [],
+		[GameLibraryStatus.DROPPED]: [],
+	});
+	protected pageInfoByStatus = signal<Record<GameLibraryStatus, LibraryPageInfo>>({
+		[GameLibraryStatus.OWNED]: {currentPage: 1, totalPages: 0, totalItems: 0, limit: DEFAULT_LIMIT},
+		[GameLibraryStatus.PLAYING]: {currentPage: 1, totalPages: 0, totalItems: 0, limit: DEFAULT_LIMIT},
+		[GameLibraryStatus.WISHLIST]: {currentPage: 1, totalPages: 0, totalItems: 0, limit: DEFAULT_LIMIT},
+		[GameLibraryStatus.COMPLETED]: {currentPage: 1, totalPages: 0, totalItems: 0, limit: DEFAULT_LIMIT},
+		[GameLibraryStatus.DROPPED]: {currentPage: 1, totalPages: 0, totalItems: 0, limit: DEFAULT_LIMIT},
+	});
 	protected existingReviews = signal<Map<number, ReviewSimpleResponse>>(new Map());
 
 	protected get isOwnLibrary(): boolean {
@@ -65,11 +88,15 @@ export class LibrarySectionComponent implements OnInit {
 	}
 
 	protected activeGames = computed<LibraryGameCard[]>(() =>
-		this.gamesByStatus()[this.activeStatus()] ?? []
+		this.cardsByStatus()[this.activeStatus()] ?? []
+	);
+
+	protected activePageInfo = computed<LibraryPageInfo>(() =>
+		this.pageInfoByStatus()[this.activeStatus()]
 	);
 
 	protected tabCount = (status: GameLibraryStatus): number =>
-		this.gamesByStatus()[status]?.length ?? 0;
+		this.pageInfoByStatus()[status]?.totalItems ?? 0;
 
 	ngOnInit() {
 		this.loadLibrary();
@@ -79,15 +106,52 @@ export class LibrarySectionComponent implements OnInit {
 		this.loading.set(true);
 		this.existingReviews.set(new Map());
 
-		this.libraryService.getUserLibrary(this.profileUserId()).pipe(
-			switchMap((entries: LibraryGame[]) => {
+		const userId = this.profileUserId();
+		forkJoin(
+			this.statuses.map(status =>
+				this.libraryService.getUserLibrary(userId, status, 1, 1).pipe(
+					map(response => ({status, totalItems: response.totalItems})),
+					catchError(() => of({status, totalItems: 0}))
+				)
+			)
+		).subscribe({
+			next: (counts) => {
+				const info = {...this.pageInfoByStatus()};
+				for (const {status, totalItems} of counts) {
+					info[status] = {
+						...info[status],
+						totalItems,
+						totalPages: Math.ceil(totalItems / info[status].limit),
+						currentPage: 1
+					};
+				}
+				this.pageInfoByStatus.set(info);
+				this.loadStatusPage(this.activeStatus(), 1);
+			},
+			error: () => this.loading.set(false),
+		});
+	}
+
+	private loadStatusPage(status: GameLibraryStatus, page: number, limit?: number) {
+		this.loading.set(true);
+		const effectiveLimit = limit ?? this.pageInfoByStatus()[status]?.limit ?? DEFAULT_LIMIT;
+
+		this.libraryService.getUserLibrary(this.profileUserId(), status, page, effectiveLimit).pipe(
+			switchMap((response) => {
+				const entries = response.data;
+				const info = {
+					currentPage: response.currentPage,
+					totalPages: response.totalPages,
+					totalItems: response.totalItems,
+					limit: response.limit,
+				};
+				this.pageInfoByStatus.set({...this.pageInfoByStatus(), [status]: info});
 				if (entries.length === 0) {
 					return of([] as LibraryGameCard[]);
 				}
 
 				const gameIds = entries.map(e => e.gameId);
 
-				// Fetch covers and basic game info in parallel
 				return forkJoin([
 					this.gameService.getGameCovers(gameIds),
 					forkJoin(gameIds.map(id => this.gameService.getGame(id)))
@@ -104,13 +168,11 @@ export class LibrarySectionComponent implements OnInit {
 				);
 			}),
 			switchMap((cards) => {
-				// If viewing own library, load existing reviews for all games
 				if (this.isOwnLibrary && cards.length > 0) {
 					const userId = this.sessionService.user().userId;
 					const reviewRequests = cards.map(card =>
 						this.reviewService.getReviewForUserAndGame(userId, card.gameId).pipe(
 							map(review => ({gameId: card.gameId, review})),
-							// Handle 404 (no review) gracefully
 							catchError(() => of({gameId: card.gameId, review: null}))
 						)
 					);
@@ -132,11 +194,7 @@ export class LibrarySectionComponent implements OnInit {
 			})
 		).subscribe({
 			next: (cards) => {
-				const grouped: Partial<Record<GameLibraryStatus, LibraryGameCard[]>> = {};
-				for (const status of this.statuses) {
-					grouped[status] = cards.filter(c => c.status === status);
-				}
-				this.gamesByStatus.set(grouped);
+				this.cardsByStatus.set({...this.cardsByStatus(), [status]: cards});
 				this.loading.set(false);
 			},
 			error: () => this.loading.set(false),
@@ -145,6 +203,19 @@ export class LibrarySectionComponent implements OnInit {
 
 	protected setStatus(status: GameLibraryStatus) {
 		this.activeStatus.set(status);
+		if ((this.cardsByStatus()[status] ?? []).length === 0 && this.tabCount(status) > 0) {
+			this.loadStatusPage(status, 1);
+		}
+	}
+
+	protected handlePageEvent(event: PageEvent) {
+		const status = this.activeStatus();
+		const currentLimit = this.pageInfoByStatus()[status]?.limit ?? DEFAULT_LIMIT;
+		if (event.pageSize !== currentLimit) {
+			this.loadStatusPage(status, 1, event.pageSize);
+		} else {
+			this.loadStatusPage(status, event.pageIndex + 1);
+		}
 	}
 
 	protected navigateToGame(gameId: number) {
@@ -185,9 +256,14 @@ export class LibrarySectionComponent implements OnInit {
 			disableClose: true,
 			autoFocus: false,
 		}).afterClosed().subscribe(result => {
-			// Dialog handles its own completion
-			if (result && result !== 'deleted') {
-				this.loadLibrary(); // Reload to refresh review status if needed
+			if (result === 'deleted') {
+				this.existingReviews.update(reviews => {
+					const next = new Map(reviews);
+					next.delete(card.gameId);
+					return next;
+				});
+			} else if (result) {
+				this.loadLibrary();
 			}
 		});
 	}

@@ -1,7 +1,8 @@
+use crate::model::{GameLibraryStatus, LibraryGame};
 use serde::{Deserialize, Serialize};
+use service_common::dto::PagedResponse;
 use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
-use crate::model::{GameLibraryStatus, LibraryGame};
 
 #[derive(Debug, Validate, Deserialize, ToSchema)]
 pub struct AddUpdateGameRequest {
@@ -16,12 +17,12 @@ fn default_page() -> u64 {
 }
 
 fn default_limit() -> u64 {
-    50
+    10
 }
 
 #[derive(Serialize, ToSchema)]
 #[serde(transparent)]
-pub struct LibraryPagedResponse(pub service_common::dto::PagedResponse<LibraryGame>);
+pub struct LibraryPagedResponse(pub PagedResponse<LibraryGame>);
 
 #[derive(Debug, Validate, Deserialize, IntoParams)]
 pub struct LibraryFilterQuery {

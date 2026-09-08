@@ -15,7 +15,7 @@ import {LibraryService} from '../../library/library.service';
 import {GameLibraryStatus, LibraryGameCard} from '../../library/library.dto';
 import {SessionService} from '../../../core/services/session.service';
 import {Role} from '../../auth/auth.dto';
-import {RATING_ICONS, RATING_LABELS, Rating} from '../../reviews/review.dto';
+import {Rating, RATING_ICONS, RATING_LABELS} from '../../reviews/review.dto';
 import {RecentlyCommentedGame, RecentlyReviewedGame} from '../home.dto';
 import {register} from 'swiper/element/bundle';
 
@@ -134,8 +134,9 @@ export class HomePage implements OnInit {
 			return;
 		}
 
-		this.libraryService.getUserLibrary(userId, GameLibraryStatus.PLAYING).pipe(
-			switchMap(entries => {
+		this.libraryService.getUserLibrary(userId, GameLibraryStatus.PLAYING, 1, 50).pipe(
+			switchMap(response => {
+				const entries = response.data;
 				if (entries.length === 0) return of([] as LibraryGameCard[]);
 				return this.gameService.getGameCovers(entries.map(e => e.gameId)).pipe(
 					switchMap(coversResp =>

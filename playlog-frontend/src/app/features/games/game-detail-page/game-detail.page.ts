@@ -10,8 +10,8 @@ import {
 } from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
 import {DatePipe} from '@angular/common';
-import {catchError, concatMap, defer, of, tap, throwError} from 'rxjs';
 import type {Observable} from 'rxjs';
+import {catchError, concatMap, defer, of, tap, throwError} from 'rxjs';
 import {MatButtonModule} from '@angular/material/button';
 import {MatIconModule} from '@angular/material/icon';
 import {MatChipsModule} from '@angular/material/chips';
@@ -112,9 +112,9 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 
 		const userId = this.sessionService.user().userId;
 		if (userId) {
-			this.libraryService.getUserLibrary(userId).subscribe({
-				next: (entries) => {
-					const entry = entries.find(e => e.gameId === id);
+			this.libraryService.getUserLibrary(userId, undefined, 1, 100).subscribe({
+				next: (response) => {
+					const entry = response.data.find(e => e.gameId === id);
 					this.libraryStatus.set(entry?.status ?? null);
 				},
 				error: () => this.libraryStatus.set(null),
@@ -235,7 +235,9 @@ export class GameDetailPage implements OnInit, AfterViewInit {
 		dialogRef.componentInstance.setPositiveButton($localize`:@@common.delete:Delete`, () => {
 			let gameDeleted = false;
 			this.gameService.deleteGame(game.id, {version: game.version}).pipe(
-				tap(() => { gameDeleted = true; }),
+				tap(() => {
+					gameDeleted = true;
+				}),
 				concatMap(() => this.deleteMediaWithRetry(game.id, 2)),
 			).subscribe({
 				next: () => {
