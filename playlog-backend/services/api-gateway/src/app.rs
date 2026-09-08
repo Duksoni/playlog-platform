@@ -17,7 +17,7 @@ use service_common::{
     http_client::build_client_with_timeout,
 };
 use std::{sync::Arc, time::Duration};
-use tower_http::trace::TraceLayer;
+use tower_http::{normalize_path::NormalizePathLayer, trace::TraceLayer};
 use utoipa_swagger_ui::SwaggerUi;
 
 pub async fn build_app(config: Config) -> Router {
@@ -142,6 +142,7 @@ pub async fn build_app(config: Config) -> Router {
         .layer(TraceLayer::new_for_http())
         .layer(DefaultBodyLimit::max(512 * 1024 * 1024))
         .layer(cors_layer(true))
+        .layer(NormalizePathLayer::trim_trailing_slash())
 }
 
 fn service_state(

@@ -50,7 +50,8 @@ impl ProxyClient {
         headers: HeaderMap,
         body: Body,
     ) -> Result<Response> {
-        let url = format!("{}{}", service_url, path);
+        let base = service_url.trim_end_matches('/');
+        let url = format!("{}{}", base, path);
 
         // Build the proxied request
         let mut request = self.client.request(method.clone(), &url);

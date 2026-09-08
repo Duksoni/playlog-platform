@@ -15,7 +15,7 @@ pub fn router(state: Arc<ServiceAppState>) -> Router<Arc<ServiceAppState>> {
         .route_layer(from_fn(require_user));
 
     let moderator_routes = Router::new()
-        .route("/", get(proxy_handler))
+        .route("/{id}", get(proxy_handler))
         .route("/pending", get(proxy_handler))
         .route("/{id}/status", put(proxy_handler))
         .route_layer(from_fn(require_moderator));
