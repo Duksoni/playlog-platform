@@ -10,13 +10,19 @@ pub fn build_cookie_header(
     same_site: cookie::SameSite,
 ) -> HeaderMap {
     let mut headers = HeaderMap::new();
-    let cookie = Cookie::build((REFRESH_TOKEN_COOKIE_NAME, refresh_token))
+    let sanitized: String = refresh_token
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || *c == '.' || *c == '-' || *c == '_')
+        .collect();
+    let cookie = Cookie::build((REFRESH_TOKEN_COOKIE_NAME, sanitized))
         .path("/")
         .max_age(max_age)
         .http_only(true)
         .secure(secure)
         .same_site(same_site)
         .build();
-    headers.append(SET_COOKIE, cookie.to_string().parse().unwrap());
+    if let Ok(value) = cookie.to_string().parse() {
+        headers.append(SET_COOKIE, value);
+    }
     headers
 }

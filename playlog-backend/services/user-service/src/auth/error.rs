@@ -1,5 +1,5 @@
 use axum::http::StatusCode;
-use service_common::error::ApiError;
+use service_common::error::{is_row_not_found, is_unique_violation, ApiError};
 use thiserror::Error;
 use tracing::error;
 
@@ -42,6 +42,12 @@ impl From<AuthError> for ApiError {
             UserNotFound => StatusCode::NOT_FOUND,
             UsernameTaken | EmailAlreadyExists => StatusCode::CONFLICT,
             DatabaseError(db_err) => {
+                if is_row_not_found(&db_err) {
+                    return ApiError::new(StatusCode::NOT_FOUND, "User not found");
+                }
+                if is_unique_violation(&db_err) {
+                    return ApiError::new(StatusCode::CONFLICT, db_err.to_string());
+                }
                 error!(error = %db_err, "database error");
                 return ApiError::internal_error();
             }

@@ -2,6 +2,7 @@ use super::{Result, SimpleUser, UpdateProfileRequest, UserDetails, UserError};
 use crate::shared::AccountStatus;
 use async_trait::async_trait;
 use jwt_common::Role;
+use service_common::validation::like_pattern;
 use sqlx::{query, query_as, query_scalar, PgPool};
 use std::str::FromStr;
 use uuid::Uuid;
@@ -19,7 +20,12 @@ pub trait UserRepository: Send + Sync {
     async fn get_user_role(&self, user_id: Uuid) -> Result<Role>;
     async fn get_account_status(&self, user_id: Uuid) -> Result<AccountStatus>;
     async fn update_profile(&self, user_id: Uuid, request: &UpdateProfileRequest) -> Result<bool>;
-    async fn update_password(&self, user_id: Uuid, new_password: &str, version: i64) -> Result<bool>;
+    async fn update_password(
+        &self,
+        user_id: Uuid,
+        new_password: &str,
+        version: i64,
+    ) -> Result<bool>;
     async fn update_user_role(&self, user_id: Uuid, new_role: Role, version: i64) -> Result<()>;
     async fn deactivate_account(&self, user_id: Uuid) -> Result<()>;
     async fn block_user(&self, user_id: Uuid, version: i64) -> Result<()>;
@@ -45,13 +51,14 @@ impl UserRepository for PostgresUserRepository {
                 FROM users u
                          JOIN user_roles ur ON ur.user_id = u.id
                          JOIN roles r ON r.id = ur.role_id
-                WHERE u.id != $1 AND username LIKE $2
+                WHERE u.id != $1 AND username ILIKE $2 ESCAPE '\'
                   AND account_status = 'ACTIVE'
                   AND r.name = $3
                 ORDER BY username
+                LIMIT 50
             "#,
             requester_id,
-            format!("%{}%", username),
+            like_pattern(username),
             role.as_db_value()
         )
         .fetch_all(&self.pool)
@@ -160,7 +167,12 @@ impl UserRepository for PostgresUserRepository {
         Ok(true)
     }
 
-    async fn update_password(&self, user_id: Uuid, new_password: &str, version: i64) -> Result<bool> {
+    async fn update_password(
+        &self,
+        user_id: Uuid,
+        new_password: &str,
+        version: i64,
+    ) -> Result<bool> {
         let rows_changed = query!(
             r#"
                 UPDATE users
@@ -304,13 +316,10 @@ impl PostgresUserRepository {
         user_id: Uuid,
         transaction: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     ) -> Result<T> {
-        let exists = query_scalar!(
-            "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)",
-            user_id
-        )
-        .fetch_one(&mut **transaction)
-        .await?
-        .unwrap_or(false);
+        let exists = query_scalar!("SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)", user_id)
+            .fetch_one(&mut **transaction)
+            .await?
+            .unwrap_or(false);
 
         if exists {
             Err(UserError::Conflict(user_id.to_string()))

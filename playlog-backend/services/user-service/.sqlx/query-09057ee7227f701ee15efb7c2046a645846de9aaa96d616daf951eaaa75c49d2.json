@@ -17,12 +17,24 @@
               ]
             }
           }
+        },
+        "origin": {
+          "Table": {
+            "table": "users",
+            "name": "account_status"
+          }
         }
       },
       {
         "ordinal": 1,
         "name": "role",
-        "type_info": "Varchar"
+        "type_info": "Varchar",
+        "origin": {
+          "Table": {
+            "table": "roles",
+            "name": "name"
+          }
+        }
       }
     ],
     "parameters": {

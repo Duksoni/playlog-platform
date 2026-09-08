@@ -58,6 +58,7 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     responses(
         (status = 200, description = "User profile", body = UserDetails),
         (status = 404, description = "User not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "users",
 )]
@@ -82,6 +83,7 @@ async fn get_user(
         (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -114,6 +116,7 @@ async fn update_user(
         (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -141,6 +144,7 @@ async fn change_password(
         (status = 204, description = "User deleted"),
         (status = 401, description = "Unauthorized"),
         (status = 404, description = "User not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -172,8 +176,9 @@ async fn deactivate_account(
     path = "/api/users",
     summary = "Find users by role and partial username (Admin only)",
     responses(
-        (status = 200, description = "List of users", body = FindUsersResponse),
+        (status = 200, description = "List of users. Empty list if none", body = FindUsersResponse),
         (status = 400, description = "Invalid query parameters"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     params(FindUsersQuery),
     tag = "users",
@@ -186,6 +191,12 @@ async fn find_users(
     Query(query): Query<FindUsersQuery>,
 ) -> ApiResult<impl IntoResponse> {
     query.validate().map_err(ApiError::from)?;
+    if query.partial_username.trim().is_empty() {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "partial_username must not be blank",
+        ));
+    }
     let users = state
         .user_service
         .find_users(claims.user_id, &query.partial_username, query.role)
@@ -204,6 +215,7 @@ async fn find_users(
         (status = 403, description = "Forbidden - requires admin role"),
         (status = 404, description = "User not found"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -238,6 +250,7 @@ async fn block_user(
         (status = 403, description = "Forbidden - requires admin role"),
         (status = 404, description = "User not found"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "users",
     security(("bearer" = []))
@@ -272,6 +285,7 @@ async fn promote_user(
         (status = 403, description = "Forbidden - requires admin role"),
         (status = 404, description = "User not found"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "users",
     security(("bearer" = []))

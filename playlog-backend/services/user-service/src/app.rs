@@ -5,6 +5,7 @@ use crate::{
     users::{router as users_router, UserService},
 };
 use axum::{
+    extract::DefaultBodyLimit,
     http::StatusCode,
     response::IntoResponse,
     routing::get,
@@ -12,7 +13,7 @@ use axum::{
 };
 use service_common::app::{cors_layer, root_redirect, timeout_layer};
 use std::sync::Arc;
-use tower_http::trace::TraceLayer;
+use tower_http::{normalize_path::NormalizePathLayer, trace::TraceLayer};
 use utoipa::OpenApi;
 use utoipa_axum::router::OpenApiRouter;
 use utoipa_swagger_ui::SwaggerUi;
@@ -47,6 +48,8 @@ pub fn build_app(state: Arc<AppState>) -> Router {
         .route("/", get(root_redirect))
         .nest("/api", router)
         .merge(SwaggerUi::new("/docs").url("/api-docs/openapi.json", api.clone()))
+        .layer(DefaultBodyLimit::max(2 * 1024 * 1024))
+        .layer(NormalizePathLayer::trim_trailing_slash())
 }
 
 #[utoipa::path(
