@@ -22,20 +22,32 @@ pub struct UpdateGameEntityRequest {
 #[serde(transparent)]
 pub struct GameEntityPagedResponse(pub PagedResponse<GameEntitySimple>);
 
-#[derive(Deserialize, IntoParams)]
-pub struct SearchQuery {
-    /// Partial name to search for
-    pub q: String,
-    #[param(required = false, example = "10")]
-    pub limit: u64
+fn default_page() -> u64 {
+    1
 }
 
-#[derive(Deserialize, IntoParams)]
+fn default_limit() -> u64 {
+    10
+}
+
+#[derive(Validate, Deserialize, IntoParams)]
+pub struct SearchQuery {
+    #[validate(length(min = 1, max = 100))]
+    pub q: String,
+    #[serde(default = "default_limit")]
+    #[validate(range(min = 1, max = 50))]
+    #[param(required = false, example = "10")]
+    pub limit: u64,
+}
+
+#[derive(Validate, Deserialize, IntoParams)]
 pub struct PagedQuery {
-    #[serde(default)]
+    #[serde(default = "default_page")]
+    #[validate(range(min = 1, max = 1000))]
     #[param(required = false, example = "1")]
     pub page: u64,
-    #[serde(default)]
+    #[serde(default = "default_limit")]
+    #[validate(range(min = 1, max = 50))]
     #[param(required = false, example = "10")]
     pub limit: u64,
 }

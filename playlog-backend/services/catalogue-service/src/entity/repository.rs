@@ -2,6 +2,7 @@ use super::{
     GameEntity, GameEntityError, GameEntityPagedResponse, GameEntitySimple, GameEntityTable, Result,
 };
 use async_trait::async_trait;
+use service_common::validation::like_pattern;
 use sqlx::{query_as, query_scalar, AssertSqlSafe, PgPool};
 
 #[async_trait]
@@ -46,12 +47,14 @@ impl GameEntityRepository for PostgresGameEntityRepository {
     }
 
     async fn get_all(&self, page: u64, limit: u64) -> Result<GameEntityPagedResponse> {
-        let limit = limit.max(10) as i64;
-        let page = page.max(1);
+        let limit = limit.clamp(1, 50) as i64;
+        let page = page.clamp(1, 1000);
         let offset = (page - 1) as i64 * limit;
 
         let count_query = format!("SELECT COUNT(*) FROM {}", self.table.table_name());
-        let total_items: i64 = query_scalar(AssertSqlSafe(count_query)).fetch_one(&self.pool).await?;
+        let total_items: i64 = query_scalar(AssertSqlSafe(count_query))
+            .fetch_one(&self.pool)
+            .await?;
 
         let total_pages = (total_items as f64 / limit as f64).ceil() as i64;
 
@@ -77,10 +80,10 @@ impl GameEntityRepository for PostgresGameEntityRepository {
     }
 
     async fn find_by_name(&self, name: &str, limit: u64) -> Result<Vec<GameEntitySimple>> {
-        let query_pattern = format!("%{}%", name);
-        let limit = limit.max(10) as i64;
+        let query_pattern = like_pattern(name);
+        let limit = limit.clamp(1, 50) as i64;
         let query = format!(
-            "SELECT id, name FROM {} WHERE name ILIKE $1 ORDER BY name LIMIT $2",
+            "SELECT id, name FROM {} WHERE name ILIKE $1 ESCAPE '\\' ORDER BY name LIMIT $2",
             self.table.table_name()
         );
         let result = query_as::<_, GameEntitySimple>(AssertSqlSafe(query))
@@ -158,7 +161,10 @@ impl DeletableGameEntityRepository for PostgresGameEntityRepository {
     async fn delete(&self, id: i32) -> Result<()> {
         let query = format!("DELETE FROM {} WHERE id = $1", self.table.table_name());
 
-        let result = sqlx::query(AssertSqlSafe(query)).bind(id).execute(&self.pool).await?;
+        let result = sqlx::query(AssertSqlSafe(query))
+            .bind(id)
+            .execute(&self.pool)
+            .await?;
 
         if result.rows_affected() > 0 {
             Ok(())

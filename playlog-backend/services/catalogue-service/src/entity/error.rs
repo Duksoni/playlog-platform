@@ -1,5 +1,7 @@
-use service_common::error::ApiError;
 use axum::http::StatusCode;
+use service_common::error::{
+    is_foreign_key_violation, is_row_not_found, is_unique_violation, ApiError,
+};
 use thiserror::Error;
 use tracing::error;
 
@@ -25,8 +27,14 @@ impl From<GameEntityError> for ApiError {
         let status = match error {
             GameEntityError::NotFound(_, _) => StatusCode::NOT_FOUND,
             GameEntityError::DatabaseError(db_err) => {
+                if is_row_not_found(&db_err) {
+                    return ApiError::new(StatusCode::NOT_FOUND, "Entity not found");
+                }
+                if is_unique_violation(&db_err) || is_foreign_key_violation(&db_err) {
+                    return ApiError::new(StatusCode::CONFLICT, db_err.to_string());
+                }
                 error!(error = %db_err, "database error");
-                return ApiError::internal_error()
+                return ApiError::internal_error();
             }
             GameEntityError::UnsupportedOperation(_, _) => StatusCode::NOT_IMPLEMENTED,
             GameEntityError::Conflict(_, _) => StatusCode::CONFLICT,

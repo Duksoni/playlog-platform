@@ -1,6 +1,8 @@
 use crate::entity::GameEntityError;
 use axum::http::StatusCode;
-use service_common::error::ApiError;
+use service_common::error::{
+    is_foreign_key_violation, is_row_not_found, is_unique_violation, ApiError,
+};
 use thiserror::Error;
 use tracing::error;
 
@@ -18,6 +20,9 @@ pub enum GameError {
     #[error("No ids provided for field {0}")]
     NoIdsProvided(String),
 
+    #[error("Too many ids provided for field {0}: max 50")]
+    TooManyIdsProvided(String),
+
     #[error("Entity error: {0}")]
     EntityError(#[from] GameEntityError),
 
@@ -31,11 +36,17 @@ impl From<GameError> for ApiError {
     fn from(error: GameError) -> Self {
         let status_code = match error {
             GameError::NotFound(_) => StatusCode::NOT_FOUND,
-            GameError::Conflict(_) => StatusCode::CONFLICT,
+            GameError::Conflict(_) | GameError::AlreadyPublished(_) => StatusCode::CONFLICT,
             GameError::NoIdsProvided(_)
-            | GameError::EntityError(_)
-            | GameError::AlreadyPublished(_) => StatusCode::BAD_REQUEST,
+            | GameError::TooManyIdsProvided(_)
+            | GameError::EntityError(_) => StatusCode::BAD_REQUEST,
             GameError::DatabaseError(db_err) => {
+                if is_row_not_found(&db_err) {
+                    return ApiError::new(StatusCode::NOT_FOUND, "Game not found");
+                }
+                if is_unique_violation(&db_err) || is_foreign_key_violation(&db_err) {
+                    return ApiError::new(StatusCode::CONFLICT, db_err.to_string());
+                }
                 error!(error = %db_err, "database error");
                 return ApiError::internal_error();
             }

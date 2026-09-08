@@ -48,6 +48,8 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     params(PagedQuery),
     responses(
         (status = 200, description = "List of tags", body = GameEntityPagedResponse),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "tags",
     operation_id = "get_all_tags_paged"
@@ -57,6 +59,7 @@ async fn get_all_paged(
     State(state): State<Arc<AppState>>,
     Query(query): Query<PagedQuery>,
 ) -> ApiResult<Json<GameEntityPagedResponse>> {
+    query.validate().map_err(ApiError::from)?;
     let result = state.tag_repository.get_all(query.page, query.limit).await?;
     Ok(Json(result))
 }
@@ -70,6 +73,7 @@ async fn get_all_paged(
     responses(
         (status = 200, description = "Tag", body = GameEntity),
         (status = 404, description = "Tag not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "tags",
     operation_id = "get_tag_by_id"
@@ -91,6 +95,8 @@ async fn get_by_id(
     params(SearchQuery),
     responses(
         (status = 200, description = "Matching tags", body = Vec<GameEntitySimple>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "tags",
     operation_id = "search_tags"
@@ -100,6 +106,7 @@ async fn search(
     State(state): State<Arc<AppState>>,
     Query(query): Query<SearchQuery>,
 ) -> ApiResult<Json<Vec<GameEntitySimple>>> {
+    query.validate().map_err(ApiError::from)?;
     let result = state.tag_repository.find_by_name(&query.q, query.limit).await?;
     Ok(Json(result))
 }
@@ -114,6 +121,8 @@ async fn search(
         (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
+        (status = 409, description = "Conflict - duplicate"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "tags",
     security(("bearer" = [])),
@@ -125,7 +134,11 @@ async fn create(
     Json(request): Json<CreateGameEntityRequest>,
 ) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
-    let result = state.tag_repository.create(&request.name).await?;
+    let name = request.name.trim();
+    if name.is_empty() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "Name must not be blank"));
+    }
+    let result = state.tag_repository.create(name).await?;
     Ok((StatusCode::CREATED, Json(result)))
 }
 
@@ -142,6 +155,7 @@ async fn create(
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Tag not found"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "tags",
     security(("bearer" = [])),
@@ -154,9 +168,13 @@ async fn update(
     Json(request): Json<UpdateGameEntityRequest>,
 ) -> ApiResult<Json<GameEntity>> {
     request.validate().map_err(ApiError::from)?;
+    let name = request.name.trim();
+    if name.is_empty() {
+        return Err(ApiError::new(StatusCode::BAD_REQUEST, "Name must not be blank"));
+    }
     let result = state
         .tag_repository
-        .update_name(id, &request.name, request.version)
+        .update_name(id, name, request.version)
         .await?;
     Ok(Json(result))
 }
@@ -165,10 +183,15 @@ async fn update(
     delete,
     path = "/api/tags/{id}",
     summary = "Delete tag",
-    params(("id" = String, Path, description = "Tag ID")),
+    params(("id" = i32, Path, description = "Tag id")),
     responses(
         (status = 204, description = "Tag deleted"),
+        (status = 400, description = "Validation error"),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
         (status = 404, description = "Tag not found"),
+        (status = 409, description = "Conflict - referenced by games"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "tags",
     security(("bearer" = [])),

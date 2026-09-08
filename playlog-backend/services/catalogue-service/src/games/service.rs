@@ -41,7 +41,8 @@ impl GameService {
     }
 
     pub async fn get_new_releases(&self, limit: u64) -> Result<Vec<GameSimple>> {
-        self.game_repository.find_new_releases(limit as i64).await
+        let limit = limit.clamp(1, 50) as i64;
+        self.game_repository.find_new_releases(limit).await
     }
 
     pub async fn get_by_developer(&self, developer_id: i32) -> Result<Vec<GameSimple>> {
@@ -152,6 +153,10 @@ async fn validate_entity_ids(
 
     if ids.is_empty() {
         return Err(GameError::NoIdsProvided(String::from(entity_type)));
+    }
+
+    if ids.len() > 50 {
+        return Err(GameError::TooManyIdsProvided(entity_type.to_string()));
     }
 
     for id in ids {

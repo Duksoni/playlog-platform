@@ -3,7 +3,8 @@ use super::{
     GameSortField, Genre, Platform, Publisher, Result, SortDirection, Tag, UpdateGameRequest,
 };
 use async_trait::async_trait;
-use sqlx::{PgPool, Postgres, Transaction, query, query_as, query_scalar, QueryBuilder};
+use service_common::validation::like_pattern;
+use sqlx::{query, query_as, query_scalar, PgPool, Postgres, QueryBuilder, Transaction};
 
 #[async_trait]
 pub trait GameRepository: Send + Sync {
@@ -72,6 +73,7 @@ impl GameRepository for PostgresGameRepository {
                 JOIN game_developers gd ON gd.game_id = games.id
                 WHERE gd.developer_id = $1 AND games.draft = false
                 ORDER BY name
+                LIMIT 100
             "#,
             developer_id
         )
@@ -82,7 +84,8 @@ impl GameRepository for PostgresGameRepository {
     }
 
     async fn find_by_publisher(&self, publisher_id: i32, page: u64) -> Result<Vec<GameSimple>> {
-        let offset = (page.max(1) - 1) * 10;
+        let page = page.clamp(1, 1000);
+        let offset = (page - 1).saturating_mul(10);
         let games = query_as!(
             GameSimple,
             r#"
@@ -110,6 +113,7 @@ impl GameRepository for PostgresGameRepository {
                 FROM games
                 WHERE draft = true
                 ORDER BY name
+                LIMIT 100
             "#,
         )
         .fetch_all(&self.pool)
@@ -145,8 +149,8 @@ impl GameRepository for PostgresGameRepository {
             "#,
             ids
         )
-            .fetch_all(&self.pool)
-            .await?;
+        .fetch_all(&self.pool)
+        .await?;
         Ok(games)
     }
 
@@ -431,8 +435,12 @@ impl PostgresGameRepository {
             separated.push_unseparated(")");
         }
         if let Some(name) = &params.name {
-            builder.push(" AND g.name ILIKE ");
-            builder.push_bind(format!("%{}%", name));
+            let trimmed = name.trim();
+            if !trimmed.is_empty() {
+                builder.push(" AND g.name ILIKE ");
+                builder.push_bind(like_pattern(trimmed));
+                builder.push(" ESCAPE '\\'");
+            }
         }
 
         let sort_field = match params.sort.unwrap_or(GameSortField::Name) {
@@ -450,7 +458,8 @@ impl PostgresGameRepository {
         builder.push(" LIMIT ");
         builder.push_bind(10_i64);
         builder.push(" OFFSET ");
-        let offset = (params.page.max(1) - 1) * 10;
+        let page = params.page.clamp(1, 1000);
+        let offset = page.saturating_sub(1).saturating_mul(10);
         builder.push_bind(offset as i64);
 
         builder

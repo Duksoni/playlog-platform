@@ -52,7 +52,9 @@ pub fn router(state: Arc<AppState>) -> OpenApiRouter<Arc<AppState>> {
     params(GameFilterQuery),
     summary = "Filter games",
     responses(
-        (status = 200, description = "List of games", body = Vec<GameSimple>),
+        (status = 200, description = "List of games. Empty list if none; parent existence not verified", body = Vec<GameSimple>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -64,6 +66,7 @@ async fn filter(
     extensions: Extensions,
     Query(params): Query<GameFilterQuery>,
 ) -> ApiResult<Json<Vec<GameSimple>>> {
+    params.validate().map_err(ApiError::from)?;
     let claims = extensions.get::<AuthClaims>();
     let include_drafts = claims.map(|c| c.role == Role::Admin).unwrap_or(false);
 
@@ -77,7 +80,10 @@ async fn filter(
     params(GetGamesQuery),
     summary = "Get games by ids",
     responses(
-        (status = 200, description = "List of games", body = Vec<GameSimple>),
+        (status = 200, description = "List of games. Missing or draft ids are silently dropped; empty query returns empty list", body = Vec<GameSimple>),
+        (status = 400, description = "Validation error"),
+        (status = 413, description = "Too many ids (max 100)"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -88,8 +94,12 @@ async fn get_games_by_ids(
     State(state): State<Arc<AppState>>,
     Query(query): Query<GetGamesQuery>,
 ) -> ApiResult<Json<Vec<GameSimple>>> {
+    query.validate().map_err(ApiError::from)?;
     if query.game_ids.is_empty() {
         return Ok(Json(vec![]));
+    }
+    if query.game_ids.len() > 100 {
+        return Err(ApiError::payload_too_large("Too many game ids (max 100)"));
     }
     let games = state.game_service.get_by_ids(&query.game_ids).await?;
     Ok(Json(games))
@@ -101,7 +111,9 @@ async fn get_games_by_ids(
     params(NewGameReleasesQuery),
     summary = "Get new releases",
     responses(
-        (status = 200, description = "List of games", body = Vec<GameSimple>),
+        (status = 200, description = "List of games. Empty list if none", body = Vec<GameSimple>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     operation_id = "get_new_releases"
@@ -111,6 +123,7 @@ async fn get_new_releases(
     State(state): State<Arc<AppState>>,
     Query(params): Query<NewGameReleasesQuery>,
 ) -> ApiResult<Json<Vec<GameSimple>>> {
+    params.validate().map_err(ApiError::from)?;
     let games = state.game_service.get_new_releases(params.limit).await?;
     Ok(Json(games))
 }
@@ -121,7 +134,8 @@ async fn get_new_releases(
     summary = "Get games by developer",
     params(("developer_id" = i32, Path, description = "Developer id")),
     responses(
-        (status = 200, description = "List of games", body = Vec<GameSimple>),
+        (status = 200, description = "List of games. Empty list if none; parent existence not verified", body = Vec<GameSimple>),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     operation_id = "get_games_by_developer"
@@ -144,7 +158,9 @@ async fn find_by_developer(
         PublsherGamesQuery
     ),
     responses(
-        (status = 200, description = "List of games", body = Vec<GameSimple>),
+        (status = 200, description = "List of games. Empty list if none; parent existence not verified", body = Vec<GameSimple>),
+        (status = 400, description = "Validation error"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     operation_id = "get_games_by_publisher"
@@ -155,6 +171,7 @@ async fn find_by_publisher(
     Path(publisher_id): Path<i32>,
     Query(params): Query<PublsherGamesQuery>,
 ) -> ApiResult<Json<Vec<GameSimple>>> {
+    params.validate().map_err(ApiError::from)?;
     let games = state
         .game_service
         .get_by_publisher(publisher_id, params.page)
@@ -170,6 +187,7 @@ async fn find_by_publisher(
     responses(
         (status = 200, description = "Game detail with all relations", body = GameSimple),
         (status = 404, description = "Game not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -192,6 +210,7 @@ async fn get_game(
     responses(
         (status = 200, description = "Game detail with all relations", body = GameDetails),
         (status = 404, description = "Game not found"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -215,7 +234,9 @@ async fn get_details(
     path = "/api/games/unpublished",
     summary = "Get all unpublished games (Admin only)",
     responses(
-        (status = 200, description = "Game detail with all relations", body = GameSimple),
+        (status = 200, description = "Game detail with all relations", body = Vec<GameSimple>),
+        (status = 401, description = "Unauthorized"),
+        (status = 403, description = "Forbidden"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -237,6 +258,8 @@ async fn get_unpublished(State(state): State<Arc<AppState>>) -> ApiResult<Json<V
         (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
+        (status = 409, description = "Conflict - duplicate or version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -248,6 +271,12 @@ async fn create(
     Json(request): Json<CreateGameRequest>,
 ) -> ApiResult<impl IntoResponse> {
     request.validate().map_err(ApiError::from)?;
+    if request.name.trim().is_empty() || request.description.trim().is_empty() {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "Name and description must not be blank",
+        ));
+    }
     let game = state.game_service.create(request).await?;
     Ok((StatusCode::CREATED, Json(game)))
 }
@@ -265,6 +294,7 @@ async fn create(
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
         (status = 409, description = "Conflict - version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -277,6 +307,12 @@ async fn update(
     Json(request): Json<UpdateGameRequest>,
 ) -> ApiResult<Json<GameDetails>> {
     request.validate().map_err(ApiError::from)?;
+    if request.name.trim().is_empty() || request.description.trim().is_empty() {
+        return Err(ApiError::new(
+            StatusCode::BAD_REQUEST,
+            "Name and description must not be blank",
+        ));
+    }
     let game = state.game_service.update(id, request).await?;
     Ok(Json(game))
 }
@@ -289,11 +325,12 @@ async fn update(
     request_body = DeleteGameRequest,
     responses(
         (status = 204, description = "Game deleted"),
-        (status = 400, description = "Already published"),
+        (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
-        (status = 409, description = "Conflict - version mismatch"),
+        (status = 409, description = "Conflict - already published or version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),
@@ -318,11 +355,12 @@ async fn delete_game(
     request_body = PublishGameRequest,
     responses(
         (status = 200, description = "Game published", body = Game),
-        (status = 400, description = "Already published"),
+        (status = 400, description = "Validation error"),
         (status = 401, description = "Unauthorized"),
         (status = 403, description = "Forbidden"),
         (status = 404, description = "Game not found"),
-        (status = 409, description = "Conflict - version mismatch"),
+        (status = 409, description = "Conflict - already published or version mismatch"),
+        (status = 422, description = "Invalid path/query/body"),
     ),
     tag = "games",
     security(("bearer" = [])),

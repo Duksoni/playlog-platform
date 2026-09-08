@@ -1,6 +1,6 @@
 {
   "db_name": "PostgreSQL",
-  "query": "\n                SELECT id, name, released, draft\n                FROM games\n                WHERE draft = true\n                ORDER BY name\n            ",
+  "query": "\n                SELECT id, name, released, draft\n                FROM games\n                WHERE draft = true\n                ORDER BY name\n                LIMIT 100\n            ",
   "describe": {
     "columns": [
       {
@@ -58,5 +58,5 @@
       false
     ]
   },
-  "hash": "76a06851cd3b4e6b2e802ca162eaadb04f689a76dbeaf204da4b98ea300c242a"
+  "hash": "2f95cdabb2a72dc0e160c8eb0205d9c23b15f92113a4cc63c12329717e65122e"
 }
