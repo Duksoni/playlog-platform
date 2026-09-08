@@ -32,8 +32,9 @@ REPORTS_COLLECTION = "reports"
 LEGIT_REASONS = [
     "Hate speech or harassment",
     "Spam or advertising",
-    "Unmarked spoilers",
     "Inappropriate content",
+    "Privacy violation",
+    "Off-topic content",
 ]
 
 NONSENSE_REASONS = [
@@ -182,7 +183,7 @@ def main():
             else random.choice(NONSENSE_REASONS)
         )
 
-        start_date = max(target_created_at, now - timedelta(days=30))
+        start_date = target_created_at
         delta = now - start_date
         report_date = (
             start_date

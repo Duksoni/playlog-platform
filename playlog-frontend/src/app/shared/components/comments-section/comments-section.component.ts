@@ -234,7 +234,7 @@ export class CommentsSectionComponent implements OnInit, OnDestroy {
 				targetId: comment.id,
 				targetLabel: $localize`:@@report.commentBy:comment by ${comment.username}`,
 			},
-			width: '500px',
+			width: '450px',
 			disableClose: true,
 			autoFocus: false,
 		}).afterClosed().subscribe(result => {

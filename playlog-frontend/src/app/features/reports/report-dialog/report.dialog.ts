@@ -19,11 +19,12 @@ import {SnackbarService} from '../../../shared/services/snackbar.service';
 import {ApiError} from '../../../core/api-error';
 import {ReportTargetType} from '../report.dto';
 
-const PRESET_REASONS: string[] = [
+export const PRESET_REASONS: string[] = [
 	$localize`:@@report.reasonHate:Hate speech or harassment`,
+	$localize`:@@report.reasonPrivacy:Privacy violation`,
 	$localize`:@@report.reasonSpam:Spam or advertising`,
-	$localize`:@@report.reasonSpoilers:Unmarked spoilers`,
 	$localize`:@@report.reasonInappropriate:Inappropriate content`,
+	$localize`:@@report.reasonOffTopic:Off-topic content`,
 ];
 
 const OTHER = $localize`:@@report.reasonOther:Other`;

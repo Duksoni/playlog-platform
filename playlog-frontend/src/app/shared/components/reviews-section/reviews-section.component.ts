@@ -233,7 +233,7 @@ export class ReviewsSectionComponent implements OnInit, OnDestroy {
 				targetId: review.id,
 				targetLabel: $localize`:@@report.reviewBy:review by ${review.username}`,
 			},
-			width: '500px',
+			width: '450px',
 			disableClose: true,
 			autoFocus: false,
 		}).afterClosed().subscribe(result => {
